@@ -1,19 +1,16 @@
 /**
- * Профиль (profile) — экран-заглушка роли «владелец точки».
- * Бизнес-логики нет: структура навигации и осмысленный EmptyState.
+ * Профиль (profile) — экран роли «владелец точки».
+ *
+ * Карточка пользователя и выход из аккаунта с подтверждением.
+ * Управление организациями — после подключения API (Промт 5–6).
  */
-import { User } from 'lucide-react-native';
-import { EmptyState } from '@bazar/ui';
+import { LogoutSection } from '../../../components/auth/LogoutSection';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 
 export default function ProfileScreen() {
   return (
     <RoleScreen role="store_owner" section="profile" title="Профиль">
-      <EmptyState
-        icon={User}
-        title="Профиль в разработке"
-        description="Данные организаций и управление точками появятся после подключения API."
-      />
+      <LogoutSection />
     </RoleScreen>
   );
 }

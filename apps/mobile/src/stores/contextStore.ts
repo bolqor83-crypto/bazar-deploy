@@ -10,9 +10,17 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import {
+  createJSONStorage,
+  persist,
+  type StateStorage,
+} from 'zustand/middleware';
 import type { ActiveContext, Membership, Role } from '@bazar/types';
-import { customerContext, mockLocations, mockMemberships } from '../mocks/context';
+import {
+  customerContext,
+  mockLocations,
+  mockMemberships,
+} from '../mocks/context';
 
 /**
  * Безопасное хранилище: при серверном рендеринге (статический экспорт
@@ -47,7 +55,11 @@ function locationIdsOf(organizationId: string): string[] {
     .map((l) => l.id);
 }
 
-function orgBelongsToRole(orgId: string, role: Role, memberships: Membership[]): boolean {
+function orgBelongsToRole(
+  orgId: string,
+  role: Role,
+  memberships: Membership[],
+): boolean {
   return memberships.some((m) => m.role === role && m.organizationId === orgId);
 }
 
@@ -58,7 +70,7 @@ function orgBelongsToRole(orgId: string, role: Role, memberships: Membership[]):
  */
 export function validateContext(
   ctx: ActiveContext | null | undefined,
-  memberships: Membership[]
+  memberships: Membership[],
 ): ActiveContext | null {
   if (!ctx || typeof ctx !== 'object') {
     return null;
@@ -72,17 +84,30 @@ export function validateContext(
   switch (role) {
     case 'customer':
       // Покупатель — без организации и точки.
-      return { userId, role: 'customer', organizationId: null, locationId: null };
+      return {
+        userId,
+        role: 'customer',
+        organizationId: null,
+        locationId: null,
+      };
 
     case 'store_owner': {
-      if (!organizationId || !orgBelongsToRole(organizationId, 'store_owner', memberships)) {
+      if (
+        !organizationId ||
+        !orgBelongsToRole(organizationId, 'store_owner', memberships)
+      ) {
         return null;
       }
       const validLocation =
         locationId && locationIdsOf(organizationId).includes(locationId)
           ? locationId
           : null;
-      return { userId, role: 'store_owner', organizationId, locationId: validLocation };
+      return {
+        userId,
+        role: 'store_owner',
+        organizationId,
+        locationId: validLocation,
+      };
     }
 
     case 'wholesale_seller': {
@@ -92,17 +117,25 @@ export function validateContext(
       ) {
         return null;
       }
-      return { userId, role: 'wholesale_seller', organizationId, locationId: null };
+      return {
+        userId,
+        role: 'wholesale_seller',
+        organizationId,
+        locationId: null,
+      };
     }
 
     case 'carrier': {
       // Роль должна быть в членствах; организация опциональна.
-      const hasCarrierMembership = memberships.some((m) => m.role === 'carrier');
+      const hasCarrierMembership = memberships.some(
+        (m) => m.role === 'carrier',
+      );
       if (!hasCarrierMembership) {
         return null;
       }
       const org =
-        organizationId && orgBelongsToRole(organizationId, 'carrier', memberships)
+        organizationId &&
+        orgBelongsToRole(organizationId, 'carrier', memberships)
           ? organizationId
           : null;
       return { userId, role: 'carrier', organizationId: org, locationId: null };
@@ -116,14 +149,19 @@ export function validateContext(
  */
 export function normalizeForRole(
   ctx: ActiveContext,
-  memberships: Membership[]
+  memberships: Membership[],
 ): ActiveContext {
   const firstOrgIdOf = (role: Role): string | null =>
     memberships.find((m) => m.role === role)?.organizationId ?? null;
 
   switch (ctx.role) {
     case 'customer':
-      return { userId: ctx.userId, role: 'customer', organizationId: null, locationId: null };
+      return {
+        userId: ctx.userId,
+        role: 'customer',
+        organizationId: null,
+        locationId: null,
+      };
 
     case 'store_owner': {
       const orgId =
@@ -134,10 +172,18 @@ export function normalizeForRole(
       // Организация сменилась — точка прежней организации не применима.
       const orgChanged = orgId !== ctx.organizationId;
       const locationId =
-        !orgChanged && orgId && ctx.locationId && locationIdsOf(orgId).includes(ctx.locationId)
+        !orgChanged &&
+        orgId &&
+        ctx.locationId &&
+        locationIdsOf(orgId).includes(ctx.locationId)
           ? ctx.locationId
           : null;
-      return { userId: ctx.userId, role: 'store_owner', organizationId: orgId, locationId };
+      return {
+        userId: ctx.userId,
+        role: 'store_owner',
+        organizationId: orgId,
+        locationId,
+      };
     }
 
     case 'wholesale_seller': {
@@ -157,12 +203,49 @@ export function normalizeForRole(
     case 'carrier': {
       // Организация опциональна: если указана чужая — работаем без неё.
       const orgId =
-        ctx.organizationId && orgBelongsToRole(ctx.organizationId, 'carrier', memberships)
+        ctx.organizationId &&
+        orgBelongsToRole(ctx.organizationId, 'carrier', memberships)
           ? ctx.organizationId
           : null;
-      return { userId: ctx.userId, role: 'carrier', organizationId: orgId, locationId: null };
+      return {
+        userId: ctx.userId,
+        role: 'carrier',
+        organizationId: orgId,
+        locationId: null,
+      };
     }
   }
+}
+
+/** Приоритет ролей при автоподборе контекста после входа. */
+const ROLE_PRIORITY: Role[] = [
+  'wholesale_seller',
+  'store_owner',
+  'carrier',
+  'customer',
+];
+
+/**
+ * Первый контекст пользователя по приоритету членств:
+ * wholesale → store_owner → carrier → customer.
+ */
+export function contextByPriority(
+  userId: string,
+  memberships: Membership[],
+): ActiveContext {
+  const role =
+    ROLE_PRIORITY.find((r) => memberships.some((m) => m.role === r)) ??
+    'customer';
+  const organizationId =
+    memberships.find((m) => m.role === role)?.organizationId ?? null;
+  // Для carrier организация опциональна, для customer — null.
+  const ctx: ActiveContext = {
+    userId,
+    role,
+    organizationId: role === 'customer' ? null : organizationId,
+    locationId: null,
+  };
+  return normalizeForRole(ctx, memberships);
 }
 
 export interface ContextState {
@@ -174,6 +257,14 @@ export interface ContextState {
   setRole: (role: Role) => void;
   setOrganization: (orgId: string) => void;
   setLocation: (locId: string | null) => void;
+  /**
+   * Синхронизация с пользователем после входа/гидратации сессии:
+   * обновляет членства и пересобирает контекст (по приоритету,
+   * если пользователь сменился).
+   */
+  syncWithUser: (userId: string, memberships: Membership[]) => void;
+  /** Сброс при выходе: customer-контекст без пользователя, чистое хранилище. */
+  reset: () => void;
 }
 
 export const useContextStore = create<ContextState>()(
@@ -196,7 +287,10 @@ export const useContextStore = create<ContextState>()(
       setOrganization: (orgId) => {
         const { active, memberships } = get();
         set({
-          active: normalizeForRole({ ...active, organizationId: orgId }, memberships),
+          active: normalizeForRole(
+            { ...active, organizationId: orgId },
+            memberships,
+          ),
         });
       },
 
@@ -207,6 +301,41 @@ export const useContextStore = create<ContextState>()(
         }
         set({ active: { ...active, locationId: locId } });
       },
+
+      syncWithUser: (userId, memberships) => {
+        const { active } = get();
+        if (active.userId === userId) {
+          // Тот же пользователь: сохраняем выбранный контекст, если он
+          // ещё валиден по свежим членствам, иначе пересобираем.
+          const normalized = normalizeForRole(active, memberships);
+          const valid = validateContext(normalized, memberships);
+          set({
+            memberships,
+            active: valid ?? contextByPriority(userId, memberships),
+          });
+          return;
+        }
+        // Другой пользователь: контекст выбираем заново по приоритету.
+        set({ memberships, active: contextByPriority(userId, memberships) });
+      },
+
+      reset: () => {
+        // Выход: без пользователя, роль customer, без организаций.
+        set({
+          memberships: [],
+          hydrated: true,
+          active: {
+            userId: '',
+            role: 'customer',
+            organizationId: null,
+            locationId: null,
+          },
+        });
+        // persist-прослойка перепишет ключ после set — удаляем её запись
+        // строго после (очередь AsyncStorage FIFO: removeItem выполняется
+        // последним, ключ исчезает).
+        void getSafeStorage().removeItem(CONTEXT_STORAGE_KEY);
+      },
     }),
     {
       name: CONTEXT_STORAGE_KEY,
@@ -215,13 +344,13 @@ export const useContextStore = create<ContextState>()(
       onRehydrateStorage: () => (state) => {
         const validated = validateContext(
           state?.active,
-          state?.memberships ?? mockMemberships
+          state?.memberships ?? mockMemberships,
         );
         useContextStore.setState({
           active: validated ?? { ...customerContext },
           hydrated: true,
         });
       },
-    }
-  )
+    },
+  ),
 );

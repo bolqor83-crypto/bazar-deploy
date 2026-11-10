@@ -3,8 +3,12 @@
  *
  * Порядок запуска:
  * 1. Загрузка шрифтов Inter (useFonts) — до этого UI не показываем.
- * 2. Гидратация contextStore из AsyncStorage — до этого держим сплэш.
- * 3. SplashScreen.hideAsync() и рендер стеков.
+ * 2. authStore.hydrate() — проверка сохранённой сессии (токен из
+ *    AsyncStorage → getSession мок-бэкенда) и синхронизация
+ *    contextStore с членствами пользователя.
+ * 3. Гидратация contextStore из AsyncStorage (persist).
+ * 4. Пока что-либо не готово — держим сплэш, показываем скелетон.
+ * 5. SplashScreen.hideAsync() и рендер стеков.
  *
  * Провайдеры: BazarUIProvider (тема + тосты + safe area).
  * Статус-бар следует теме.
@@ -23,8 +27,9 @@ import {
 import { BazarUIProvider, Skeleton, useTheme } from '@bazar/ui';
 import { View } from 'react-native';
 import { useContextStore } from '../stores/contextStore';
+import { useAuthStore } from '../stores/authStore';
 
-// Не даём сплэшу скрыться до готовности шрифтов и контекста.
+// Не даём сплэшу скрыться до готовности шрифтов, сессии и контекста.
 void SplashScreen.preventAutoHideAsync().catch(() => {
   // На платформах без сплэша — просто продолжаем.
 });
@@ -43,6 +48,7 @@ function AppStack() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
+        <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="dev/design" />
       </Stack>
@@ -55,7 +61,12 @@ function BootSkeleton() {
   const { colors, spacing } = useTheme();
   return (
     <View
-      style={{ flex: 1, backgroundColor: colors.background, padding: spacing.xl, gap: spacing.md }}
+      style={{
+        flex: 1,
+        backgroundColor: colors.background,
+        padding: spacing.xl,
+        gap: spacing.md,
+      }}
     >
       <Skeleton height={28} width={220} />
       <Skeleton height={16} width="80%" />
@@ -72,7 +83,15 @@ export default function RootLayout() {
     Inter_700Bold,
   });
   const contextHydrated = useContextStore((s) => s.hydrated);
-  const ready = fontsLoaded && contextHydrated;
+  const authState = useAuthStore((s) => s.state);
+
+  // Проверка сохранённой сессии: один вызов при монтировании.
+  // hydrate сам синхронизирует contextStore с членствами пользователя.
+  useEffect(() => {
+    void useAuthStore.getState().hydrate();
+  }, []);
+
+  const ready = fontsLoaded && contextHydrated && authState !== 'unknown';
 
   useEffect(() => {
     if (ready) {

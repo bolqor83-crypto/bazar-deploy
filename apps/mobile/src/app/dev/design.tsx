@@ -25,6 +25,7 @@ import {
   useThemeStore,
   useToast,
 } from '@bazar/ui';
+import { AuthGuard } from '../../components/guards/AuthGuard';
 
 /** В проде витрина недоступна. */
 function useDevOnly(): boolean {
@@ -63,12 +64,19 @@ function ShowcaseBody() {
     <ToastProvider>
       <ScrollView
         style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: spacing.xl, paddingBottom: spacing.xxxl }}
+        contentContainerStyle={{
+          padding: spacing.xl,
+          paddingBottom: spacing.xxxl,
+        }}
       >
         <Text variant="display" style={{ marginBottom: spacing.sm }}>
           Дизайн-система Bazar
         </Text>
-        <Text variant="bodySmall" color="textSecondary" style={{ marginBottom: spacing.lg }}>
+        <Text
+          variant="bodySmall"
+          color="textSecondary"
+          style={{ marginBottom: spacing.lg }}
+        >
           12 компонентов · токены · темы light/dark/system · режим: {mode}
         </Text>
 
@@ -79,12 +87,21 @@ function ShowcaseBody() {
         <Section title="Текст">
           <Text variant="h1">Заголовок h1 — 28/36</Text>
           <Text variant="body" style={{ marginTop: spacing.sm }}>
-            Body 17pt — основной текст приложения: читается в 4 утра, в перчатках, при слабом свете.
+            Body 17pt — основной текст приложения: читается в 4 утра, в
+            перчатках, при слабом свете.
           </Text>
-          <Text variant="bodySmall" color="textSecondary" style={{ marginTop: spacing.sm }}>
+          <Text
+            variant="bodySmall"
+            color="textSecondary"
+            style={{ marginTop: spacing.sm }}
+          >
             Body small — 15pt, второстепенное
           </Text>
-          <Text variant="caption" color="textMuted" style={{ marginTop: spacing.sm }}>
+          <Text
+            variant="caption"
+            color="textMuted"
+            style={{ marginTop: spacing.sm }}
+          >
             Caption 13pt — подписи
           </Text>
           <Text variant="bodyStrong" mono style={{ marginTop: spacing.sm }}>
@@ -93,7 +110,9 @@ function ShowcaseBody() {
         </Section>
 
         <Section title="Кнопки">
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}
+          >
             <Button variant="primary">Основная</Button>
             <Button variant="secondary">Вторичная</Button>
             <Button variant="ghost">Призрачная</Button>
@@ -106,12 +125,38 @@ function ShowcaseBody() {
         </Section>
 
         <Section title="Иконочные кнопки">
-          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-            <IconButton icon={User} accessibilityLabel="Профиль, малый" size="sm" />
-            <IconButton icon={User} accessibilityLabel="Профиль, средний" size="md" />
-            <IconButton icon={User} accessibilityLabel="Профиль, крупный" size="lg" />
-            <IconButton icon={User} accessibilityLabel="Профиль, призрачный" variant="ghost" />
-            <IconButton icon={User} accessibilityLabel="Профиль, недоступен" disabled />
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.md,
+              alignItems: 'center',
+            }}
+          >
+            <IconButton
+              icon={User}
+              accessibilityLabel="Профиль, малый"
+              size="sm"
+            />
+            <IconButton
+              icon={User}
+              accessibilityLabel="Профиль, средний"
+              size="md"
+            />
+            <IconButton
+              icon={User}
+              accessibilityLabel="Профиль, крупный"
+              size="lg"
+            />
+            <IconButton
+              icon={User}
+              accessibilityLabel="Профиль, призрачный"
+              variant="ghost"
+            />
+            <IconButton
+              icon={User}
+              accessibilityLabel="Профиль, недоступен"
+              disabled
+            />
           </View>
         </Section>
 
@@ -123,12 +168,21 @@ function ShowcaseBody() {
               value={inputValue}
               onChangeText={(text: string) => {
                 setInputValue(text);
-                setInputError(text.length > 0 && text.length < 3 ? 'Слишком короткое название' : null);
+                setInputError(
+                  text.length > 0 && text.length < 3
+                    ? 'Слишком короткое название'
+                    : null,
+                );
               }}
               hint={inputError ?? 'Как его увидят покупатели'}
               error={inputError}
             />
-            <Input label="ИНН" value="" onChangeText={() => {}} error="Проверьте ИНН" />
+            <Input
+              label="ИНН"
+              value=""
+              onChangeText={() => {}}
+              error="Проверьте ИНН"
+            />
           </View>
         </Section>
 
@@ -153,7 +207,9 @@ function ShowcaseBody() {
         </Section>
 
         <Section title="Бейджи">
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}
+          >
             <Badge>Нейтральный</Badge>
             <Badge variant="success">Оплачено</Badge>
             <Badge variant="warning">Долг</Badge>
@@ -198,9 +254,14 @@ function ShowcaseBody() {
           <Button variant="secondary" onPress={() => setDialogVisible(true)}>
             Открыть шит
           </Button>
-          <Dialog visible={dialogVisible} onClose={() => setDialogVisible(false)} title="Пример шита">
+          <Dialog
+            visible={dialogVisible}
+            onClose={() => setDialogVisible(false)}
+            title="Пример шита"
+          >
             <Text variant="bodySmall" color="textSecondary">
-              Появляется пружиной снизу, закрывается свайпом за ручку, тапом по подложке или кнопкой ниже.
+              Появляется пружиной снизу, закрывается свайпом за ручку, тапом по
+              подложке или кнопкой ниже.
             </Text>
             <View style={{ marginTop: spacing.lg }}>
               <Button onPress={() => setDialogVisible(false)}>Понятно</Button>
@@ -212,19 +273,34 @@ function ShowcaseBody() {
           <View style={{ gap: spacing.md }}>
             <Button
               variant="secondary"
-              onPress={() => show({ variant: 'success', message: 'Заказ отправлен поставщику' })}
+              onPress={() =>
+                show({
+                  variant: 'success',
+                  message: 'Заказ отправлен поставщику',
+                })
+              }
             >
               Тост «успех»
             </Button>
             <Button
               variant="secondary"
-              onPress={() => show({ variant: 'error', message: 'Не удалось сохранить черновик' })}
+              onPress={() =>
+                show({
+                  variant: 'error',
+                  message: 'Не удалось сохранить черновик',
+                })
+              }
             >
               Тост «ошибка»
             </Button>
             <Button
               variant="secondary"
-              onPress={() => show({ variant: 'info', message: 'Прайс обновлён 5 минут назад' })}
+              onPress={() =>
+                show({
+                  variant: 'info',
+                  message: 'Прайс обновлён 5 минут назад',
+                })
+              }
             >
               Тост «инфо»
             </Button>
@@ -247,5 +323,11 @@ export default function DesignShowcaseScreen() {
   if (!allowed) {
     return null;
   }
-  return <ShowcaseBody />;
+  // Витрина доступна без входа (requireAuth={false}); аутентифицированного
+  // AuthGuard уведёт в приложение. Только __DEV__-сборки.
+  return (
+    <AuthGuard requireAuth={false}>
+      <ShowcaseBody />
+    </AuthGuard>
+  );
 }
