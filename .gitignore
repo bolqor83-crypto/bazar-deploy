@@ -1,0 +1,36 @@
+# Зависимости
+node_modules/
+
+# Секреты и окружение
+.env
+.env.*
+!.env.example
+secrets/*
+
+# Expo / Metro
+.expo/
+.expo-shared/
+
+# Turborepo
+.turbo/
+
+# Сборка
+dist/
+build/
+
+# Логи
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Системное
+.DS_Store
+*.pem
+
+# Нативные папки (managed workflow Expo)
+ios/
+android/
+
+# Тесты
+coverage/

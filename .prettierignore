@@ -1,0 +1,8 @@
+node_modules
+coverage
+dist
+.expo
+.expo-shared
+.turbo
+pnpm-lock.yaml
+apps/mobile/assets
