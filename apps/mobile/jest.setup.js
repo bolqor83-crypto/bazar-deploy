@@ -55,7 +55,7 @@ jest.mock('react-native-reanimated', () => {
 
 // AsyncStorage: официальный мок из пакета
 jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
 // Haptics: без нативных вызовов
@@ -65,8 +65,50 @@ jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(() => Promise.resolve()),
   selectionAsync: jest.fn(() => Promise.resolve()),
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
-  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
 }));
+
+// expo-crypto: детерминированный мок хеширования. Тесты проверяют
+// соль и разделение хешей, а не сам SHA-256. Дайджест не содержит
+// открытый вход (как и настоящий хеш).
+jest.mock('expo-crypto', () => {
+  let counter = 0;
+  // FNV-1a в обе стороны: псевдодайджест без фрагментов входа.
+  const fnv = (data, seed) => {
+    let h = seed;
+    for (let i = 0; i < data.length; i += 1) {
+      h ^= data.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  };
+  return {
+    __esModule: true,
+    CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+    digestStringAsync: jest.fn(
+      async (_algorithm, data) =>
+        `mock-sha256-${fnv(data, 0x811c9dc5)}${fnv(data.split('').reverse().join(''), 0x9747b28c)}`,
+    ),
+    getRandomBytes: (n) => {
+      counter += 1;
+      // Соль зависит от счётчика вызовов: разные пользователи
+      // с одинаковым паролем получают разные хеши.
+      const bytes = new Uint8Array(n);
+      for (let i = 0; i < n; i += 1) {
+        bytes[i] = (counter * 31 + i * 7) % 256;
+      }
+      return bytes;
+    },
+    randomUUID: () => {
+      counter += 1;
+      return `mock-uuid-${counter}-${Date.now()}`;
+    },
+  };
+});
 
 // Шрифты Inter: считаем загруженными
 jest.mock('@expo-google-fonts/inter', () => {
@@ -97,13 +139,16 @@ jest.mock('expo-splash-screen', () => ({
 }));
 
 // SafeAreaProvider: официальный мок (children рендерятся всегда, insets = 0)
-jest.mock('react-native-safe-area-context', () =>
-  require('react-native-safe-area-context/jest/mock').default
+jest.mock(
+  'react-native-safe-area-context',
+  () => require('react-native-safe-area-context/jest/mock').default,
 );
 
 // Expo Router: управляемый мок навигации.
 // mockRouter доступен тестам через import { router } from 'expo-router'.
+// mockRedirect — заглушка Redirect (рендерит null, помнит href).
 const mockRouter = { replace: jest.fn(), push: jest.fn(), back: jest.fn() };
+const mockRedirect = jest.fn(() => null);
 jest.mock('expo-router', () => ({
   __esModule: true,
   router: mockRouter,
@@ -113,4 +158,5 @@ jest.mock('expo-router', () => ({
   useSegments: () => [],
   Link: ({ children }) => children,
   Stack: { Screen: () => null },
+  Redirect: mockRedirect,
 }));
