@@ -13,6 +13,8 @@ module.exports = defineConfig([
   globalIgnores([
     '**/node_modules/**',
     '**/dist/**',
+    '**/dist-dev/**',
+    '**/web-build/**',
     '**/build/**',
     '**/.expo/**',
     '**/.expo-shared/**',

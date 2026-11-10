@@ -16,6 +16,7 @@ secrets/*
 
 # Сборка
 dist/
+dist-dev/
 build/
 
 # Логи

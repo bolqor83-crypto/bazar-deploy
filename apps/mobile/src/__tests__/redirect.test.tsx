@@ -4,9 +4,9 @@
 import { render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ActiveContext } from '@bazar/types';
-import TabsIndex from './index';
-import { customerContext, mockMemberships } from '../../mocks/context';
-import { useContextStore } from '../../stores/contextStore';
+import TabsIndex from '../app/(tabs)/index';
+import { customerContext, mockMemberships } from '../mocks/context';
+import { useContextStore } from '../stores/contextStore';
 
 function setContext(active: ActiveContext) {
   useContextStore.setState({

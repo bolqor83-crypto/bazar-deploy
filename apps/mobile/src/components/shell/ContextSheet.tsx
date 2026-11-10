@@ -11,6 +11,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import type { ActiveContext, Role } from '@bazar/types';
 import {
@@ -27,7 +28,7 @@ import {
   locationsForOrganization,
   organizationsForRole,
 } from './contextUtils';
-import { ROLE_LABEL } from './navigation';
+import { ROLE_LABEL, firstRouteFor } from './navigation';
 
 export interface ContextSheetProps {
   visible: boolean;
@@ -40,6 +41,7 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
   const active = useContextStore((s) => s.active);
   const memberships = useContextStore((s) => s.memberships);
   const setActive = useContextStore((s) => s.setActive);
+  const router = useRouter();
   const { spacing } = useTheme();
 
   const [draft, setDraft] = useState<ActiveContext>(active);
@@ -81,9 +83,14 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
   };
 
   const apply = () => {
+    const roleChanged = draft.role !== active.role;
     setActive(draft);
     hapticSelection();
     onClose();
+    // Смена роли меняет набор экранов: уходим на первый экран новой роли.
+    if (roleChanged) {
+      router.replace(firstRouteFor(draft.role));
+    }
   };
 
   const sectionTitleStyle = {

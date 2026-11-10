@@ -4,9 +4,24 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+/**
+ * Безопасное хранилище: при серверном рендеринге (статический экспорт
+ * Expo web) window/AsyncStorage недоступны — используем no-op.
+ */
+function getSafeStorage(): StateStorage {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: async () => null,
+      setItem: async () => undefined,
+      removeItem: async () => undefined,
+    };
+  }
+  return AsyncStorage;
+}
 
 export const THEME_STORAGE_KEY = 'bazar.theme.mode';
 
@@ -39,7 +54,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: THEME_STORAGE_KEY,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(getSafeStorage),
       partialize: (state) => ({ mode: state.mode }),
       onRehydrateStorage: () => (state) => {
         const mode = state?.mode;

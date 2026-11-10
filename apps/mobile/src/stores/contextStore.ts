@@ -10,9 +10,24 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { ActiveContext, Membership, Role } from '@bazar/types';
 import { customerContext, mockLocations, mockMemberships } from '../mocks/context';
+
+/**
+ * Безопасное хранилище: при серверном рендеринге (статический экспорт
+ * Expo web) window/AsyncStorage недоступны — используем no-op.
+ */
+function getSafeStorage(): StateStorage {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: async () => null,
+      setItem: async () => undefined,
+      removeItem: async () => undefined,
+    };
+  }
+  return AsyncStorage;
+}
 
 export const CONTEXT_STORAGE_KEY = 'bazar.context.active';
 
@@ -195,7 +210,7 @@ export const useContextStore = create<ContextState>()(
     }),
     {
       name: CONTEXT_STORAGE_KEY,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(getSafeStorage),
       partialize: (state) => ({ active: state.active }),
       onRehydrateStorage: () => (state) => {
         const validated = validateContext(
