@@ -3,7 +3,10 @@
  *
  * Модель контекста (User → Organization → Membership →
  * BusinessLocation → Role) — в context.ts, см. ADR 0003.
+ * Модель аутентификации (AuthUser, Session, AuthState) — в auth.ts,
+ * см. ADR 0004.
  * Бизнес-сущности (Product, Order и т.д.) будут добавлены
  * в следующих промтах.
  */
 export * from './context';
+export * from './auth';
