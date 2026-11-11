@@ -1,0 +1,62 @@
+{
+  "name": "@bazar/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Бэкенд Bazar: NestJS + Prisma + аутентификация Argon2id/JWT (Промт 7).",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --config test/jest-unit.config.cjs",
+    "test:e2e": "jest --config test/jest-e2e.config.cjs --runInBand",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "seed": "ts-node --transpile-only src/seed/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only src/seed/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/serve-static": "^5.0.5",
+    "@nestjs/swagger": "^11.4.8",
+    "@nestjs/throttler": "^6.7.1",
+    "@node-rs/argon2": "^2.2.2",
+    "@prisma/client": "^6.19.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "helmet": "^8.0.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.12",
+    "@nestjs/testing": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "prisma": "^6.19.3",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.4.15",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.0"
+  }
+}

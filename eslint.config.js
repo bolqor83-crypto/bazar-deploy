@@ -51,6 +51,22 @@ module.exports = defineConfig([
     },
   },
   {
+    // CommonJS-скрипты Node (настройки Jest, сборочные хелперы):
+    // доступны глобалы модуля CommonJS.
+    files: ['**/*.cjs'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+  },
+  {
     // ВРЕМЕННО (см. ADR 0002): правила react-hooks/immutability и refs дают
     // ложные срабатывания на ворклеты и shared-значения Reanimated.
     // Вернуть, когда Reanimated получит совместимый линт-плагин.

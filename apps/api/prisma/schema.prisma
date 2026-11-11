@@ -1,0 +1,93 @@
+// Схема данных Bazar (Промт 7: минимальный фундамент).
+//
+// Провайдер конфигурируется через DATABASE_URL. Текущая демо-сборка
+// работает на SQLite (см. ADR 0008: Docker/PostgreSQL и ключи Neon
+// в песочнице недоступны, SQLite — последний fallback для demo).
+// Переключение на PostgreSQL — замена DATABASE_URL + провайдера;
+// перечисления здесь эмулируются строками с проверкой в DTO.
+//
+// За пределами Промта 7: Product, Order, Debt, Delivery (Промт 9+).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Пользователь. Пароль хранится как хеш Argon2id — никогда не
+/// покидает сервер (в ответах API его нет).
+model User {
+  id           String       @id @default(cuid())
+  phone        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  Membership[]
+  sessions     Session[]
+}
+
+/// Сессия refresh-токена. В БД лежит только SHA-256-хеш токена.
+/// family связывает цепочку обновлений одного входа: при попытке
+/// повторно использовать отозванный токен отзывается вся семья.
+model Session {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshHash String    @unique
+  family      String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  userAgent   String?
+  ip          String?
+
+  @@index([userId])
+  @@index([family])
+}
+
+/// Организация. type: WHOLESALE | RETAIL | LOGISTICS (строка вместо
+/// enum — ограничение SQLite, значения проверяются в DTO).
+model Organization {
+  id          String             @id @default(cuid())
+  name        String
+  type        String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  memberships Membership[]
+  locations   BusinessLocation[]
+}
+
+/// Членство пользователя в организации.
+/// role: CUSTOMER | STORE_OWNER | WHOLESALE_SELLER | CARRIER (строка
+/// вместо enum — ограничение SQLite, значения проверяются в DTO).
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId, role])
+  @@index([userId])
+}
+
+/// Торговая точка розничной организации.
+model BusinessLocation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  address        String
+  city           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}

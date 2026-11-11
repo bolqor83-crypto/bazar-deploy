@@ -1,0 +1,14 @@
+# Локальная SQLite-база демо-режима
+prisma/dev.db
+prisma/dev.db-journal
+prisma/test-e2e.db
+prisma/test-e2e.db-journal
+
+# Окружение
+.env
+
+# Сборка
+dist/
+
+# Тесты
+coverage/

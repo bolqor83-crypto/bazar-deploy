@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 
 # Хоистинг (решение ADR 0001): «плоская» структура node_modules
 # предсказуема для Metro, Expo CLI, Jest и CI.
@@ -8,5 +8,10 @@ nodeLinker: hoisted
 
 # Разрешённые postinstall-скрипты:
 # @parcel/watcher — файловый вотчер Metro (Expo), требуется его нативная сборка.
+# prisma / @prisma/client / @prisma/engines — генерация клиента Prisma (Промт 7).
 allowBuilds:
   '@parcel/watcher': true
+  prisma: true
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
