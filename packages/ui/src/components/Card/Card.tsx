@@ -3,7 +3,9 @@
  *
  * Варианты: default (фон + граница), elevated (тень md в light,
  * граница в dark), outlined (граница borderStrong).
- * При onPress — haptic и лёгкое затухание, роль button.
+ * При onPress — haptic и лёгкое затухание, роль button;
+ * selected (Промт 6) — состояние выбора для выбираемых карточек
+ * (например, способ доставки).
  */
 import type { ReactNode } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
@@ -15,11 +17,19 @@ export type CardVariant = 'default' | 'elevated' | 'outlined';
 export interface CardProps {
   variant?: CardVariant;
   onPress?: () => void;
+  /** Признак выбранной карточки (только вместе с onPress). */
+  selected?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }
 
-export function Card({ variant = 'default', onPress, style, children }: CardProps) {
+export function Card({
+  variant = 'default',
+  onPress,
+  selected = false,
+  style,
+  children,
+}: CardProps) {
   const { colors, radii, spacing, isDark } = useTheme();
 
   const base: ViewStyle = {
@@ -44,6 +54,7 @@ export function Card({ variant = 'default', onPress, style, children }: CardProp
     return (
       <Pressable
         accessibilityRole="button"
+        accessibilityState={selected ? { selected: true } : undefined}
         onPress={() => {
           hapticTap();
           onPress();

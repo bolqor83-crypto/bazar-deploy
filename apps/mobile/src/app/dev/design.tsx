@@ -12,13 +12,22 @@ import {
   Badge,
   Button,
   Card,
+  DeliveryCard,
   Dialog,
   Divider,
   EmptyState,
   ErrorState,
   IconButton,
   Input,
+  LocationSelector,
+  OrderStatus,
+  OrderSummary,
+  PartyCard,
+  PriceDisplay,
+  ProductCard,
+  QuantitySelector,
   Skeleton,
+  StockIndicator,
   Text,
   ToastProvider,
   useTheme,
@@ -59,6 +68,9 @@ function ShowcaseBody() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [inputError, setInputError] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(3);
+  const [location, setLocation] = useState<string | null>('l1');
+  const [delivery, setDelivery] = useState<'pickup' | 'delivery'>('pickup');
 
   return (
     <ToastProvider>
@@ -77,7 +89,7 @@ function ShowcaseBody() {
           color="textSecondary"
           style={{ marginBottom: spacing.lg }}
         >
-          12 компонентов · токены · темы light/dark/system · режим: {mode}
+          22 компонента · токены · темы light/dark/system · режим: {mode}
         </Text>
 
         <Button variant="ghost" size="sm" onPress={cycleMode}>
@@ -307,10 +319,143 @@ function ShowcaseBody() {
           </View>
         </Section>
 
+        <Section title="Бизнес-компоненты">
+          <Text variant="bodySmall" color="textSecondary">
+            10 компонентов Промта 6: цены в копейках с узким неразрывным
+            пробелом U+202F, статусы заказов, карточки сторон, выбор точки и
+            способа получения.
+          </Text>
+
+          <Text variant="h3">PriceDisplay</Text>
+          <View style={{ gap: spacing.md }}>
+            <PriceDisplay value={89_000} size="lg" />
+            <PriceDisplay value={85_000} oldPrice={100_000} />
+            <PriceDisplay value={125_50} />
+          </View>
+
+          <Text variant="h3">QuantitySelector</Text>
+          <QuantitySelector
+            value={quantity}
+            onChange={setQuantity}
+            min={0}
+            max={9}
+          />
+
+          <Text variant="h3">StockIndicator</Text>
+          <View style={{ gap: spacing.sm }}>
+            <StockIndicator stock="in" />
+            <StockIndicator stock="low" />
+            <StockIndicator stock="out" />
+          </View>
+
+          <Text variant="h3">OrderStatus</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: spacing.sm,
+            }}
+          >
+            <OrderStatus status="new" />
+            <OrderStatus status="assembling" />
+            <OrderStatus status="in_delivery" />
+            <OrderStatus status="completed" />
+            <OrderStatus status="cancelled" />
+            <OrderStatus status="disputed" />
+          </View>
+
+          <Text variant="h3">ProductCard</Text>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <ProductCard
+              name="Молоко 3,2%"
+              priceKopecks={8_900}
+              unit="1 л"
+              stock="in"
+            />
+            <ProductCard
+              name="Сыр «Гауда»"
+              priceKopecks={55_000}
+              oldPriceKopecks={65_000}
+              unit="300 г"
+              stock="low"
+            />
+          </View>
+
+          <Text variant="h3">ProductRow и OrderSummary</Text>
+          <Card>
+            <OrderSummary
+              items={[
+                {
+                  name: 'Молоко 3,2%',
+                  priceKopecks: 8_900,
+                  quantity: 2,
+                  unit: 'л',
+                },
+                { name: 'Сыр «Гауда»', priceKopecks: 55_000, quantity: 1 },
+                {
+                  name: 'Картофель',
+                  priceKopecks: 4_500,
+                  quantity: 5,
+                  unit: 'кг',
+                },
+              ]}
+            />
+          </Card>
+
+          <Text variant="h3">PartyCard</Text>
+          <PartyCard
+            name="Опт-Юг"
+            subtitle="Оптовый продавец"
+            rating={4.8}
+            verified
+          />
+          <PartyCard name="Транс-Логистик" subtitle="Перевозчик" rating={4.2} />
+
+          <Text variant="h3">LocationSelector</Text>
+          <LocationSelector
+            locations={[
+              {
+                id: 'l1',
+                name: 'Точка на Садовой',
+                address: 'ул. Садовая, 12',
+              },
+              {
+                id: 'l2',
+                name: 'Точка на Доватора',
+                address: 'ул. Доватора, 45',
+              },
+              {
+                id: 'l3',
+                name: 'Точка в Аксае',
+                address: 'г. Аксай, пр. Ленина, 3',
+              },
+            ]}
+            value={location}
+            onChange={setLocation}
+          />
+
+          <Text variant="h3">DeliveryCard</Text>
+          <DeliveryCard
+            method="pickup"
+            address="ул. Садовая, 12"
+            time="сегодня, после 14:00"
+            selected={delivery === 'pickup'}
+            onPress={() => setDelivery('pickup')}
+          />
+          <DeliveryCard
+            method="delivery"
+            address="До двери"
+            time="завтра, 10:00–14:00"
+            priceKopecks={25_000}
+            selected={delivery === 'delivery'}
+            onPress={() => setDelivery('delivery')}
+          />
+        </Section>
+
         <Divider inset="none" />
         <View style={{ marginTop: spacing.xl }}>
           <Text variant="caption" color="textMuted" align="center">
-            Bazar · дизайн-система · Промт 2
+            Bazar · дизайн-система · Промты 2 и 6
           </Text>
         </View>
       </ScrollView>

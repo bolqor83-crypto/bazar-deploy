@@ -60,10 +60,18 @@ export { Text } from './components/Text';
 export type { TextProps } from './components/Text';
 
 export { Button } from './components/Button';
-export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export type {
+  ButtonProps,
+  ButtonSize,
+  ButtonVariant,
+} from './components/Button';
 
 export { IconButton } from './components/IconButton';
-export type { IconButtonProps, IconButtonSize, IconButtonVariant } from './components/IconButton';
+export type {
+  IconButtonProps,
+  IconButtonSize,
+  IconButtonVariant,
+} from './components/IconButton';
 
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
@@ -78,16 +86,86 @@ export { Skeleton } from './components/Skeleton';
 export type { SkeletonProps } from './components/Skeleton';
 
 export { EmptyState } from './components/EmptyState';
-export type { EmptyStateAction, EmptyStateProps } from './components/EmptyState';
+export type {
+  EmptyStateAction,
+  EmptyStateProps,
+} from './components/EmptyState';
 
 export { ErrorState } from './components/ErrorState';
 export type { ErrorStateProps } from './components/ErrorState';
 
 export { Divider } from './components/Divider';
-export type { DividerInset, DividerOrientation, DividerProps } from './components/Divider';
+export type {
+  DividerInset,
+  DividerOrientation,
+  DividerProps,
+} from './components/Divider';
 
 export { Dialog } from './components/Dialog';
 export type { DialogProps } from './components/Dialog';
 
 export { ToastProvider, useToast, useToastStore } from './components/Toast';
-export type { ToastData, ToastInput, ToastProviderProps, ToastVariant } from './components/Toast';
+export type {
+  ToastData,
+  ToastInput,
+  ToastProviderProps,
+  ToastVariant,
+} from './components/Toast';
+
+// Бизнес-компоненты (Промт 6, Часть D)
+export {
+  PriceDisplay,
+  formatPrice,
+  discountPercent,
+  NARROW_NBSP,
+} from './components/PriceDisplay';
+export type {
+  PriceDisplayProps,
+  PriceDisplaySize,
+} from './components/PriceDisplay';
+
+export { QuantitySelector } from './components/QuantitySelector';
+export type { QuantitySelectorProps } from './components/QuantitySelector';
+
+export { StockIndicator } from './components/StockIndicator';
+export type {
+  StockIndicatorProps,
+  StockLevel,
+} from './components/StockIndicator';
+
+export {
+  OrderStatus,
+  ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+} from './components/OrderStatus';
+export type {
+  OrderStatusProps,
+  OrderStatusType,
+} from './components/OrderStatus';
+
+export { ProductCard } from './components/ProductCard';
+export type { ProductCardProps } from './components/ProductCard';
+
+export { ProductRow } from './components/ProductRow';
+export type { ProductRowProps } from './components/ProductRow';
+
+export { OrderSummary } from './components/OrderSummary';
+export type {
+  OrderSummaryItem,
+  OrderSummaryProps,
+} from './components/OrderSummary';
+
+export { PartyCard, initialsOf } from './components/PartyCard';
+export type { PartyCardProps } from './components/PartyCard';
+
+export { LocationSelector } from './components/LocationSelector';
+export type {
+  LocationSelectorProps,
+  SelectorLocation,
+} from './components/LocationSelector';
+
+export { DeliveryCard } from './components/DeliveryCard';
+export type {
+  DeliveryCardProps,
+  DeliveryMethod,
+} from './components/DeliveryCard';
