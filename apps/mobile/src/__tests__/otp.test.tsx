@@ -89,7 +89,7 @@ describe('(auth)/otp', () => {
     expect(authMockService.loginWithOtp).not.toHaveBeenCalled();
   });
 
-  it('успешный вход по коду → редирект на /(tabs)', async () => {
+  it('успешный вход по коду → сессия в store, экран не навигирует сам', async () => {
     jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
     jest
       .mocked(authMockService.loginWithOtp)
@@ -102,13 +102,15 @@ describe('(auth)/otp', () => {
     await fireEvent.press(screen.getByText('Войти'));
 
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+      expect(useAuthStore.getState().state).toBe('authenticated');
     });
+    // Баг №2: навигацию выполняет только AuthGuard — без собственного
+    // router.replace экрана (иначе гонка с Redirect guard'а).
+    expect(router.replace).not.toHaveBeenCalled();
     expect(authMockService.loginWithOtp).toHaveBeenCalledWith(
       '+79001234567',
       '123456',
     );
-    expect(useAuthStore.getState().state).toBe('authenticated');
   });
 
   it('неверный код → ошибка из store', async () => {

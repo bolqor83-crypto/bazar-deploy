@@ -1,6 +1,6 @@
 /**
  * Тесты экрана регистрации: поля, валидация после blur,
- * обязательный чекбокс, успех → /welcome.
+ * обязательный чекбокс, успех → сессия (навигацию выполняет AuthGuard).
  */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -104,7 +104,7 @@ describe('(auth)/register', () => {
     expect(authMockService.register).not.toHaveBeenCalled();
   });
 
-  it('успех → сессия, редирект на /welcome', async () => {
+  it('успех → сессия в store, экран не навигирует сам (guard ведёт на /welcome)', async () => {
     jest
       .mocked(authMockService.register)
       .mockResolvedValue({ user: NEWBIE, session: SESSION });
@@ -113,9 +113,12 @@ describe('(auth)/register', () => {
 
     await fireEvent.press(screen.getByText('Зарегистрироваться'));
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/welcome');
+      expect(useAuthStore.getState().state).toBe('authenticated');
     });
-    expect(useAuthStore.getState().state).toBe('authenticated');
+    // Баг №2: навигацию выполняет только AuthGuard — экран не делает
+    // собственный router.replace, иначе гонка уводит в /(tabs).
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().user).toEqual(NEWBIE);
     expect(authMockService.register).toHaveBeenCalledWith({
       name: 'Мария Иванова',
       phone: '+79001112233',

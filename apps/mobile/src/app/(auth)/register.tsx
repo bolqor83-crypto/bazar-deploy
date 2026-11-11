@@ -102,7 +102,9 @@ export default function RegisterScreen() {
     setLoading(false);
     if (ok) {
       hapticSuccess();
-      router.replace('/welcome');
+      // Навигацию выполняет AuthGuard зоны (auth): без членств —
+      // на онбординг /welcome, с членствами — в /(tabs). Ручной
+      // router.replace здесь вызвал бы гонку с Redirect guard'а.
     } else {
       hapticError();
     }

@@ -69,7 +69,7 @@ describe('(auth)/login', () => {
     expect(authMockService.login).not.toHaveBeenCalled();
   });
 
-  it('успешный вход → сессия в store, редирект на /(tabs)', async () => {
+  it('успешный вход → сессия в store, экран не навигирует сам (guard ведёт в приложение)', async () => {
     jest
       .mocked(authMockService.login)
       .mockResolvedValue({ user: IVAN, session: SESSION });
@@ -80,9 +80,11 @@ describe('(auth)/login', () => {
     await fireEvent.press(screen.getByText('Войти'));
 
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+      expect(useAuthStore.getState().state).toBe('authenticated');
     });
-    expect(useAuthStore.getState().state).toBe('authenticated');
+    // Баг №2: навигацию выполняет только AuthGuard — без собственного
+    // router.replace экрана (иначе гонка с Redirect guard'а).
+    expect(router.replace).not.toHaveBeenCalled();
     expect(useAuthStore.getState().token).toBe('token-u1');
     expect(authMockService.login).toHaveBeenCalledWith({
       phone: '+79001234567',
@@ -123,8 +125,10 @@ describe('(auth)/login', () => {
         phone: '+79001234567',
         password: 'qwerty123',
       });
-      expect(router.replace).toHaveBeenCalledWith('/(tabs)');
+      expect(useAuthStore.getState().state).toBe('authenticated');
     });
+    // Баг №2: экран не навигирует — маршрутизацию делает AuthGuard.
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('ссылки ведут на сброс, OTP и регистрацию', async () => {

@@ -81,7 +81,8 @@ export default function LoginScreen() {
     setLoading(false);
     if (ok) {
       hapticSuccess();
-      router.replace('/(tabs)');
+      // Навигацию выполняет AuthGuard зоны (auth): без членств —
+      // на онбординг /welcome, с членствами — в /(tabs).
     } else {
       hapticError();
     }
