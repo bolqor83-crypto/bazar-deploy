@@ -304,7 +304,11 @@ export const useContextStore = create<ContextState>()(
 
       syncWithUser: (userId, memberships) => {
         const { active } = get();
-        if (active.userId === userId) {
+        // Гостевой контекст (userId === '') — это не «тот же
+        // пользователь»: при входе приоритет членств применяется
+        // всегда, иначе первый вход уводил бы в customer.
+        const sameUser = active.userId !== '' && active.userId === userId;
+        if (sameUser) {
           // Тот же пользователь: сохраняем выбранный контекст, если он
           // ещё валиден по свежим членствам, иначе пересобираем.
           const normalized = normalizeForRole(active, memberships);

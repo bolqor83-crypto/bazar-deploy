@@ -109,9 +109,15 @@ export const mockMemberships: Membership[] = [
   },
 ];
 
-/** Контекст покупателя по умолчанию. */
+/**
+ * Контекст покупателя по умолчанию.
+ *
+ * userId пустой: это гостевой контекст, а не контекст мок-юзера.
+ * Если бы здесь стоял id пользователя, syncWithUser при первом входе
+ * считал бы его «тем же» и не применял приоритет членств.
+ */
 export const customerContext = {
-  userId: 'u1',
+  userId: '',
   role: 'customer',
   organizationId: null,
   locationId: null,
