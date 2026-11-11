@@ -3,7 +3,6 @@
  * После успеха — диалог «Пароль изменён» и возврат на /login.
  */
 import { useState } from 'react';
-import { View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   Button,

@@ -5,7 +5,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { AuthError } from '@bazar/types';
 import { authMockService } from '../services/authMock';
-import { __resetAuthStoreForTests, useAuthStore } from '../stores/authStore';
+import { __resetAuthStoreForTests } from '../stores/authStore';
 import ResetRequestScreen from '../app/(auth)/reset-request';
 import ResetConfirmScreen from '../app/(auth)/reset-confirm';
 
