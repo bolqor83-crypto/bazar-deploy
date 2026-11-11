@@ -28,6 +28,7 @@ import { BazarUIProvider, Skeleton, useTheme } from '@bazar/ui';
 import { View } from 'react-native';
 import { useContextStore } from '../stores/contextStore';
 import { useAuthStore } from '../stores/authStore';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 // Не даём сплэшу скрыться до готовности шрифтов, сессии и контекста.
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -49,6 +50,7 @@ function AppStack() {
         }}
       >
         <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="dev/design" />
       </Stack>
@@ -84,14 +86,21 @@ export default function RootLayout() {
   });
   const contextHydrated = useContextStore((s) => s.hydrated);
   const authState = useAuthStore((s) => s.state);
+  const onboardingHydrated = useOnboardingStore((s) => s.hydrated);
 
-  // Проверка сохранённой сессии: один вызов при монтировании.
-  // hydrate сам синхронизирует contextStore с членствами пользователя.
+  // Проверка сохранённой сессии и восстановление прогресса
+  // онбординга: один вызов каждого при монтировании. hydrate сам
+  // синхронизирует contextStore с членствами пользователя.
   useEffect(() => {
     void useAuthStore.getState().hydrate();
+    void useOnboardingStore.getState().hydrate();
   }, []);
 
-  const ready = fontsLoaded && contextHydrated && authState !== 'unknown';
+  const ready =
+    fontsLoaded &&
+    contextHydrated &&
+    onboardingHydrated &&
+    authState !== 'unknown';
 
   useEffect(() => {
     if (ready) {

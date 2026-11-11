@@ -27,8 +27,15 @@ export function ContextSwitcher({ onPress }: ContextSwitcherProps) {
   const { colors, spacing, radii } = useTheme();
   const active = useContextStore((s) => s.active);
   const memberships = useContextStore((s) => s.memberships);
+  const organizations = useContextStore((s) => s.organizations);
+  const locations = useContextStore((s) => s.locations);
 
-  const label = formatContextLabel(active, memberships);
+  const label = formatContextLabel(
+    active,
+    memberships,
+    organizations,
+    locations,
+  );
   const Icon = ROLE_ICONS[active.role];
 
   const containerStyle: StyleProp<ViewStyle> = {
@@ -47,10 +54,15 @@ export function ContextSwitcher({ onPress }: ContextSwitcherProps) {
       accessibilityRole="button"
       accessibilityLabel={`Контекст: ${label}. Переключить`}
       onPress={onPress}
-      style={({ pressed }) => [containerStyle, pressed ? { opacity: 0.7 } : null]}
+      style={({ pressed }) => [
+        containerStyle,
+        pressed ? { opacity: 0.7 } : null,
+      ]}
     >
       <Icon size={18} color={colors.primaryText} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}
+      >
         <Text
           variant="bodySmall"
           numberOfLines={1}

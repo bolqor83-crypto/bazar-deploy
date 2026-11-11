@@ -22,6 +22,7 @@ import {
   type RegisterData,
 } from '../services/authMock';
 import { useContextStore } from './contextStore';
+import { useOnboardingStore } from './onboardingStore';
 
 export const SESSION_STORAGE_KEY = 'bazar.auth.session';
 
@@ -38,6 +39,8 @@ export interface AuthStoreState {
   error: string | null;
 
   hydrate: () => Promise<void>;
+  /** Обновляет данные пользователя по активной сессии (онбординг, Промт 6). */
+  refreshUser: () => Promise<void>;
   register: (data: RegisterData) => Promise<boolean>;
   login: (data: LoginData) => Promise<boolean>;
   loginWithOtp: (phone: string, code: string) => Promise<boolean>;
@@ -116,6 +119,36 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     // Сессия истекла или невалидна — чистим за собой.
     await AsyncStorage.removeItem(SESSION_STORAGE_KEY).catch(() => undefined);
     set({ state: 'unauthenticated', user: null, token: null, error: null });
+  },
+
+  /**
+   * Обновляет пользователя и контекст по активной сессии без
+   * перечитывания хранилища сессии. Вызывается после создания
+   * членства в онбординге: getSession отдаёт свежие членства,
+   * syncWithUser обновляет contextStore. Ошибки поглощаются —
+   * текущее состояние остаётся рабочим.
+   */
+  refreshUser: async () => {
+    const { state, token } = get();
+    if (state !== 'authenticated' || !token) {
+      return;
+    }
+    try {
+      const response = await authMockService.getSession(token);
+      if (response) {
+        set({
+          state: 'authenticated',
+          user: response.user,
+          token: response.session.token,
+          error: null,
+        });
+        useContextStore
+          .getState()
+          .syncWithUser(response.user.id, response.user.memberships);
+      }
+    } catch {
+      // Обновление не удалось — работаем с прежними данными.
+    }
   },
 
   register: async (data) => {
@@ -229,6 +262,9 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     }
     await AsyncStorage.removeItem(SESSION_STORAGE_KEY).catch(() => undefined);
     useContextStore.getState().reset();
+    // Онбординг принадлежит сессии: новому пользователю — с чистого
+    // шага выбора роли, черновики прежнего не протекают.
+    useOnboardingStore.getState().reset();
   },
 
   clearError: () => {

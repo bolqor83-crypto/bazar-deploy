@@ -10,7 +10,13 @@
  * «Применить» записывает контекст в стор (с валидацией) и закрывает шит.
  */
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import type { ActiveContext, Role } from '@bazar/types';
@@ -35,11 +41,18 @@ export interface ContextSheetProps {
   onClose: () => void;
 }
 
-const ALL_ROLES: Role[] = ['customer', 'store_owner', 'wholesale_seller', 'carrier'];
+const ALL_ROLES: Role[] = [
+  'customer',
+  'store_owner',
+  'wholesale_seller',
+  'carrier',
+];
 
 export function ContextSheet({ visible, onClose }: ContextSheetProps) {
   const active = useContextStore((s) => s.active);
   const memberships = useContextStore((s) => s.memberships);
+  const organizationsList = useContextStore((s) => s.organizations);
+  const locationsList = useContextStore((s) => s.locations);
   const setActive = useContextStore((s) => s.setActive);
   const router = useRouter();
   const { spacing } = useTheme();
@@ -58,23 +71,41 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
   /** Роли, доступные пользователю: покупатель + роли из членств. */
   const availableRoles: Role[] = [
     'customer',
-    ...ALL_ROLES.filter((r) => r !== 'customer' && memberships.some((m) => m.role === r)),
+    ...ALL_ROLES.filter(
+      (r) => r !== 'customer' && memberships.some((m) => m.role === r),
+    ),
   ];
 
   const showOrganizations =
-    draft.role === 'store_owner' || draft.role === 'wholesale_seller' || draft.role === 'carrier';
-  const organizations = organizationsForRole(draft.role, memberships);
-  const showLocations = draft.role === 'store_owner' && draft.organizationId !== null;
-  const locations = locationsForOrganization(draft.organizationId);
+    draft.role === 'store_owner' ||
+    draft.role === 'wholesale_seller' ||
+    draft.role === 'carrier';
+  const organizations = organizationsForRole(
+    draft.role,
+    memberships,
+    organizationsList,
+  );
+  const showLocations =
+    draft.role === 'store_owner' && draft.organizationId !== null;
+  const locations = locationsForOrganization(
+    draft.organizationId,
+    locationsList,
+  );
 
   const selectRole = (role: Role) => {
     hapticSelection();
-    setDraft(normalizeForRole({ ...draft, role }, memberships));
+    setDraft(normalizeForRole({ ...draft, role }, memberships, locationsList));
   };
 
   const selectOrganization = (orgId: string | null) => {
     hapticSelection();
-    setDraft(normalizeForRole({ ...draft, organizationId: orgId }, memberships));
+    setDraft(
+      normalizeForRole(
+        { ...draft, organizationId: orgId },
+        memberships,
+        locationsList,
+      ),
+    );
   };
 
   const selectLocation = (locId: string | null) => {
@@ -103,10 +134,20 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
         <View style={{ gap: spacing.lg, paddingBottom: spacing.md }}>
           {/* Роли */}
           <View>
-            <Text variant="bodySmall" color="textSecondary" style={sectionTitleStyle}>
+            <Text
+              variant="bodySmall"
+              color="textSecondary"
+              style={sectionTitleStyle}
+            >
               Роль
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: spacing.sm,
+              }}
+            >
               {ALL_ROLES.map((role) => {
                 const enabled = availableRoles.includes(role);
                 const selected = draft.role === role;
@@ -126,7 +167,11 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
           {/* Организация */}
           {showOrganizations ? (
             <View>
-              <Text variant="bodySmall" color="textSecondary" style={sectionTitleStyle}>
+              <Text
+                variant="bodySmall"
+                color="textSecondary"
+                style={sectionTitleStyle}
+              >
                 Организация
               </Text>
               {draft.role === 'carrier' ? (
@@ -140,7 +185,13 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
                 <SelectRow
                   key={org.id}
                   label={org.name}
-                  hint={org.kind === 'wholesale' ? 'опт' : org.kind === 'retail' ? 'розница' : 'логистика'}
+                  hint={
+                    org.kind === 'wholesale'
+                      ? 'опт'
+                      : org.kind === 'retail'
+                        ? 'розница'
+                        : 'логистика'
+                  }
                   selected={draft.organizationId === org.id}
                   onPress={() => selectOrganization(org.id)}
                 />
@@ -156,7 +207,11 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
           {/* Точка */}
           {showLocations ? (
             <View>
-              <Text variant="bodySmall" color="textSecondary" style={sectionTitleStyle}>
+              <Text
+                variant="bodySmall"
+                color="textSecondary"
+                style={sectionTitleStyle}
+              >
                 Торговая точка
               </Text>
               <SelectRow
@@ -180,8 +235,18 @@ export function ContextSheet({ visible, onClose }: ContextSheetProps) {
 
       <Divider inset="none" style={{ marginVertical: spacing.md }} />
 
-      <Text variant="caption" color="textMuted" style={{ marginBottom: spacing.sm }}>
-        Текущий выбор: {formatContextLabel(draft, memberships)}
+      <Text
+        variant="caption"
+        color="textMuted"
+        style={{ marginBottom: spacing.sm }}
+      >
+        Текущий выбор:{' '}
+        {formatContextLabel(
+          draft,
+          memberships,
+          organizationsList,
+          locationsList,
+        )}
       </Text>
 
       <Button variant="primary" size="md" onPress={apply}>
@@ -220,9 +285,15 @@ function RoleChip({ label, selected, enabled, onPress }: RoleChipProps) {
       accessibilityState={{ selected, disabled: !enabled }}
       disabled={!enabled}
       onPress={onPress}
-      style={({ pressed }) => [style, pressed && enabled ? { opacity: 0.7 } : null]}
+      style={({ pressed }) => [
+        style,
+        pressed && enabled ? { opacity: 0.7 } : null,
+      ]}
     >
-      <Text variant="bodySmall" color={selected ? 'primaryText' : 'textSecondary'}>
+      <Text
+        variant="bodySmall"
+        color={selected ? 'primaryText' : 'textSecondary'}
+      >
         {label}
       </Text>
     </Pressable>

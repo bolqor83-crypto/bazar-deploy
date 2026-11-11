@@ -2,11 +2,16 @@
  * Стор активного контекста Bazar.
  *
  * Активный контекст (роль + организация + точка) персистится в
- * AsyncStorage под ключом bazar.context.active. Членства пока
- * берутся из моков; с API они придут с сервера и не персистятся.
+ * AsyncStorage под ключом bazar.context.active. Вместе с ним
+ * персистятся членства и известные организации/точки — это
+ * клиентский «снимок мира» пользователя (Промт 6: организации и
+ * точки, созданные в онбординге, переживают перезагрузку без
+ * обращения к бэкенду; при реальном API — Промт 7 — снимок
+ * заменяется данными сервера).
  *
  * При гидратации невалидный контекст (роль исчезла, организация
- * недоступна) откатывается на покупателя (customer).
+ * недоступна, точка больше не принадлежит организации) откатывается
+ * на покупателя (customer).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
@@ -15,11 +20,18 @@ import {
   persist,
   type StateStorage,
 } from 'zustand/middleware';
-import type { ActiveContext, Membership, Role } from '@bazar/types';
+import type {
+  ActiveContext,
+  BusinessLocation,
+  Membership,
+  Organization,
+  Role,
+} from '@bazar/types';
 import {
   customerContext,
   mockLocations,
   mockMemberships,
+  mockOrganizations,
 } from '../mocks/context';
 
 /**
@@ -48,9 +60,12 @@ function isRole(value: unknown): value is Role {
   );
 }
 
-/** Идентификаторы точек организации (пока из моков). */
-function locationIdsOf(organizationId: string): string[] {
-  return mockLocations
+/** Идентификаторы точек организации. */
+function locationIdsOf(
+  organizationId: string,
+  locations: BusinessLocation[],
+): string[] {
+  return locations
     .filter((l) => l.organizationId === organizationId)
     .map((l) => l.id);
 }
@@ -64,13 +79,14 @@ function orgBelongsToRole(
 }
 
 /**
- * Валидация контекста по членствам.
+ * Валидация контекста по членствам и известным точкам.
  * Возвращает нормализованный контекст или null, если контекст
  * невалиден (роль недоступна пользователю и т.п.).
  */
 export function validateContext(
   ctx: ActiveContext | null | undefined,
   memberships: Membership[],
+  locations: BusinessLocation[] = mockLocations,
 ): ActiveContext | null {
   if (!ctx || typeof ctx !== 'object') {
     return null;
@@ -99,7 +115,8 @@ export function validateContext(
         return null;
       }
       const validLocation =
-        locationId && locationIdsOf(organizationId).includes(locationId)
+        locationId &&
+        locationIdsOf(organizationId, locations).includes(locationId)
           ? locationId
           : null;
       return {
@@ -150,6 +167,7 @@ export function validateContext(
 export function normalizeForRole(
   ctx: ActiveContext,
   memberships: Membership[],
+  locations: BusinessLocation[] = mockLocations,
 ): ActiveContext {
   const firstOrgIdOf = (role: Role): string | null =>
     memberships.find((m) => m.role === role)?.organizationId ?? null;
@@ -175,7 +193,7 @@ export function normalizeForRole(
         !orgChanged &&
         orgId &&
         ctx.locationId &&
-        locationIdsOf(orgId).includes(ctx.locationId)
+        locationIdsOf(orgId, locations).includes(ctx.locationId)
           ? ctx.locationId
           : null;
       return {
@@ -232,6 +250,7 @@ const ROLE_PRIORITY: Role[] = [
 export function contextByPriority(
   userId: string,
   memberships: Membership[],
+  locations: BusinessLocation[] = mockLocations,
 ): ActiveContext {
   const role =
     ROLE_PRIORITY.find((r) => memberships.some((m) => m.role === r)) ??
@@ -245,18 +264,28 @@ export function contextByPriority(
     organizationId: role === 'customer' ? null : organizationId,
     locationId: null,
   };
-  return normalizeForRole(ctx, memberships);
+  return normalizeForRole(ctx, memberships, locations);
 }
 
 export interface ContextState {
   active: ActiveContext;
   memberships: Membership[];
+  /** Известные организации (моки Промта 3 + созданные в онбординге). */
+  organizations: Organization[];
+  /** Известные точки (моки Промта 3 + созданные в онбординге). */
+  locations: BusinessLocation[];
   /** Гидратация из AsyncStorage завершена. */
   hydrated: boolean;
   setActive: (ctx: ActiveContext) => void;
   setRole: (role: Role) => void;
   setOrganization: (orgId: string) => void;
   setLocation: (locId: string | null) => void;
+  /**
+   * Регистрирует организации/точки, созданные в онбординге: мерж
+   * по идентификатору, данные Ивана Петрова не затрагиваются.
+   */
+  registerOrganizations: (orgs: Organization[]) => void;
+  registerLocations: (locs: BusinessLocation[]) => void;
   /**
    * Синхронизация с пользователем после входа/гидратации сессии:
    * обновляет членства и пересобирает контекст (по приоритету,
@@ -272,24 +301,30 @@ export const useContextStore = create<ContextState>()(
     (set, get) => ({
       active: { ...customerContext },
       memberships: mockMemberships,
+      organizations: mockOrganizations,
+      locations: mockLocations,
       hydrated: false,
 
       setActive: (ctx) => {
-        const validated = validateContext(ctx, get().memberships);
+        const { memberships, locations } = get();
+        const validated = validateContext(ctx, memberships, locations);
         set({ active: validated ?? { ...customerContext } });
       },
 
       setRole: (role) => {
-        const { active, memberships } = get();
-        set({ active: normalizeForRole({ ...active, role }, memberships) });
+        const { active, memberships, locations } = get();
+        set({
+          active: normalizeForRole({ ...active, role }, memberships, locations),
+        });
       },
 
       setOrganization: (orgId) => {
-        const { active, memberships } = get();
+        const { active, memberships, locations } = get();
         set({
           active: normalizeForRole(
             { ...active, organizationId: orgId },
             memberships,
+            locations,
           ),
         });
       },
@@ -302,8 +337,24 @@ export const useContextStore = create<ContextState>()(
         set({ active: { ...active, locationId: locId } });
       },
 
+      registerOrganizations: (orgs) => {
+        const known = get().organizations;
+        const fresh = orgs.filter((o) => !known.some((k) => k.id === o.id));
+        if (fresh.length > 0) {
+          set({ organizations: [...known, ...fresh] });
+        }
+      },
+
+      registerLocations: (locs) => {
+        const known = get().locations;
+        const fresh = locs.filter((l) => !known.some((k) => k.id === l.id));
+        if (fresh.length > 0) {
+          set({ locations: [...known, ...fresh] });
+        }
+      },
+
       syncWithUser: (userId, memberships) => {
-        const { active } = get();
+        const { active, locations } = get();
         // Гостевой контекст (userId === '') — это не «тот же
         // пользователь»: при входе приоритет членств применяется
         // всегда, иначе первый вход уводил бы в customer.
@@ -311,22 +362,27 @@ export const useContextStore = create<ContextState>()(
         if (sameUser) {
           // Тот же пользователь: сохраняем выбранный контекст, если он
           // ещё валиден по свежим членствам, иначе пересобираем.
-          const normalized = normalizeForRole(active, memberships);
-          const valid = validateContext(normalized, memberships);
+          const normalized = normalizeForRole(active, memberships, locations);
+          const valid = validateContext(normalized, memberships, locations);
           set({
             memberships,
-            active: valid ?? contextByPriority(userId, memberships),
+            active: valid ?? contextByPriority(userId, memberships, locations),
           });
           return;
         }
         // Другой пользователь: контекст выбираем заново по приоритету.
-        set({ memberships, active: contextByPriority(userId, memberships) });
+        set({
+          memberships,
+          active: contextByPriority(userId, memberships, locations),
+        });
       },
 
       reset: () => {
         // Выход: без пользователя, роль customer, без организаций.
         set({
           memberships: [],
+          organizations: mockOrganizations,
+          locations: mockLocations,
           hydrated: true,
           active: {
             userId: '',
@@ -344,11 +400,21 @@ export const useContextStore = create<ContextState>()(
     {
       name: CONTEXT_STORAGE_KEY,
       storage: createJSONStorage(getSafeStorage),
-      partialize: (state) => ({ active: state.active }),
+      // Персистим «снимок мира»: активный контекст, членства и известные
+      // организации/точки. После перезагрузки контекст созданный в
+      // онбординге валиден без обращения к бэкенду; syncWithUser при
+      // гидратации сессии сверит членства со свежими данными.
+      partialize: (state) => ({
+        active: state.active,
+        memberships: state.memberships,
+        organizations: state.organizations,
+        locations: state.locations,
+      }),
       onRehydrateStorage: () => (state) => {
         const validated = validateContext(
           state?.active,
           state?.memberships ?? mockMemberships,
+          state?.locations ?? mockLocations,
         );
         useContextStore.setState({
           active: validated ?? { ...customerContext },
