@@ -1,0 +1,12 @@
+{
+  "name": "@bazar/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Веб-платформа Bazar — скелет. Реализация (Next.js) — Промт 7.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}
