@@ -4,7 +4,7 @@
  * Шаг 1 — телефон, «Отправить код». Шаг 2 — код из SMS (маска
  * 999-999) и таймер повторной отправки (60 с).
  *
- * В __DEV__ — подсказка, что код выводится в консоль (мок).
+ * В __DEV__ — код из ответа API (dev-режим сервера без SMS).
  * В production-сборке подсказки нет.
  */
 import { useEffect, useState } from 'react';
@@ -30,7 +30,7 @@ const RESEND_SECONDS = 60;
 
 export default function OtpScreen() {
   const { spacing } = useTheme();
-  const { sendOtp, loginWithOtp, error, clearError } = useAuth();
+  const { sendOtp, loginWithOtp, error, clearError, lastDevCode } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [phone, setPhone] = useState('');
@@ -181,14 +181,14 @@ export default function OtpScreen() {
         </Text>
       ) : null}
 
-      {__DEV__ ? (
+      {__DEV__ && lastDevCode ? (
         <Text
           variant="caption"
           color="textMuted"
           align="center"
           style={{ marginTop: spacing.md }}
         >
-          DEV: код показывается в консоли сервера
+          DEV: код для входа — {lastDevCode}
         </Text>
       ) : null}
 

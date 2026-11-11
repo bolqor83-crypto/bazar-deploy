@@ -1,45 +1,49 @@
 /**
- * Стор аутентификации Bazar.
+ * Стор аутентификации Bazar (Промт 7: реальный API).
  *
- * Сессия персистится в AsyncStorage под ключом bazar.auth.session
- * (только userId + token), полные данные восстанавливаются через
- * authMockService.getSession().
+ * Токены: access-JWT — только в памяти (client.ts), refresh — в
+ * AsyncStorage (bazar.auth.refresh). Гидратация: refresh → /me.
  *
- * После успешного входа стор синхронизирует contextStore по
- * приоритету членств (wholesale → store_owner → carrier → customer),
- * при выходе — полностью очищает оба стора и хранилище.
+ * После успешного входа стор синхронизирует contextStore «снимком
+ * мира»: членства/организации/точки из API + локальные данные
+ * онбординга (моки до Промта 8). При выходе — полная очистка.
  *
  * Все операции поглощают ошибки: текст на русском пишется в
  * state.error, наружу исключения не летят.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import type { AuthErrorCode, AuthState, AuthUser } from '@bazar/types';
+import type {
+  AuthErrorCode,
+  AuthState,
+  AuthUser,
+  WorldSnapshot,
+} from '@bazar/types';
 import { AuthError } from '@bazar/types';
 import {
-  authMockService,
+  clearTokens,
+  setSessionExpiredHandler,
+  tryRefresh,
+} from '../services/api/client';
+import {
+  authApi,
   type LoginData,
   type RegisterData,
-} from '../services/authMock';
+} from '../services/api/authApi';
+import { onboardingMockService } from '../services/onboardingMock';
 import { useContextStore } from './contextStore';
 import { useOnboardingStore } from './onboardingStore';
-
-export const SESSION_STORAGE_KEY = 'bazar.auth.session';
-
-/** Сохранённая сессия: только идентификатор и токен. */
-interface StoredSession {
-  userId: string;
-  token: string;
-}
 
 export interface AuthStoreState {
   state: AuthState;
   user: AuthUser | null;
+  /** Access-токен в памяти (для запросов); null после logout. */
   token: string | null;
   error: string | null;
+  /** DEV-код OTP из ответа API (только в dev-режиме сервера). */
+  lastDevCode: string | null;
 
   hydrate: () => Promise<void>;
-  /** Обновляет данные пользователя по активной сессии (онбординг, Промт 6). */
+  /** Обновляет данные пользователя по активной сессии (онбординг). */
   refreshUser: () => Promise<void>;
   register: (data: RegisterData) => Promise<boolean>;
   login: (data: LoginData) => Promise<boolean>;
@@ -55,16 +59,21 @@ export interface AuthStoreState {
   clearError: () => void;
 }
 
-/** Человекочитаемые тексты ошибок по кодам мок-бэкенда. */
+/** Человекочитаемые тексты ошибок по кодам API. */
 const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   AUTH_INVALID_PHONE: 'Введите корректный номер телефона',
-  // Не раскрываем, что именно неверно — номер или пароль.
   AUTH_INVALID_PASSWORD: 'Неверный номер или пароль',
+  // Не раскрываем, что именно неверно — номер или пароль.
+  AUTH_INVALID_CREDENTIALS: 'Неверный номер или пароль',
   AUTH_USER_NOT_FOUND: 'Неверный номер или пароль',
   AUTH_USER_EXISTS: 'Этот номер уже зарегистрирован',
   AUTH_OTP_INVALID: 'Неверный код. Проверьте и попробуйте ещё раз',
   AUTH_OTP_EXPIRED: 'Код истёк. Запросите новый',
+  AUTH_UNAUTHORIZED: 'Сессия истекла. Войдите заново',
+  AUTH_SESSION_EXPIRED: 'Сессия истекла. Войдите заново',
+  AUTH_RATE_LIMIT: 'Слишком много попыток. Подождите минуту',
   AUTH_UNKNOWN: 'Что-то пошло не так. Попробуйте ещё раз',
+  NETWORK_ERROR: 'Сервер временно недоступен. Проверьте связь',
 };
 
 function messageFor(error: unknown): string {
@@ -74,11 +83,72 @@ function messageFor(error: unknown): string {
   return ERROR_MESSAGES.AUTH_UNKNOWN;
 }
 
+/**
+ * «Снимок мира»: данные API + локальный онбординг пользователя
+ * (до миграции онбординга на API в Промте 8).
+ */
+async function worldWithOnboarding(
+  userId: string,
+  world: WorldSnapshot,
+): Promise<WorldSnapshot> {
+  try {
+    const local = await onboardingMockService.listForUser(userId);
+    const organizations = [...world.organizations];
+    for (const org of local.organizations) {
+      if (!organizations.some((o) => o.id === org.id)) {
+        organizations.push(org);
+      }
+    }
+    const locations = [...world.locations];
+    for (const loc of local.locations) {
+      if (!locations.some((l) => l.id === loc.id)) {
+        locations.push(loc);
+      }
+    }
+    const memberships = [...world.memberships];
+    for (const membership of local.memberships) {
+      if (
+        !memberships.some(
+          (m) =>
+            m.organizationId === membership.organizationId &&
+            m.role === membership.role,
+        )
+      ) {
+        memberships.push(membership);
+      }
+    }
+    return { memberships, organizations, locations };
+  } catch {
+    // Локальный онбординг недоступен — работаем с данными API.
+    return world;
+  }
+}
+
+/** Применяет результат аутентификации к стору и контексту. */
+async function applyAuthResult(
+  set: (partial: Partial<AuthStoreState>) => void,
+  result: {
+    user: AuthUser;
+    accessToken: string;
+    world: WorldSnapshot;
+  },
+): Promise<void> {
+  set({
+    state: 'authenticated',
+    user: result.user,
+    token: result.accessToken,
+    error: null,
+  });
+  const world = await worldWithOnboarding(result.user.id, result.world);
+  useContextStore.getState().syncWithUser(result.user.id, world);
+}
+
 export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   state: 'unknown',
   user: null,
   token: null,
   error: null,
+  lastDevCode: null,
 
   hydrate: async () => {
     // SSR (статический экспорт Expo web): хранилища нет — сразу гость.
@@ -87,46 +157,28 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
       return;
     }
 
-    let stored: StoredSession | null = null;
-    try {
-      const raw = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
-      stored = raw ? (JSON.parse(raw) as StoredSession) : null;
-    } catch {
-      stored = null;
-    }
-
-    if (!stored?.token) {
+    // Есть ли refresh-токен для восстановления сессии.
+    const refreshed = await tryRefresh();
+    if (!refreshed) {
       set({ state: 'unauthenticated', user: null, token: null, error: null });
       return;
     }
 
-    const response = await authMockService.getSession(stored.token);
-    if (response) {
-      set({
-        state: 'authenticated',
-        user: response.user,
-        token: response.session.token,
-        error: null,
-      });
-      // Тот же пользователь: сохраняем выбранный ранее контекст,
-      // проверив его по свежим членствам.
-      useContextStore
-        .getState()
-        .syncWithUser(response.user.id, response.user.memberships);
-      return;
+    try {
+      const result = await authApi.getSession();
+      await applyAuthResult(set, result);
+    } catch {
+      // Refresh прошёл, но /me упал (сеть): остаёмся гостем —
+      // следующий заход повторит попытку.
+      set({ state: 'unauthenticated', user: null, token: null, error: null });
     }
-
-    // Сессия истекла или невалидна — чистим за собой.
-    await AsyncStorage.removeItem(SESSION_STORAGE_KEY).catch(() => undefined);
-    set({ state: 'unauthenticated', user: null, token: null, error: null });
   },
 
   /**
-   * Обновляет пользователя и контекст по активной сессии без
-   * перечитывания хранилища сессии. Вызывается после создания
-   * членства в онбординге: getSession отдаёт свежие членства,
-   * syncWithUser обновляет contextStore. Ошибки поглощаются —
-   * текущее состояние остаётся рабочим.
+   * Обновляет пользователя и контекст по активной сессии. Вызывается
+   * после создания членства в онбординге: /me отдаёт свежие членства,
+   * локальные онбординг-данные подмешиваются поверх. Ошибки
+   * поглощаются — текущее состояние остаётся рабочим.
    */
   refreshUser: async () => {
     const { state, token } = get();
@@ -134,18 +186,8 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
       return;
     }
     try {
-      const response = await authMockService.getSession(token);
-      if (response) {
-        set({
-          state: 'authenticated',
-          user: response.user,
-          token: response.session.token,
-          error: null,
-        });
-        useContextStore
-          .getState()
-          .syncWithUser(response.user.id, response.user.memberships);
-      }
+      const result = await authApi.getSession();
+      await applyAuthResult(set, result);
     } catch {
       // Обновление не удалось — работаем с прежними данными.
     }
@@ -154,17 +196,8 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   register: async (data) => {
     set({ error: null });
     try {
-      const { user, session } = await authMockService.register(data);
-      set({ state: 'authenticated', user, token: session.token, error: null });
-      await AsyncStorage.setItem(
-        SESSION_STORAGE_KEY,
-        JSON.stringify({
-          userId: user.id,
-          token: session.token,
-        } satisfies StoredSession),
-      );
-      // Новый пользователь без членств → роль customer.
-      useContextStore.getState().syncWithUser(user.id, user.memberships);
+      const result = await authApi.register(data);
+      await applyAuthResult(set, result);
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -175,17 +208,8 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   login: async (data) => {
     set({ error: null });
     try {
-      const { user, session } = await authMockService.login(data);
-      set({ state: 'authenticated', user, token: session.token, error: null });
-      await AsyncStorage.setItem(
-        SESSION_STORAGE_KEY,
-        JSON.stringify({
-          userId: user.id,
-          token: session.token,
-        } satisfies StoredSession),
-      );
-      // Вход: контекст выбираем по приоритету членств заново.
-      useContextStore.getState().syncWithUser(user.id, user.memberships);
+      const result = await authApi.login(data);
+      await applyAuthResult(set, result);
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -196,16 +220,8 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   loginWithOtp: async (phone, code) => {
     set({ error: null });
     try {
-      const { user, session } = await authMockService.loginWithOtp(phone, code);
-      set({ state: 'authenticated', user, token: session.token, error: null });
-      await AsyncStorage.setItem(
-        SESSION_STORAGE_KEY,
-        JSON.stringify({
-          userId: user.id,
-          token: session.token,
-        } satisfies StoredSession),
-      );
-      useContextStore.getState().syncWithUser(user.id, user.memberships);
+      const result = await authApi.loginWithOtp(phone, code);
+      await applyAuthResult(set, result);
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -214,10 +230,11 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   },
 
   sendOtp: async (phone) => {
-    set({ error: null });
+    set({ error: null, lastDevCode: null });
     try {
-      await authMockService.sendOtp(phone);
-      return true;
+      const { sent, devCode } = await authApi.sendOtp(phone, 'login');
+      set({ lastDevCode: devCode });
+      return sent;
     } catch (error) {
       set({ error: messageFor(error) });
       return false;
@@ -225,10 +242,11 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   },
 
   requestPasswordReset: async (phone) => {
-    set({ error: null });
+    set({ error: null, lastDevCode: null });
     try {
-      await authMockService.requestPasswordReset(phone);
-      return true;
+      const { sent, devCode } = await authApi.sendOtp(phone, 'password_reset');
+      set({ lastDevCode: devCode });
+      return sent;
     } catch (error) {
       set({ error: messageFor(error) });
       return false;
@@ -238,7 +256,8 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   resetPassword: async (phone, otp, newPassword) => {
     set({ error: null });
     try {
-      await authMockService.resetPassword(phone, otp, newPassword);
+      const result = await authApi.resetPassword(phone, otp, newPassword);
+      await applyAuthResult(set, result);
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -247,20 +266,15 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   },
 
   logout: async () => {
-    const token = get().token;
     set({ state: 'unauthenticated', user: null, token: null, error: null });
-    // Полная очистка: сессия на «сервере», OTP-коды, локальная сессия,
-    // контекст пользователя.
+    // Отзыв сессии на сервере — лучший труд: локальное состояние
+    // очищается в любом случае.
     try {
-      if (token) {
-        await authMockService.logout(token);
-      }
-      await authMockService.clearOtpCodes();
+      await authApi.logout();
     } catch {
-      // Очистка на «сервере» не критична: локальное состояние
-      // всё равно удаляется ниже.
+      // Сеть недоступна: refresh-токен всё равно стирается ниже.
     }
-    await AsyncStorage.removeItem(SESSION_STORAGE_KEY).catch(() => undefined);
+    clearTokens();
     useContextStore.getState().reset();
     // Онбординг принадлежит сессии: новому пользователю — с чистого
     // шага выбора роли, черновики прежнего не протекают.
@@ -272,6 +286,18 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
   },
 }));
 
+/**
+ * Авто-logout при безнадёжной сессии: клиент не смог обновить
+ * access при 401 (refresh отозван/истёк). Регистрируется один раз.
+ */
+let handlerRegistered = false;
+if (!handlerRegistered) {
+  handlerRegistered = true;
+  setSessionExpiredHandler(async () => {
+    await useAuthStore.getState().logout();
+  });
+}
+
 /** Только для тестов: сброс к исходному состоянию. */
 export function __resetAuthStoreForTests(): void {
   useAuthStore.setState({
@@ -279,5 +305,6 @@ export function __resetAuthStoreForTests(): void {
     user: null,
     token: null,
     error: null,
+    lastDevCode: null,
   });
 }

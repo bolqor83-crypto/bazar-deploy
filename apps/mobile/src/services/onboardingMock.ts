@@ -1,15 +1,13 @@
 /**
  * Мок-бэкенд онбординга Bazar.
  *
- * // MOCK ONLY. Реальный бэкенд — Промт 7.
+ * // MOCK ONLY. Реальный бэкенд организаций — Промт 8.
  *
  * Созданные в онбординге организации, точки и членства хранятся в
- * AsyncStorage отдельно от моков Промта 3 (bazar.onboarding.*), при
- * чтении объединяются с ними: данные Ивана Петрова не перезаписываются.
- *
- * addMembership обновляет запись пользователя в bazar.auth.users —
- * так authMockService.getSession() возвращает свежие членства без
- * изменения контракта аутентификации.
+ * AsyncStorage отдельно (bazar.onboarding.*). С Промта 7
+ * аутентификация — реальный API: listForUser() отдаёт локальные
+ * онбординг-данные пользователя, authStore подмешивает их к
+ * данным API в «снимок мира» contextStore (переезд — Промт 8).
  *
  * Каждая операция имитирует задержку сети (300–700 мс) только в
  * браузере; на SSR и в тестах (node-окружение без window) — без
@@ -29,7 +27,6 @@ import {
   mockMemberships,
   mockOrganizations,
 } from '../mocks/context';
-import { USERS_KEY } from './authMock';
 
 // ---------------------------------------------------------------------------
 // Ключи хранилища
@@ -130,7 +127,7 @@ function shortNameOf(name: string): string {
 export const onboardingMockService = {
   /**
    * Создаёт организацию пользователя.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async createOrganization(
     userId: string,
@@ -168,7 +165,7 @@ export const onboardingMockService = {
 
   /**
    * Создаёт торговую точку организации.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async createLocation(
     userId: string,
@@ -205,9 +202,8 @@ export const onboardingMockService = {
   /**
    * Привязывает пользователя к организации с ролью. Идемпотентно:
    * повторный вызов с теми же userId/organizationId/role не создаёт
-   * дубль. Обновляет запись пользователя в bazar.auth.users, чтобы
-   * getSession() отдавал свежие членства.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * дубль.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async addMembership(
     userId: string,
@@ -243,38 +239,12 @@ export const onboardingMockService = {
       await writeJson(ONBOARDING_MEMBERSHIPS_KEY, stored);
     }
 
-    // Запись пользователя в мок-бэкенде аутентификации: членства
-    // должны попадать в getSession(). Хеш пароля не трогаем.
-    // // MOCK ONLY. Реальный бэкенд — Промт 7.
-    const raw = await AsyncStorage.getItem(USERS_KEY);
-    if (raw) {
-      const users = JSON.parse(raw) as Record<string, unknown>;
-      const phone = Object.keys(users).find(
-        (key) => (users[key] as { id?: string }).id === userId,
-      );
-      if (phone) {
-        const record = users[phone] as { memberships?: Membership[] };
-        const memberships = record.memberships ?? [];
-        const already = memberships.some(
-          (m) =>
-            m.userId === userId &&
-            m.organizationId === organizationId &&
-            m.role === role,
-        );
-        if (!already) {
-          memberships.push(membership);
-          record.memberships = memberships;
-          await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
-        }
-      }
-    }
-
     return membership;
   },
 
   /**
    * Все организации: моки Промта 3 + созданные в онбординге.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async getAllOrganizations(): Promise<Organization[]> {
     const created =
@@ -284,7 +254,7 @@ export const onboardingMockService = {
 
   /**
    * Все точки: моки Промта 3 + созданные в онбординге.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async getAllLocations(): Promise<BusinessLocation[]> {
     const created = await readJson<StoredOnboardingLocation>(
@@ -295,13 +265,41 @@ export const onboardingMockService = {
 
   /**
    * Все членства: моки Промта 3 + созданные в онбординге.
-   * // MOCK ONLY. Реальный бэкенд — Промт 7.
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
    */
   async getAllMemberships(): Promise<Membership[]> {
     const created = await readJson<StoredOnboardingMembership>(
       ONBOARDING_MEMBERSHIPS_KEY,
     );
     return [...mockMemberships, ...created];
+  },
+
+  /**
+   * Локальный «мир» пользователя, созданный в онбординге:
+   * организации, точки и членства. Без моков Промта 3 — членства
+   * пользователя приходят из реального API (Промт 7), локальные
+   * онбординг-данные подмешиваются поверх (до Промта 8).
+   * // MOCK ONLY. Реальный бэкенд — Промт 8.
+   */
+  async listForUser(userId: string): Promise<{
+    organizations: Organization[];
+    locations: BusinessLocation[];
+    memberships: Membership[];
+  }> {
+    const [orgs, locs, memberships] = await Promise.all([
+      readJson<StoredOnboardingOrganization>(ONBOARDING_ORGS_KEY),
+      readJson<StoredOnboardingLocation>(ONBOARDING_LOCATIONS_KEY),
+      readJson<StoredOnboardingMembership>(ONBOARDING_MEMBERSHIPS_KEY),
+    ]);
+    const userOrgs = orgs.filter((o) => o.createdBy === userId);
+    const userOrgIds = new Set(userOrgs.map((o) => o.id));
+    return {
+      organizations: userOrgs,
+      locations: locs.filter(
+        (l) => l.createdBy === userId || userOrgIds.has(l.organizationId),
+      ),
+      memberships: memberships.filter((m) => m.userId === userId),
+    };
   },
 };
 

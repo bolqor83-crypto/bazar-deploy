@@ -1,17 +1,22 @@
 /**
  * Экран входа: телефон + пароль.
  *
+ * При недоступном API (health-check не прошёл) — ErrorState с
+ * кнопкой «Повторить» вместо формы (graceful degradation, Промт 7:
+ * мок-аутентификация удалена, падать в мок нельзя).
+ *
  * Быстрые ссылки: сброс пароля, вход по SMS-коду, регистрация.
- * В __DEV__ — кнопка быстрого входа под мок-пользователем
- * (Иван Петров). В production-сборке её нет.
+ * В __DEV__ — кнопка быстрого входа под демо-пользователем
+ * (Иван Петров, реальные данные из БД). В production-сборке её нет.
  */
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 import {
   Badge,
   Button,
+  ErrorState,
   Input,
   Text,
   hapticError,
@@ -20,6 +25,7 @@ import {
 } from '@bazar/ui';
 import { AuthScreenShell } from '../../components/auth/AuthScreenShell';
 import { useAuth } from '../../hooks/useAuth';
+import { authApi } from '../../services/api/authApi';
 import { formatPhoneInput, phoneToE164 } from '../../utils/phone';
 
 interface FieldErrors {
@@ -52,6 +58,22 @@ export default function LoginScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // null — проверка ещё идёт (форму не блокируем), false — API недоступен.
+  const [apiAlive, setApiAlive] = useState<boolean | null>(null);
+
+  const checkApi = useCallback(() => {
+    let cancelled = false;
+    void authApi.ping().then((alive) => {
+      if (!cancelled) {
+        setApiAlive(alive);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(checkApi, [checkApi]);
 
   const validate = (phoneValue: string, passwordValue: string): FieldErrors => {
     const errors: FieldErrors = {};
@@ -109,88 +131,108 @@ export default function LoginScreen() {
       title="Вход в Bazar"
       subtitle="Оптовая торговля и розница — в одном приложении"
     >
-      <Input
-        label="Телефон"
-        value={phone}
-        onChangeText={onChangePhone}
-        keyboardType="phone-pad"
-        autoComplete="tel"
-        inputMode="tel"
-        placeholder="+7 (999) 999-99-99"
-        error={fieldErrors.phone ?? null}
-        onBlur={() =>
-          setFieldErrors((prev) => ({ ...prev, ...validate(phone, password) }))
-        }
-      />
-      <Input
-        label="Пароль"
-        value={password}
-        onChangeText={onChangePassword}
-        secureTextEntry={!passwordVisible}
-        autoComplete="password"
-        placeholder="Ваш пароль"
-        error={fieldErrors.password ?? null}
-        rightIcon={
-          passwordVisible ? (
-            <EyeOff size={22} color={colors.textSecondary} />
-          ) : (
-            <Eye size={22} color={colors.textSecondary} />
-          )
-        }
-        rightIconAccessibilityLabel={
-          passwordVisible ? 'Скрыть пароль' : 'Показать пароль'
-        }
-        onRightIconPress={() => setPasswordVisible((v) => !v)}
-      />
-
-      <Button
-        variant="primary"
-        size="lg"
-        fullWidth
-        loading={loading}
-        onPress={() => void doLogin(phone, password)}
-      >
-        Войти
-      </Button>
-
-      {error ? (
-        <Text variant="bodySmall" color="danger" align="center">
-          {error}
-        </Text>
-      ) : null}
-
-      <LinkRow label="Забыли пароль?" target="/reset-request" />
-      <LinkRow label="Войти по коду из SMS" target="/otp" />
-      <LinkRow label="Нет аккаунта? Зарегистрироваться" target="/register" />
-
-      {__DEV__ ? (
-        <View
-          style={{
-            marginTop: spacing.xl,
-            gap: spacing.sm,
-            alignItems: 'center',
+      {apiAlive === false ? (
+        <ErrorState
+          title="Сервер временно недоступен"
+          description="Проверьте соединение и попробуйте ещё раз"
+          onRetry={() => {
+            setApiAlive(null);
+            checkApi();
           }}
-        >
-          <Badge variant="warning" size="sm">
-            DEV
-          </Badge>
+        />
+      ) : (
+        <>
+          <Input
+            label="Телефон"
+            value={phone}
+            onChangeText={onChangePhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="+7 (999) 999-99-99"
+            error={fieldErrors.phone ?? null}
+            onBlur={() =>
+              setFieldErrors((prev) => ({
+                ...prev,
+                ...validate(phone, password),
+              }))
+            }
+          />
+          <Input
+            label="Пароль"
+            value={password}
+            onChangeText={onChangePassword}
+            secureTextEntry={!passwordVisible}
+            autoComplete="password"
+            placeholder="Ваш пароль"
+            error={fieldErrors.password ?? null}
+            rightIcon={
+              passwordVisible ? (
+                <EyeOff size={22} color={colors.textSecondary} />
+              ) : (
+                <Eye size={22} color={colors.textSecondary} />
+              )
+            }
+            rightIconAccessibilityLabel={
+              passwordVisible ? 'Скрыть пароль' : 'Показать пароль'
+            }
+            onRightIconPress={() => setPasswordVisible((v) => !v)}
+          />
+
           <Button
-            variant="secondary"
-            size="md"
-            disabled={loading}
-            onPress={() => {
-              setPhone('+7 (900) 123-45-67');
-              setPassword('qwerty123');
-              void doLogin('+79001234567', 'qwerty123');
-            }}
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={loading}
+            onPress={() => void doLogin(phone, password)}
           >
-            Продолжить как Иван Петров
+            Войти
           </Button>
-          <Text variant="caption" color="textMuted" align="center">
-            Быстрый вход под мок-пользователем. Только в разработке.
-          </Text>
-        </View>
-      ) : null}
+
+          {error ? (
+            <Text variant="bodySmall" color="danger" align="center">
+              {error}
+            </Text>
+          ) : null}
+
+          <LinkRow label="Забыли пароль?" target="/reset-request" />
+          <LinkRow label="Войти по коду из SMS" target="/otp" />
+          <LinkRow
+            label="Нет аккаунта? Зарегистрироваться"
+            target="/register"
+          />
+
+          {__DEV__ ? (
+            <View
+              style={{
+                marginTop: spacing.xl,
+                gap: spacing.sm,
+                alignItems: 'center',
+              }}
+            >
+              <Badge variant="warning" size="sm">
+                DEV
+              </Badge>
+              <Button
+                variant="secondary"
+                size="md"
+                disabled={loading}
+                onPress={() => {
+                  setPhone('+7 (900) 123-45-67');
+                  setPassword('qwerty123');
+                  void doLogin('+79001234567', 'qwerty123');
+                }}
+              >
+                Продолжить как Иван Петров
+              </Button>
+              <Text variant="caption" color="textMuted" align="center">
+                Быстрый вход под демо-пользователем (реальная БД). Только в
+                разработке.
+              </Text>
+            </View>
+          ) : null}
+        </>
+      )}
     </AuthScreenShell>
   );
 }

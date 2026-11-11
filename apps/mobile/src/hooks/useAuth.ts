@@ -19,11 +19,13 @@ export function useAuth() {
   const resetPassword = useAuthStore((s) => s.resetPassword);
   const logout = useAuthStore((s) => s.logout);
   const clearError = useAuthStore((s) => s.clearError);
+  const lastDevCode = useAuthStore((s) => s.lastDevCode);
 
   return {
     state,
     user,
     error,
+    lastDevCode,
     isAuthenticated: state === 'authenticated',
     isUnknown: state === 'unknown',
     login,

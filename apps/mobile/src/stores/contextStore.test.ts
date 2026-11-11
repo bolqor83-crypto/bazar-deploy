@@ -4,7 +4,12 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ActiveContext } from '@bazar/types';
-import { customerContext, mockMemberships } from '../mocks/context';
+import {
+  customerContext,
+  mockLocations,
+  mockMemberships,
+  mockOrganizations,
+} from '../mocks/context';
 import {
   CONTEXT_STORAGE_KEY,
   normalizeForRole,
@@ -319,7 +324,11 @@ describe('contextStore', () => {
       // (ровно его валидирует onRehydrateStorage без сохранённых данных).
       resetStore({ ...customerContext });
       // Вход Ивана: authStore.login вызывает syncWithUser('u1', ...).
-      useContextStore.getState().syncWithUser('u1', mockMemberships);
+      useContextStore.getState().syncWithUser('u1', {
+        memberships: mockMemberships,
+        organizations: mockOrganizations,
+        locations: mockLocations,
+      });
       expect(useContextStore.getState().active).toEqual({
         userId: 'u1',
         role: 'wholesale_seller',
@@ -329,12 +338,20 @@ describe('contextStore', () => {
     });
 
     it('после logout повторный вход Ивана → снова wholesale', () => {
-      useContextStore.getState().syncWithUser('u1', mockMemberships);
+      useContextStore.getState().syncWithUser('u1', {
+        memberships: mockMemberships,
+        organizations: mockOrganizations,
+        locations: mockLocations,
+      });
       // Пользователь ушёл в режим покупателя и вышел
       useContextStore.getState().setRole('customer');
       useContextStore.getState().reset();
       // Повторный вход с чистого листа
-      useContextStore.getState().syncWithUser('u1', mockMemberships);
+      useContextStore.getState().syncWithUser('u1', {
+        memberships: mockMemberships,
+        organizations: mockOrganizations,
+        locations: mockLocations,
+      });
       expect(useContextStore.getState().active).toEqual({
         userId: 'u1',
         role: 'wholesale_seller',
@@ -352,7 +369,11 @@ describe('contextStore', () => {
         organizationId: 'o3',
         locationId: 'l4',
       });
-      useContextStore.getState().syncWithUser('u1', mockMemberships);
+      useContextStore.getState().syncWithUser('u1', {
+        memberships: mockMemberships,
+        organizations: mockOrganizations,
+        locations: mockLocations,
+      });
       expect(useContextStore.getState().active).toEqual({
         userId: 'u1',
         role: 'store_owner',

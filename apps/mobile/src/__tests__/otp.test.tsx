@@ -1,16 +1,16 @@
 /**
  * Тесты экрана входа по OTP: два шага, таймер повторной отправки,
- * успешный вход.
+ * успешный вход, DEV-код из ответа API (Промт 7).
  */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import type { AuthUser, Session } from '@bazar/types';
+import type { AuthUser } from '@bazar/types';
 import { AuthError } from '@bazar/types';
-import { authMockService } from '../services/authMock';
+import { authApi, type AuthResult } from '../services/api/authApi';
 import { __resetAuthStoreForTests, useAuthStore } from '../stores/authStore';
 import OtpScreen from '../app/(auth)/otp';
 
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 const IVAN: AuthUser = {
   id: 'u1',
@@ -20,12 +20,14 @@ const IVAN: AuthUser = {
   memberships: [],
 };
 
-const SESSION: Session = {
-  userId: 'u1',
-  token: 'token-u1',
-  issuedAt: '2026-01-01T00:00:00.000Z',
-  expiresAt: '2026-01-08T00:00:00.000Z',
-};
+function authResult(user: AuthUser): AuthResult {
+  return {
+    user,
+    accessToken: 'access-u1',
+    refreshToken: 'refresh-u1',
+    world: { memberships: user.memberships, organizations: [], locations: [] },
+  };
+}
 
 describe('(auth)/otp', () => {
   beforeEach(() => {
@@ -50,11 +52,13 @@ describe('(auth)/otp', () => {
       screen.getByText('Введите номер полностью: +7 (999) 999-99-99'),
     ).toBeTruthy();
     expect(screen.queryByLabelText('Код из SMS')).toBeNull();
-    expect(authMockService.sendOtp).not.toHaveBeenCalled();
+    expect(authApi.sendOtp).not.toHaveBeenCalled();
   });
 
   it('отправка кода → шаг 2 с таймером повторной отправки', async () => {
-    jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
+    jest
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
     const screen = await render(<OtpScreen />);
 
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
@@ -64,11 +68,13 @@ describe('(auth)/otp', () => {
     expect(screen.getByText('Отправить повторно через 60 с')).toBeTruthy();
     // Повторная отправка недоступна, пока тикает таймер
     expect(screen.queryByText('Отправить код повторно')).toBeNull();
-    expect(authMockService.sendOtp).toHaveBeenCalledWith('+79001234567');
+    expect(authApi.sendOtp).toHaveBeenCalledWith('+79001234567', 'login');
   });
 
   it('маска кода 999-999', async () => {
-    jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
+    jest
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
     const screen = await render(<OtpScreen />);
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
     await fireEvent.press(screen.getByText('Отправить код'));
@@ -78,7 +84,9 @@ describe('(auth)/otp', () => {
   });
 
   it('неполный код → ошибка', async () => {
-    jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
+    jest
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
     const screen = await render(<OtpScreen />);
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
     await fireEvent.press(screen.getByText('Отправить код'));
@@ -86,14 +94,14 @@ describe('(auth)/otp', () => {
     await fireEvent.changeText(screen.getByLabelText('Код из SMS'), '123');
     await fireEvent.press(screen.getByText('Войти'));
     expect(screen.getByText('Введите 6 цифр кода')).toBeTruthy();
-    expect(authMockService.loginWithOtp).not.toHaveBeenCalled();
+    expect(authApi.loginWithOtp).not.toHaveBeenCalled();
   });
 
   it('успешный вход по коду → сессия в store, экран не навигирует сам', async () => {
-    jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
     jest
-      .mocked(authMockService.loginWithOtp)
-      .mockResolvedValue({ user: IVAN, session: SESSION });
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
+    jest.mocked(authApi.loginWithOtp).mockResolvedValue(authResult(IVAN));
     const screen = await render(<OtpScreen />);
 
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
@@ -107,16 +115,15 @@ describe('(auth)/otp', () => {
     // Баг №2: навигацию выполняет только AuthGuard — без собственного
     // router.replace экрана (иначе гонка с Redirect guard'а).
     expect(router.replace).not.toHaveBeenCalled();
-    expect(authMockService.loginWithOtp).toHaveBeenCalledWith(
-      '+79001234567',
-      '123456',
-    );
+    expect(authApi.loginWithOtp).toHaveBeenCalledWith('+79001234567', '123456');
   });
 
   it('неверный код → ошибка из store', async () => {
-    jest.mocked(authMockService.sendOtp).mockResolvedValue({ sent: true });
     jest
-      .mocked(authMockService.loginWithOtp)
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
+    jest
+      .mocked(authApi.loginWithOtp)
       .mockRejectedValue(new AuthError('AUTH_OTP_INVALID', 'Неверный код'));
     const screen = await render(<OtpScreen />);
 
@@ -133,11 +140,18 @@ describe('(auth)/otp', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('DEV-подсказка о коде в консоли присутствует в dev-сборке', async () => {
+  it('DEV: код из ответа API показывается на шаге ввода', async () => {
     expect(__DEV__).toBe(true);
+    jest
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: '424242' });
     const screen = await render(<OtpScreen />);
-    expect(
-      screen.getByText('DEV: код показывается в консоли сервера'),
-    ).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
+    await fireEvent.press(screen.getByText('Отправить код'));
+
+    await waitFor(() => {
+      expect(screen.getByText('DEV: код для входа — 424242')).toBeTruthy();
+    });
   });
 });

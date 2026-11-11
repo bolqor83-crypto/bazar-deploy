@@ -11,25 +11,6 @@ import {
   ONBOARDING_ORGS_KEY,
   onboardingMockService,
 } from '../onboardingMock';
-import { USERS_KEY } from '../authMock';
-
-/** Мок-запись пользователя в хранилище аутентификации. */
-function seedUser(userId: string): void {
-  void AsyncStorage.setItem(
-    USERS_KEY,
-    JSON.stringify({
-      '+79005556677': {
-        id: userId,
-        phone: '+79005556677',
-        name: 'Мария Иванова',
-        createdAt: '2026-01-02T00:00:00.000Z',
-        memberships: [],
-        passwordHash: 'hash',
-        salt: 'salt',
-      },
-    }),
-  );
-}
 
 describe('onboardingMockService', () => {
   beforeEach(async () => {
@@ -112,8 +93,7 @@ describe('onboardingMockService', () => {
   });
 
   describe('addMembership', () => {
-    it('записывает членство и обновляет пользователя в bazar.auth.users', async () => {
-      seedUser('u9');
+    it('записывает членство в bazar.onboarding.memberships', async () => {
       const membership = await onboardingMockService.addMembership(
         'u9',
         'ob-org-1',
@@ -126,22 +106,9 @@ describe('onboardingMockService', () => {
         ONBOARDING_MEMBERSHIPS_KEY,
       );
       expect(rawMemberships ? JSON.parse(rawMemberships) : []).toHaveLength(1);
-
-      const rawUsers = await AsyncStorage.getItem(USERS_KEY);
-      const users = rawUsers
-        ? (JSON.parse(rawUsers) as Record<
-            string,
-            { memberships: { role: string }[] }
-          >)
-        : {};
-      const record = users['+79005556677'];
-      expect(record).toBeDefined();
-      expect(record?.memberships).toHaveLength(1);
-      expect(record?.memberships[0]?.role).toBe('store_owner');
     });
 
     it('идемпотентен: повторный вызов не создаёт дубль', async () => {
-      seedUser('u9');
       await onboardingMockService.addMembership('u9', 'ob-org-1', 'carrier');
       await onboardingMockService.addMembership('u9', 'ob-org-1', 'carrier');
 
@@ -149,12 +116,41 @@ describe('onboardingMockService', () => {
         ONBOARDING_MEMBERSHIPS_KEY,
       );
       expect(rawMemberships ? JSON.parse(rawMemberships) : []).toHaveLength(1);
+    });
+  });
 
-      const rawUsers = await AsyncStorage.getItem(USERS_KEY);
-      const users = rawUsers
-        ? (JSON.parse(rawUsers) as Record<string, { memberships: unknown[] }>)
-        : {};
-      expect(users['+79005556677']?.memberships).toHaveLength(1);
+  describe('listForUser', () => {
+    it('отдаёт организации, точки и членства только этого пользователя', async () => {
+      const org = await onboardingMockService.createOrganization('u9', {
+        name: 'Фермерский двор',
+        kind: 'retail',
+        address: 'ул. Садовая, 12',
+      });
+      await onboardingMockService.createLocation('u9', org.id, {
+        name: 'Точка на Западном',
+        address: 'ул. Западная, 3',
+      });
+      await onboardingMockService.addMembership('u9', org.id, 'store_owner');
+      // Чужие данные того же хранилища.
+      await onboardingMockService.createOrganization('u8', {
+        name: 'Чужой склад',
+        kind: 'wholesale',
+        address: 'ул. Чужая, 99',
+      });
+
+      const world = await onboardingMockService.listForUser('u9');
+      expect(world.organizations).toHaveLength(1);
+      expect(world.organizations[0]?.name).toBe('Фермерский двор');
+      expect(world.locations).toHaveLength(1);
+      expect(world.memberships).toHaveLength(1);
+      expect(world.memberships[0]?.role).toBe('store_owner');
+    });
+
+    it('пуст для пользователя без онбординга', async () => {
+      const world = await onboardingMockService.listForUser('u42');
+      expect(world.organizations).toEqual([]);
+      expect(world.locations).toEqual([]);
+      expect(world.memberships).toEqual([]);
     });
   });
 

@@ -4,12 +4,12 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { AuthError } from '@bazar/types';
-import { authMockService } from '../services/authMock';
+import { authApi } from '../services/api/authApi';
 import { __resetAuthStoreForTests } from '../stores/authStore';
 import ResetRequestScreen from '../app/(auth)/reset-request';
 import ResetConfirmScreen from '../app/(auth)/reset-confirm';
 
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 describe('(auth)/reset-request', () => {
   beforeEach(() => {
@@ -31,13 +31,13 @@ describe('(auth)/reset-request', () => {
     expect(
       screen.getByText('Введите номер полностью: +7 (999) 999-99-99'),
     ).toBeTruthy();
-    expect(authMockService.requestPasswordReset).not.toHaveBeenCalled();
+    expect(authApi.sendOtp).not.toHaveBeenCalled();
   });
 
   it('успех → переход на /reset-confirm с телефоном', async () => {
     jest
-      .mocked(authMockService.requestPasswordReset)
-      .mockResolvedValue({ sent: true });
+      .mocked(authApi.sendOtp)
+      .mockResolvedValue({ sent: true, devCode: null });
     const screen = await render(<ResetRequestScreen />);
 
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
@@ -73,11 +73,22 @@ describe('(auth)/reset-confirm', () => {
     await fireEvent.press(screen.getByText('Сохранить пароль'));
     expect(screen.getByText('Введите номер полностью')).toBeTruthy();
     expect(screen.getByText('Введите 6 цифр кода')).toBeTruthy();
-    expect(authMockService.resetPassword).not.toHaveBeenCalled();
+    expect(authApi.resetPassword).not.toHaveBeenCalled();
   });
 
   it('успех → диалог и возврат на /login', async () => {
-    jest.mocked(authMockService.resetPassword).mockResolvedValue({ ok: true });
+    jest.mocked(authApi.resetPassword).mockResolvedValue({
+      user: {
+        id: 'u1',
+        phone: '+79001234567',
+        name: 'Иван Петров',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        memberships: [],
+      },
+      accessToken: 'access-u1',
+      refreshToken: 'refresh-u1',
+      world: { memberships: [], organizations: [], locations: [] },
+    });
     const screen = await render(<ResetConfirmScreen />);
 
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
@@ -96,7 +107,7 @@ describe('(auth)/reset-confirm', () => {
     await waitFor(() => {
       expect(screen.getByText('Пароль изменён')).toBeTruthy();
     });
-    expect(authMockService.resetPassword).toHaveBeenCalledWith(
+    expect(authApi.resetPassword).toHaveBeenCalledWith(
       '+79001234567',
       '123456',
       'newpass1',
@@ -108,7 +119,7 @@ describe('(auth)/reset-confirm', () => {
 
   it('истёкший код → ошибка из store', async () => {
     jest
-      .mocked(authMockService.resetPassword)
+      .mocked(authApi.resetPassword)
       .mockRejectedValue(new AuthError('AUTH_OTP_EXPIRED', 'Истёк'));
     const screen = await render(<ResetConfirmScreen />);
 

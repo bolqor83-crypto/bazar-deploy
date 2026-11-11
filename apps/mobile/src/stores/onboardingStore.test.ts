@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AuthUser } from '@bazar/types';
 import { OnboardingError } from '@bazar/types';
 import { onboardingMockService } from '../services/onboardingMock';
-import { authMockService } from '../services/authMock';
+import { authApi } from '../services/api/authApi';
 import { __resetAuthStoreForTests, useAuthStore } from './authStore';
 import { useContextStore } from './contextStore';
 import {
@@ -16,7 +16,7 @@ import {
 } from './onboardingStore';
 
 jest.mock('../services/onboardingMock');
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 const NEWBIE: AuthUser = {
   id: 'u9',
@@ -304,8 +304,8 @@ describe('onboardingStore', () => {
         role: 'store_owner',
         title: 'Владелец',
       });
-      // refreshUser → getSession с обновлёнными членствами.
-      jest.mocked(authMockService.getSession).mockResolvedValue({
+      // refreshUser → getSession с обновлёнными членствами (API).
+      jest.mocked(authApi.getSession).mockResolvedValue({
         user: {
           ...NEWBIE,
           memberships: [
@@ -317,11 +317,26 @@ describe('onboardingStore', () => {
             },
           ],
         },
-        session: {
-          userId: 'u9',
-          token: 'token-u9',
-          issuedAt: '2026-01-02T00:00:00.000Z',
-          expiresAt: '2026-01-09T00:00:00.000Z',
+        accessToken: 'access-u9',
+        refreshToken: 'refresh-u9',
+        world: {
+          memberships: [
+            {
+              userId: 'u9',
+              organizationId: 'ob-org-1',
+              role: 'store_owner',
+              title: 'Владелец',
+            },
+          ],
+          organizations: [
+            {
+              id: 'ob-org-1',
+              name: 'Фермерский двор',
+              shortName: 'Фермерский двор',
+              kind: 'retail',
+            },
+          ],
+          locations: [],
         },
       });
       // Точка, созданная на шаге location, известна contextStore.

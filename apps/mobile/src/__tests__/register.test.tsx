@@ -4,13 +4,13 @@
  */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import type { AuthUser, Session } from '@bazar/types';
+import type { AuthUser } from '@bazar/types';
 import { AuthError } from '@bazar/types';
-import { authMockService } from '../services/authMock';
+import { authApi, type AuthResult } from '../services/api/authApi';
 import { __resetAuthStoreForTests, useAuthStore } from '../stores/authStore';
 import RegisterScreen from '../app/(auth)/register';
 
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 const NEWBIE: AuthUser = {
   id: 'u2',
@@ -20,12 +20,14 @@ const NEWBIE: AuthUser = {
   memberships: [],
 };
 
-const SESSION: Session = {
-  userId: 'u2',
-  token: 'token-u2',
-  issuedAt: '2026-01-02T00:00:00.000Z',
-  expiresAt: '2026-01-09T00:00:00.000Z',
-};
+function authResult(user: AuthUser): AuthResult {
+  return {
+    user,
+    accessToken: 'access-test',
+    refreshToken: 'refresh-test',
+    world: { memberships: user.memberships, organizations: [], locations: [] },
+  };
+}
 
 /** Результат render из RNTL v14 — асинхронный. */
 type Screen = Awaited<ReturnType<typeof render>>;
@@ -101,13 +103,11 @@ describe('(auth)/register', () => {
     await fireEvent.press(screen.getByText('Зарегистрироваться'));
 
     expect(screen.getByText('Нужно принять условия')).toBeTruthy();
-    expect(authMockService.register).not.toHaveBeenCalled();
+    expect(authApi.register).not.toHaveBeenCalled();
   });
 
   it('успех → сессия в store, экран не навигирует сам (guard ведёт на /welcome)', async () => {
-    jest
-      .mocked(authMockService.register)
-      .mockResolvedValue({ user: NEWBIE, session: SESSION });
+    jest.mocked(authApi.register).mockResolvedValue(authResult(NEWBIE));
     const screen = await render(<RegisterScreen />);
     await fillValid(screen);
 
@@ -119,7 +119,7 @@ describe('(auth)/register', () => {
     // собственный router.replace, иначе гонка уводит в /(tabs).
     expect(router.replace).not.toHaveBeenCalled();
     expect(useAuthStore.getState().user).toEqual(NEWBIE);
-    expect(authMockService.register).toHaveBeenCalledWith({
+    expect(authApi.register).toHaveBeenCalledWith({
       name: 'Мария Иванова',
       phone: '+79001112233',
       password: 'password1',
@@ -128,7 +128,7 @@ describe('(auth)/register', () => {
 
   it('занятый телефон → ошибка сервера под кнопкой', async () => {
     jest
-      .mocked(authMockService.register)
+      .mocked(authApi.register)
       .mockRejectedValue(new AuthError('AUTH_USER_EXISTS', 'Занят'));
     const screen = await render(<RegisterScreen />);
     await fillValid(screen);

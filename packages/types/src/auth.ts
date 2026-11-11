@@ -1,14 +1,14 @@
 /**
- * Модель аутентификации Bazar (см. ADR 0004).
+ * Модель аутентификации Bazar (см. ADR 0004, обновление — Промт 7).
  *
  * - AuthUser — публичные данные аккаунта (пароль сюда не входит).
- * - Session — псевдо-сессия мок-бэкенда: токен + сроки.
+ * - Tokens — пара реального API: access-JWT (в памяти) + refresh
+ *   (AsyncStorage, Промт 8 — SecureStore).
  * - AuthState — состояние стора: до проверки сессии «unknown».
  *
- * Пароль никогда не покидает экран ввода: в мок-хранилище лежит
- * только passwordHash (SHA-256 от пароля с индивидуальной солью).
+ * Пароль никогда не покидает экран ввода: на сервере — Argon2id.
  */
-import type { Membership } from './context';
+import type { BusinessLocation, Membership, Organization } from './context';
 
 /** Публичные данные аутентифицированного пользователя. */
 export interface AuthUser {
@@ -21,12 +21,23 @@ export interface AuthUser {
   memberships: Membership[];
 }
 
-/** Псевдо-сессия мок-бэкенда. Реальные JWT — Промт 6. */
-export interface Session {
-  userId: string;
-  token: string;
-  issuedAt: string;
-  expiresAt: string;
+/** Пара токенов реального API (Промт 7). */
+export interface Tokens {
+  /** Access-JWT, HS256, TTL 15 минут. Хранится только в памяти. */
+  accessToken: string;
+  /** Opaque refresh-токен, TTL 30 дней. Хранится в AsyncStorage. */
+  refreshToken: string;
+}
+
+/**
+ * «Снимок мира» пользователя: членства + организации + точки.
+ * Источник — реальный API (GET /api/auth/me); локальный онбординг
+ * (Промт 6, моки) подмешивается поверх до миграции в Промт 8.
+ */
+export interface WorldSnapshot {
+  memberships: Membership[];
+  organizations: Organization[];
+  locations: BusinessLocation[];
 }
 
 /**
@@ -37,17 +48,26 @@ export interface Session {
  */
 export type AuthState = 'unknown' | 'authenticated' | 'unauthenticated';
 
-/** Коды ошибок мок-бэкенда аутентификации. */
+/** Коды ошибок API аутентификации (маппятся в русские тексты на клиенте). */
 export type AuthErrorCode =
   | 'AUTH_INVALID_PHONE'
   | 'AUTH_INVALID_PASSWORD'
+  /** Единый код неверного номера/пароля: не раскрываем, что именно. */
+  | 'AUTH_INVALID_CREDENTIALS'
   | 'AUTH_USER_NOT_FOUND'
   | 'AUTH_USER_EXISTS'
   | 'AUTH_OTP_INVALID'
   | 'AUTH_OTP_EXPIRED'
-  | 'AUTH_UNKNOWN';
+  /** Access-токен отсутствует/невалиден (401 до авторизации). */
+  | 'AUTH_UNAUTHORIZED'
+  /** Refresh-токен невалиден/отозван (reuse detection) — нужен логин. */
+  | 'AUTH_SESSION_EXPIRED'
+  | 'AUTH_RATE_LIMIT'
+  | 'AUTH_UNKNOWN'
+  /** Сеть: API недоступен или таймаут. */
+  | 'NETWORK_ERROR';
 
-/** Ошибка сервиса аутентификации с машинным кодом. */
+/** Ошибка клиента API с машинным кодом. */
 export class AuthError extends Error {
   readonly code: AuthErrorCode;
 

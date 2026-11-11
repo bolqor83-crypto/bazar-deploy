@@ -8,19 +8,19 @@
  *
  * После фикса: guard — единственный маршрутизатор; без членств →
  * /welcome, с членствами → /(tabs). Тесты проходят полный путь:
- * реальный authStore + мок authMockService, затем рендер AuthGuard
- * гостевой зоны (как это делает (auth)/_layout).
+ * реальный authStore + мок authApi (Промт 7: реальный API-клиент),
+ * затем рендер AuthGuard гостевой зоны (как это делает (auth)/_layout).
  */
 import { render } from '@testing-library/react-native';
 import { Redirect } from 'expo-router';
 import { Text } from '@bazar/ui';
-import type { AuthUser, Session } from '@bazar/types';
-import { authMockService } from '../services/authMock';
+import type { AuthUser } from '@bazar/types';
+import { authApi, type AuthResult } from '../services/api/authApi';
 import { AuthGuard } from '../components/guards/AuthGuard';
 import { __resetAuthStoreForTests, useAuthStore } from '../stores/authStore';
 import { useContextStore } from '../stores/contextStore';
 
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 const NEWBIE: AuthUser = {
   id: 'u9',
@@ -30,12 +30,18 @@ const NEWBIE: AuthUser = {
   memberships: [],
 };
 
-const SESSION: Session = {
-  userId: 'u9',
-  token: 'token-u9',
-  issuedAt: '2026-01-02T00:00:00.000Z',
-  expiresAt: '2026-01-09T00:00:00.000Z',
-};
+function authResult(user: AuthUser): AuthResult {
+  return {
+    user,
+    accessToken: 'access-u9',
+    refreshToken: 'refresh-u9',
+    world: {
+      memberships: user.memberships,
+      organizations: [],
+      locations: [],
+    },
+  };
+}
 
 /** Guard гостевой зоны — так оборачивает экраны (auth)/_layout. */
 function renderGuestZoneGuard() {
@@ -64,9 +70,7 @@ describe('пост-аутентификационная маршрутизаци
   });
 
   it('регистрация без членств → /welcome, а не /(tabs)', async () => {
-    jest
-      .mocked(authMockService.register)
-      .mockResolvedValue({ user: NEWBIE, session: SESSION });
+    jest.mocked(authApi.register).mockResolvedValue(authResult(NEWBIE));
 
     const ok = await useAuthStore.getState().register({
       name: 'Мария Иванова',
@@ -84,9 +88,7 @@ describe('пост-аутентификационная маршрутизаци
   });
 
   it('вход по паролю без членств → /welcome', async () => {
-    jest
-      .mocked(authMockService.login)
-      .mockResolvedValue({ user: NEWBIE, session: SESSION });
+    jest.mocked(authApi.login).mockResolvedValue(authResult(NEWBIE));
 
     const ok = await useAuthStore.getState().login({
       phone: '+79005556677',
@@ -102,9 +104,7 @@ describe('пост-аутентификационная маршрутизаци
   });
 
   it('вход по OTP без членств → /welcome', async () => {
-    jest
-      .mocked(authMockService.loginWithOtp)
-      .mockResolvedValue({ user: NEWBIE, session: SESSION });
+    jest.mocked(authApi.loginWithOtp).mockResolvedValue(authResult(NEWBIE));
 
     const ok = await useAuthStore
       .getState()
@@ -119,21 +119,21 @@ describe('пост-аутентификационная маршрутизаци
   });
 
   it('вход по паролю с членствами → /(tabs) (прежнее поведение сохранено)', async () => {
-    jest.mocked(authMockService.login).mockResolvedValue({
-      user: {
-        ...NEWBIE,
-        id: 'u1',
-        memberships: [
-          {
-            userId: 'u1',
-            organizationId: 'o1',
-            role: 'wholesale_seller',
-            title: 'Владелец',
-          },
-        ],
-      },
-      session: SESSION,
-    });
+    const IVAN_WITH_MEMBERSHIPS: AuthUser = {
+      ...NEWBIE,
+      id: 'u1',
+      memberships: [
+        {
+          userId: 'u1',
+          organizationId: 'o1',
+          role: 'wholesale_seller',
+          title: 'Владелец',
+        },
+      ],
+    };
+    jest
+      .mocked(authApi.login)
+      .mockResolvedValue(authResult(IVAN_WITH_MEMBERSHIPS));
 
     const ok = await useAuthStore.getState().login({
       phone: '+79001234567',

@@ -1,15 +1,16 @@
 /**
- * Тесты экрана входа: рендер, валидация, вход, ошибка, DEV-кнопка.
+ * Тесты экрана входа: рендер, валидация, вход, ошибка, DEV-кнопка,
+ * graceful degradation при недоступном API (Промт 7).
  */
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import type { AuthUser, Session } from '@bazar/types';
+import type { AuthUser } from '@bazar/types';
 import { AuthError } from '@bazar/types';
-import { authMockService } from '../services/authMock';
+import { authApi, type AuthResult } from '../services/api/authApi';
 import { __resetAuthStoreForTests, useAuthStore } from '../stores/authStore';
 import LoginScreen from '../app/(auth)/login';
 
-jest.mock('../services/authMock');
+jest.mock('../services/api/authApi');
 
 const IVAN: AuthUser = {
   id: 'u1',
@@ -19,17 +20,20 @@ const IVAN: AuthUser = {
   memberships: [],
 };
 
-const SESSION: Session = {
-  userId: 'u1',
-  token: 'token-u1',
-  issuedAt: '2026-01-01T00:00:00.000Z',
-  expiresAt: '2026-01-08T00:00:00.000Z',
-};
+function authResult(user: AuthUser): AuthResult {
+  return {
+    user,
+    accessToken: 'access-u1',
+    refreshToken: 'refresh-u1',
+    world: { memberships: user.memberships, organizations: [], locations: [] },
+  };
+}
 
 describe('(auth)/login', () => {
   beforeEach(() => {
     __resetAuthStoreForTests();
     jest.clearAllMocks();
+    jest.mocked(authApi.ping).mockResolvedValue(true);
     jest.mocked(router.replace).mockClear();
     jest.mocked(router.push).mockClear();
   });
@@ -66,13 +70,11 @@ describe('(auth)/login', () => {
       screen.getByText('Введите номер полностью: +7 (999) 999-99-99'),
     ).toBeTruthy();
     expect(screen.getByText('Введите пароль')).toBeTruthy();
-    expect(authMockService.login).not.toHaveBeenCalled();
+    expect(authApi.login).not.toHaveBeenCalled();
   });
 
   it('успешный вход → сессия в store, экран не навигирует сам (guard ведёт в приложение)', async () => {
-    jest
-      .mocked(authMockService.login)
-      .mockResolvedValue({ user: IVAN, session: SESSION });
+    jest.mocked(authApi.login).mockResolvedValue(authResult(IVAN));
     const screen = await render(<LoginScreen />);
 
     await fireEvent.changeText(screen.getByLabelText('Телефон'), '79001234567');
@@ -85,8 +87,8 @@ describe('(auth)/login', () => {
     // Баг №2: навигацию выполняет только AuthGuard — без собственного
     // router.replace экрана (иначе гонка с Redirect guard'а).
     expect(router.replace).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().token).toBe('token-u1');
-    expect(authMockService.login).toHaveBeenCalledWith({
+    expect(useAuthStore.getState().token).toBe('access-u1');
+    expect(authApi.login).toHaveBeenCalledWith({
       phone: '+79001234567',
       password: 'qwerty123',
     });
@@ -94,9 +96,9 @@ describe('(auth)/login', () => {
 
   it('ошибка сервера показывается под кнопкой', async () => {
     jest
-      .mocked(authMockService.login)
+      .mocked(authApi.login)
       .mockRejectedValue(
-        new AuthError('AUTH_USER_NOT_FOUND', 'Пользователь не найден'),
+        new AuthError('AUTH_INVALID_CREDENTIALS', 'Неверный номер или пароль'),
       );
     const screen = await render(<LoginScreen />);
 
@@ -110,18 +112,16 @@ describe('(auth)/login', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('DEV: быстрая кнопка «Продолжить как Иван Петров» входит под мок-юзером', async () => {
+  it('DEV: быстрая кнопка «Продолжить как Иван Петров» входит под демо-юзером', async () => {
     expect(__DEV__).toBe(true);
-    jest
-      .mocked(authMockService.login)
-      .mockResolvedValue({ user: IVAN, session: SESSION });
+    jest.mocked(authApi.login).mockResolvedValue(authResult(IVAN));
     const screen = await render(<LoginScreen />);
 
     expect(screen.getByText('DEV')).toBeTruthy();
     await fireEvent.press(screen.getByText('Продолжить как Иван Петров'));
 
     await waitFor(() => {
-      expect(authMockService.login).toHaveBeenCalledWith({
+      expect(authApi.login).toHaveBeenCalledWith({
         phone: '+79001234567',
         password: 'qwerty123',
       });
@@ -129,6 +129,24 @@ describe('(auth)/login', () => {
     });
     // Баг №2: экран не навигирует — маршрутизацию делает AuthGuard.
     expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('недоступный API → ErrorState «Сервер временно недоступен» с «Повторить»', async () => {
+    jest.mocked(authApi.ping).mockResolvedValue(false);
+    const screen = await render(<LoginScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Сервер временно недоступен')).toBeTruthy();
+    });
+    // Формы входа нет: мок-режима больше не существует.
+    expect(screen.queryByLabelText('Телефон')).toBeNull();
+
+    // «Повторить»: API ожил — снова форма входа.
+    jest.mocked(authApi.ping).mockResolvedValue(true);
+    await fireEvent.press(screen.getByText('Повторить'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Телефон')).toBeTruthy();
+    });
   });
 
   it('ссылки ведут на сброс, OTP и регистрацию', async () => {

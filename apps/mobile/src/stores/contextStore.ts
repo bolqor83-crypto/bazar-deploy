@@ -26,6 +26,7 @@ import type {
   Membership,
   Organization,
   Role,
+  WorldSnapshot,
 } from '@bazar/types';
 import {
   customerContext,
@@ -288,10 +289,11 @@ export interface ContextState {
   registerLocations: (locs: BusinessLocation[]) => void;
   /**
    * Синхронизация с пользователем после входа/гидратации сессии:
-   * обновляет членства и пересобирает контекст (по приоритету,
-   * если пользователь сменился).
+   * обновляет «снимок мира» (членства + организации + точки) из
+   * реального API и пересобирает контекст (по приоритету, если
+   * пользователь сменился). Промт 7: источник данных — API.
    */
-  syncWithUser: (userId: string, memberships: Membership[]) => void;
+  syncWithUser: (userId: string, world: WorldSnapshot) => void;
   /** Сброс при выходе: customer-контекст без пользователя, чистое хранилище. */
   reset: () => void;
 }
@@ -353,8 +355,9 @@ export const useContextStore = create<ContextState>()(
         }
       },
 
-      syncWithUser: (userId, memberships) => {
-        const { active, locations } = get();
+      syncWithUser: (userId, world) => {
+        const { active } = get();
+        const { memberships, organizations, locations } = world;
         // Гостевой контекст (userId === '') — это не «тот же
         // пользователь»: при входе приоритет членств применяется
         // всегда, иначе первый вход уводил бы в customer.
@@ -366,6 +369,8 @@ export const useContextStore = create<ContextState>()(
           const valid = validateContext(normalized, memberships, locations);
           set({
             memberships,
+            organizations,
+            locations,
             active: valid ?? contextByPriority(userId, memberships, locations),
           });
           return;
@@ -373,6 +378,8 @@ export const useContextStore = create<ContextState>()(
         // Другой пользователь: контекст выбираем заново по приоритету.
         set({
           memberships,
+          organizations,
+          locations,
           active: contextByPriority(userId, memberships, locations),
         });
       },
