@@ -49,9 +49,11 @@
 - Мобильное приложение: Expo (managed) + React Native + TypeScript strict (без `any` в новом коде).
 - Навигация: Expo Router (file-based).
 - Состояние: Zustand. Анимации: Reanimated.
-- Тесты: Jest + jest-expo + @testing-library/react-native.
+- Бэкенд (Промт 7): NestJS 11 + Prisma 6 + Argon2id + JWT.
+- Тесты: Jest + jest-expo + @testing-library/react-native (mobile);
+  Jest + ts-jest + supertest (api, unit и e2e).
 - Новые npm-пакеты — только с явного разрешения пользователя.
-- Секреты хранятся только в `secrets/.env.local` (gitignored). Никогда не коммитить и не выводить их значения.
+- Секреты хранятся только в `secrets/.env.local` и `apps/api/.env` (gitignored). Никогда не коммитить и не выводить их значения.
 
 ## Контекст и навигация (Промт 3, ADR 0003)
 
@@ -67,19 +69,27 @@
 - Активный контекст персистится (ключ `bazar.context.active`); невалидный
   контекст откатывается на роль покупателя.
 
-## Аутентификация (Промт 4, ADR 0004)
+## Аутентификация (Промт 7, ADR 0004 + 0008)
 
-- Аутентификация — мок на AsyncStorage (`src/services/authMock.ts`),
-  пароли хешируются `expo-crypto` SHA-256 + индивидуальная соль.
-  Реальный бэкенд — Промт 7.
-- Мок-пользователь для разработки: Иван Петров, `+79001234567` /
-  `qwerty123` (вход даёт доступ ко всем организациям Промта 3).
-- После входа контекст выбирается по приоритету членств:
-  wholesale → store_owner → carrier → customer.
-- Мок-OTP выводится только в `__DEV__` через `console.warn`
-  (префикс `[MOCK OTP]`), в production-сборке не выводится.
-- Logout — полная очистка: authStore + contextStore + ключи
-  `bazar.auth.session`, `bazar.context.active`, `bazar.auth.otp.*`.
+- Аутентификация — реальный API (`apps/api`, NestJS): login /
+  register / OTP / refresh / logout / сброс пароля.
+- Пароли — Argon2id на сервере (OWASP: 19 МБ / 2 итерации),
+  хеш не покидает бэкенд.
+- Access-JWT (HS256, 15 минут) — только в памяти клиента;
+  refresh (opaque, 30 дней) — в AsyncStorage `bazar.auth.refresh`
+  (SecureStore — Промт 8). В БД — только SHA-256-хеш.
+- Refresh-token family + reuse detection: повторное использование
+  отозванного токена отзывает всю семью.
+- Клиент `src/services/api/client.ts`: авто-refresh при 401 (одна
+  попытка), таймаут 15 с, структурированные ошибки с кодами.
+- Гидратация: refresh → `GET /api/auth/me`; после входа контекст —
+  по приоритету членств wholesale → store_owner → carrier → customer.
+- Демо-пользователь: Иван Петров, `+79001234567` / `qwerty123`
+  (4 организации в реальной БД, seed).
+- OTP в dev-режиме сервера возвращается в ответе (`devCode`) и
+  показывается на экране только в `__DEV__`.
+- Мок-auth удалён (ADR 0008). При недоступном API — ErrorState
+  «Сервер временно недоступен» с «Повторить»; в мок не падаем.
 
 ## Онбординг (Промт 6, ADR 0005)
 
@@ -94,11 +104,12 @@
 - Прогресс персистится: `bazar.onboarding.state` (шаг, роль, черновики,
   id созданных сущностей). Черновики форм подставляются при возврате.
 - Сущности онбординга: `bazar.onboarding.organizations/locations/
-memberships`; мок-сервис объединяет их с моками Промта 3, данные
-  Ивана не перезаписываются. // MOCK ONLY. Реальный бэкенд — Промт 7.
+memberships`; // MOCK ONLY. Миграция онбординга на API — Промт 8.
 - contextStore держит «снимок мира» (memberships + organizations +
-  locations) и персистит его: созданный в онбординге контекст
-  переживает перезагрузку.
+  locations). Источник — `GET /api/auth/me` (Промт 7); локальные
+  онбординг-данные подмешиваются поверх (`onboardingMock.listForUser`)
+  до миграции. Моки `mocks/context.ts` — только для customerContext
+  и онбординг-экранов.
 - `logout` сбрасывает и онбординг: черновики не протекают между
   аккаунтами.
 
@@ -108,7 +119,7 @@ memberships`; мок-сервис объединяет их с моками Пр
   только typecheck. Next.js и витрина — Промт 7.
 - Веб не опережает мобильное приложение; дизайн — только токены
   `@bazar/ui`.
-- Конвейер turbo — 13 задач (12 + @bazar/web#typecheck).
+- Конвейер turbo — 16 задач (13 + @bazar/api lint/typecheck/test).
 
 ## Бизнес-компоненты (Промт 6, ADR 0007)
 
@@ -126,13 +137,43 @@ memberships`; мок-сервис объединяет их с моками Пр
 
 ## Безопасность
 
-- Пароли никогда не в открытом виде — ни в моке, ни в production.
-- Токены не в URL, не в логах; хранение — только AsyncStorage
-  (`bazar.auth.session`).
+- Пароли — Argon2id на сервере; никогда не в открытом виде, хеш не
+  покидает бэкенд.
+- Access-токен — только в памяти клиента; refresh — AsyncStorage,
+  в БД — SHA-256-хеш. Токены не в URL и не в логах.
+- Rate limiting на auth: 5/30/100 запросов в минуту по группам.
+- Права проверяются на сервере; чужие организации — 404 без
+  раскрытия существования.
 - OTP-коды не попадают в аналитику.
 - Сущности онбординга создаются от id аутентифицированного
   пользователя; поля `createdBy` пишутся всегда.
 - Не выводить секреты в отчёты и логи.
+
+## Бэкенд (Промт 7, ADR 0008)
+
+- `apps/api` (`@bazar/api`): NestJS 11 + Prisma 6, TypeScript strict.
+- Модель: User → Organization → Membership → BusinessLocation → Role.
+  Product/Order/Debt/Delivery — Промт 9+, не создавать раньше срока.
+- БД демо — SQLite (Docker/PostgreSQL в песочнице недоступны);
+  переход на Neon/PostgreSQL — замена DATABASE_URL + провайдера.
+- OpenAPI на `/api/docs` (Swagger UI) и `/api/docs-json` — контракт
+  для генерации клиента.
+- Структура ответа ошибок: `{ statusCode, error, message, code }` —
+  код машиночитаемый, клиент маппит в русские тексты.
+- Логи pino с requestId (AsyncLocalStorage); тела и заголовки
+  запросов не логируются (там пароли и токены).
+
+## Деплой (Промт 7)
+
+- Один публичный URL через preview-шлюз платформы: NestJS на :3000
+  отдаёт и API (`/api/*`), и статику mobile (ServeStaticModule →
+  `apps/mobile/dist`, SPA-fallback).
+- Mobile собирается с `EXPO_PUBLIC_API_URL=/api` (same-origin).
+- Туннели (cloudflared/localtunnel/ngrok) заблокированы политикой
+  песочницы — не пробовать.
+- После перезапуска песочницы: `pnpm install` → `prisma migrate dev`
+  (накатит seed) → `pnpm --filter @bazar/api build` → запуск
+  `node apps/api/dist/src/main.js` на :3000.
 
 ## Защита маршрутов
 

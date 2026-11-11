@@ -18,8 +18,6 @@ import {
   setSessionExpiredHandler,
 } from '../client';
 
-type FetchMock = jest.Mock;
-
 function jsonResponse(status: number, body: unknown): Response {
   return {
     ok: status >= 200 && status < 300,

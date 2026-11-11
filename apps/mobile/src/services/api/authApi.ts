@@ -67,9 +67,6 @@ interface ApiAuthResponse {
   refreshToken: string;
 }
 
-/** Ответ GET /auth/me. */
-interface ApiMeResponse extends ApiUser {}
-
 // ---------------------------------------------------------------------------
 // Мапперы
 // ---------------------------------------------------------------------------
@@ -268,7 +265,7 @@ export const authApi = {
 
   /** Профиль + мир: GET /api/auth/me. */
   async getSession(): Promise<AuthResult> {
-    const api = await apiRequest<ApiMeResponse>('/auth/me');
+    const api = await apiRequest<ApiUser>('/auth/me');
     // Токены уже в клиенте; в результате — для единообразия контракта.
     const refresh = await getRefreshToken();
     return {
