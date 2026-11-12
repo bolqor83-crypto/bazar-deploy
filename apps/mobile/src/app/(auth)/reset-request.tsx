@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Input, Text, hapticError, hapticSuccess } from '@bazar/ui';
+import { Smartphone } from 'lucide-react-native';
 import { AuthScreenShell } from '../../components/auth/AuthScreenShell';
 import { useAuth } from '../../hooks/useAuth';
 import { formatPhoneInput, phoneToE164 } from '../../utils/phone';
@@ -40,6 +41,7 @@ export default function ResetRequestScreen() {
   return (
     <AuthScreenShell
       title="Сброс пароля"
+      icon={Smartphone}
       subtitle="Пришлём код подтверждения на ваш номер"
     >
       <Input

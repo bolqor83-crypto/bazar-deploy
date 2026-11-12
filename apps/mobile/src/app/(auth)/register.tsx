@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
-import { Check, Eye, EyeOff } from 'lucide-react-native';
+import { Check, Eye, EyeOff, UserPlus } from 'lucide-react-native';
 import {
   Button,
   Input,
@@ -113,6 +113,7 @@ export default function RegisterScreen() {
   return (
     <AuthScreenShell
       title="Регистрация в Bazar"
+      icon={UserPlus}
       subtitle="Аккаунт один — магазин, опт и доставка переключаются внутри"
     >
       <Input

@@ -13,6 +13,7 @@ import {
   hapticSuccess,
   useTheme,
 } from '@bazar/ui';
+import { ShieldCheck } from 'lucide-react-native';
 import { AuthScreenShell } from '../../components/auth/AuthScreenShell';
 import { useAuth } from '../../hooks/useAuth';
 import { formatPhoneInput, phoneToE164 } from '../../utils/phone';
@@ -81,6 +82,7 @@ export default function ResetConfirmScreen() {
   return (
     <AuthScreenShell
       title="Новый пароль"
+      icon={ShieldCheck}
       subtitle="Введите код из SMS и придумайте новый пароль"
     >
       <Input
