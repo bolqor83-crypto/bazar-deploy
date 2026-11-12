@@ -23,6 +23,7 @@ import { HttpApiExceptionFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
+import { CatalogModule } from './catalog/catalog.module';
 import { HealthModule } from './health/health.module';
 import { LocationsModule } from './locations/locations.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -75,6 +76,7 @@ const ValidationPipeConfig = new ValidationPipe({
     UsersModule,
     OrganizationsModule,
     LocationsModule,
+    CatalogModule,
     HealthModule,
   ],
   providers: [

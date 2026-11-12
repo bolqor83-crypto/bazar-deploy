@@ -16,6 +16,9 @@ export class FakePrisma {
   readonly memberships = new Map<string, Record<string, unknown>>();
   readonly organizations = new Map<string, Record<string, unknown>>();
   readonly locations = new Map<string, Record<string, unknown>>();
+  readonly categories = new Map<string, Record<string, unknown>>();
+  readonly products = new Map<string, Record<string, unknown>>();
+  readonly offers = new Map<string, Record<string, unknown>>();
 
   /** Счётчик create для авто-идентификаторов. */
   private counter = 0;
@@ -267,6 +270,146 @@ export class FakePrisma {
         ...data,
       };
       this.locations.set(record.id, record);
+      return record;
+    },
+  };
+
+  readonly category = {
+    findMany: async ({
+      orderBy,
+    }: {
+      orderBy?: { sortOrder?: 'asc' | 'desc' };
+    } = {}) => {
+      const all = [...this.categories.values()];
+      if (orderBy?.sortOrder === 'desc') {
+        all.sort((a, b) => (b.sortOrder as number) - (a.sortOrder as number));
+      } else {
+        all.sort((a, b) => (a.sortOrder as number) - (b.sortOrder as number));
+      }
+      return all;
+    },
+    count: async () => this.categories.size,
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const record = {
+        id: this.nextId('cat'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...data,
+      };
+      this.categories.set(record.id, record);
+      return record;
+    },
+  };
+
+  readonly product = {
+    findMany: async ({
+      where,
+      include,
+      select,
+    }: {
+      where?: { categoryId?: string; category?: { slug: string } };
+      include?: { category?: boolean; offers?: boolean };
+      select?: { categoryId?: boolean };
+    } = {}) => {
+      const result: Record<string, unknown>[] = [];
+      for (const product of this.products.values()) {
+        if (where?.categoryId && product.categoryId !== where.categoryId) {
+          continue;
+        }
+        if (where?.category) {
+          const category = this.categories.get(product.categoryId as string);
+          if (!category || category.slug !== where.category.slug) {
+            continue;
+          }
+        }
+        if (select?.categoryId) {
+          result.push({ categoryId: product.categoryId });
+          continue;
+        }
+        const record: Record<string, unknown> = { ...product };
+        if (include?.category) {
+          record.category = this.categories.get(product.categoryId as string);
+        }
+        if (include?.offers) {
+          record.offers = [...this.offers.values()]
+            .filter((o) => o.productId === product.id)
+            .map((o) => ({
+              ...o,
+              organization: this.organizations.get(o.organizationId as string),
+            }));
+        }
+        result.push(record);
+      }
+      return result;
+    },
+    findUnique: async ({
+      where,
+      include,
+    }: {
+      where: { id: string };
+      include?: { category?: boolean; offers?: boolean };
+    }) => {
+      const product = this.products.get(where.id);
+      if (!product) {
+        return null;
+      }
+      const record: Record<string, unknown> = { ...product };
+      if (include?.category) {
+        record.category = this.categories.get(product.categoryId as string);
+      }
+      if (include?.offers) {
+        record.offers = [...this.offers.values()]
+          .filter((o) => o.productId === product.id)
+          .map((o) => ({
+            ...o,
+            organization: this.organizations.get(o.organizationId as string),
+          }));
+      }
+      return record;
+    },
+    count: async () => this.products.size,
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const record = {
+        id: this.nextId('prod'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...data,
+      };
+      this.products.set(record.id, record);
+      return record;
+    },
+  };
+
+  readonly productOffer = {
+    findMany: async ({
+      where,
+    }: {
+      where?: { productId?: string; organizationId?: string };
+    } = {}) => {
+      const result: Record<string, unknown>[] = [];
+      for (const offer of this.offers.values()) {
+        if (where?.productId && offer.productId !== where.productId) {
+          continue;
+        }
+        if (
+          where?.organizationId &&
+          offer.organizationId !== where.organizationId
+        ) {
+          continue;
+        }
+        result.push(offer);
+      }
+      return result;
+    },
+    count: async () => this.offers.size,
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const record = {
+        id: this.nextId('offer'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...data,
+      };
+      this.offers.set(record.id, record);
       return record;
     },
   };

@@ -6,7 +6,8 @@
 // Переключение на PostgreSQL — замена DATABASE_URL + провайдера;
 // перечисления здесь эмулируются строками с проверкой в DTO.
 //
-// За пределами Промта 7: Product, Order, Debt, Delivery (Промт 9+).
+// За пределами Промта 7: Order, Debt, Delivery (Промт 9+).
+// Промт 8 добавил каталог: Category → Product → ProductOffer.
 
 generator client {
   provider = "prisma-client-js"
@@ -59,6 +60,60 @@ model Organization {
   updatedAt   DateTime           @updatedAt
   memberships Membership[]
   locations   BusinessLocation[]
+  offers      ProductOffer[]
+}
+
+/// Категория каталога (Промт 8). slug — адрес фильтра, icon — имя
+/// иконки из набора Lucide (клиент маппит в компонент), sortOrder —
+/// порядок в ленте категорий.
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  icon      String
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+/// Товар каталога. images — JSON-массив строк-URL (SQLite не имеет
+/// нативных массивов); до загрузки фото клиент показывает плашку-
+/// заглушку. Цены живут в ProductOffer: один товар — много продавцов.
+model Product {
+  id          String          @id @default(cuid())
+  categoryId  String
+  name        String
+  unit        String
+  description String          @default("")
+  images      String          @default("[]")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  category    Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  offers      ProductOffer[]
+
+  @@index([categoryId])
+}
+
+/// Предложение организации на товар: цена в копейках (без дробей),
+/// склад, минимальная партия, бейдж («hit» — хит) и скоропорт.
+/// badge — строка или null; набор значений расширяется без миграций.
+model ProductOffer {
+  id             String       @id @default(cuid())
+  productId      String
+  organizationId String
+  priceKopecks   Int
+  stock          Int
+  minQuantity    Int          @default(1)
+  badge          String?
+  isPerishable   Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([organizationId])
 }
 
 /// Членство пользователя в организации.

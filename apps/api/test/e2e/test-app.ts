@@ -39,6 +39,8 @@ export async function createTestApp(): Promise<TestApp> {
 export async function clearDatabase(prisma: PrismaService): Promise<void> {
   await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
 }
 
 /** Регистрация через API → пара токенов. */
