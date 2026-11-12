@@ -200,6 +200,25 @@ memberships`; // MOCK ONLY. Миграция онбординга на API — �
   (накатит seed) → `pnpm --filter @bazar/api build` → запуск
   `node apps/api/dist/src/main.js` на :3000.
 
+## Инфраструктура (разрешено с Промта 9)
+
+Прежние ограничения серии промтов («git push в GitHub запрещён»,
+«токены не использовать», «деплой запрещён») **отменены явным
+разрешением пользователя в Промте 9**.
+
+- **GitHub push разрешён.** Токен — в `secrets/.env.local`
+  (gitignored). Репозиторий `bazar` — приватный.
+- **Neon PostgreSQL** — production-БД (pooled — runtime,
+  direct — миграции). SQLite — только локальный fallback без сети.
+- **Render** — только для Промта 10. Токен сохранить, API не вызывать
+  до Промта 10.
+- **Pixelmatch CI** — разрешён и обязателен (Промт 9).
+- Секреты — `secrets/` (gitignored, `secrets/.gitignore` гасит всё
+  кроме себя) и `apps/api/.env` (gitignored).
+- `secrets/git-cred-helper.sh` — credential helper для push: токен
+  не хранится в `.git/config` plaintext.
+- **Никогда не выводить значения токенов** в отчёт, логи, коммиты.
+
 ## Защита маршрутов
 
 - Каждая группа маршрутов обёрнута в AuthGuard, каждая ролевая группа —
