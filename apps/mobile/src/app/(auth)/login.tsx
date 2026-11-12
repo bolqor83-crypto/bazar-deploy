@@ -12,10 +12,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { router } from 'expo-router';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react-native';
 import {
   Badge,
   Button,
+  Divider,
   ErrorState,
   Input,
   Text,
@@ -129,6 +130,7 @@ export default function LoginScreen() {
   return (
     <AuthScreenShell
       title="Вход в Bazar"
+      icon={LockKeyhole}
       subtitle="Оптовая торговля и розница — в одном приложении"
     >
       {apiAlive === false ? (
@@ -196,7 +198,19 @@ export default function LoginScreen() {
           ) : null}
 
           <LinkRow label="Забыли пароль?" target="/reset-request" />
-          <LinkRow label="Войти по коду из SMS" target="/otp" />
+
+          <Divider inset="lg" />
+
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            disabled={loading}
+            onPress={() => router.push('/otp')}
+          >
+            Войти по коду из SMS
+          </Button>
+
           <LinkRow
             label="Нет аккаунта? Зарегистрироваться"
             target="/register"

@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
+import { ShieldCheck, Smartphone } from 'lucide-react-native';
 import {
   Button,
   Input,
@@ -94,7 +95,8 @@ export default function OtpScreen() {
 
   return (
     <AuthScreenShell
-      title="Вход по коду"
+      title="Введите код"
+      icon={step === 1 ? Smartphone : ShieldCheck}
       subtitle={
         step === 1
           ? 'Пришлём одноразовый код на телефон'

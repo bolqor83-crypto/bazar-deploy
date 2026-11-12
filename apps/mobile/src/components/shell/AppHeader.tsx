@@ -5,10 +5,10 @@
  * Справа: переключатель темы и профиль. Высота 56 + safe area сверху.
  * Все зоны нажатия ≥ 48×48.
  */
-import { useState } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, useTheme } from '@bazar/ui';
+import { useContextSheetStore } from '../../stores/contextSheetStore';
 import { ContextSheet } from './ContextSheet';
 import { ContextSwitcher } from './ContextSwitcher';
 import { ProfileButton } from './ProfileButton';
@@ -23,7 +23,9 @@ export interface AppHeaderProps {
 export function AppHeader({ title }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const sheetVisible = useContextSheetStore((s) => s.visible);
+  const closeSheet = useContextSheetStore((s) => s.close);
+  const openSheet = useContextSheetStore((s) => s.open);
 
   const containerStyle: StyleProp<ViewStyle> = {
     paddingTop: insets.top,
@@ -39,7 +41,7 @@ export function AppHeader({ title }: AppHeaderProps) {
 
   return (
     <View style={containerStyle}>
-      <ContextSwitcher onPress={() => setSheetVisible(true)} />
+      <ContextSwitcher onPress={openSheet} />
 
       <View style={{ flex: 1, alignItems: 'center' }} pointerEvents="none">
         <Text variant="h3" numberOfLines={1} ellipsizeMode="tail">
@@ -52,7 +54,7 @@ export function AppHeader({ title }: AppHeaderProps) {
         <ProfileButton />
       </View>
 
-      <ContextSheet visible={sheetVisible} onClose={() => setSheetVisible(false)} />
+      <ContextSheet visible={sheetVisible} onClose={closeSheet} />
     </View>
   );
 }

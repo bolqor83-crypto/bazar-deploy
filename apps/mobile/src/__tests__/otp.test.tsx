@@ -38,7 +38,7 @@ describe('(auth)/otp', () => {
 
   it('шаг 1: телефон и кнопка «Отправить код»', async () => {
     const screen = await render(<OtpScreen />);
-    expect(screen.getByText('Вход по коду')).toBeTruthy();
+    expect(screen.getByText('Введите код')).toBeTruthy();
     expect(screen.getByLabelText('Телефон')).toBeTruthy();
     expect(screen.getByText('Отправить код')).toBeTruthy();
     expect(screen.queryByLabelText('Код из SMS')).toBeNull();

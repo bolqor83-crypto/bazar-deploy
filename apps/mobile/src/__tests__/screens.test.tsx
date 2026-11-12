@@ -8,7 +8,6 @@ import type { ActiveContext } from '@bazar/types';
 import { customerContext, mockMemberships } from '../mocks/context';
 import { useContextStore } from '../stores/contextStore';
 
-import HomeScreen from '../app/(tabs)/customer/home';
 import OrdersScreen from '../app/(tabs)/customer/orders';
 import DeliveriesScreen from '../app/(tabs)/customer/deliveries';
 import FavoritesScreen from '../app/(tabs)/customer/favorites';
@@ -65,7 +64,6 @@ const CARRIER: ActiveContext = {
 
 /** Экран → [маршрут, компонент, заголовок, текст EmptyState, контекст]. */
 const SCREENS: readonly Row[] = [
-  ['customer/home', HomeScreen, 'Главная', 'Главная пока готовится', CUSTOMER],
   ['customer/orders', OrdersScreen, 'Заказы', 'Заказов пока нет', CUSTOMER],
   [
     'customer/deliveries',
@@ -100,7 +98,7 @@ const SCREENS: readonly Row[] = [
     'store/feed',
     StoreFeedScreen,
     'Лента',
-    'Лента предложений появится здесь, когда будет API.',
+    'Предложения поставщиков появятся здесь',
     STORE,
   ],
   [
@@ -145,7 +143,7 @@ const SCREENS: readonly Row[] = [
     'wholesale/overview',
     OverviewScreen,
     'Обзор',
-    'Обзор в разработке',
+    'Показатели соберутся с первыми заказами',
     WHOLESALE,
   ],
   [
@@ -209,7 +207,7 @@ const SCREENS: readonly Row[] = [
     'carrier/feed',
     CarrierFeedScreen,
     'Лента',
-    'Лента заявок появится здесь, когда будет API.',
+    'Заявки на перевозку появятся здесь',
     CARRIER,
   ],
   [
@@ -263,7 +261,7 @@ describe('Экраны-заглушки', () => {
   );
 
   it('заглушки не используют текст «Нет данных»', async () => {
-    const screen = await render(<HomeScreen />);
+    const screen = await render(<OrdersScreen />);
     expect(screen.queryByText('Нет данных')).toBeNull();
   });
 

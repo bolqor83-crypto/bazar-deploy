@@ -26,15 +26,20 @@ describe('(tabs)/index: редирект по активной роли', () => 
     setContext({ ...customerContext });
   });
 
-  it('customer → /customer/home', async () => {
+  it('customer → /customer/catalog', async () => {
     await renderIndex();
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/customer/home');
+      expect(router.replace).toHaveBeenCalledWith('/customer/catalog');
     });
   });
 
   it('store_owner → /store/purchase', async () => {
-    setContext({ userId: 'u1', role: 'store_owner', organizationId: 'o2', locationId: null });
+    setContext({
+      userId: 'u1',
+      role: 'store_owner',
+      organizationId: 'o2',
+      locationId: null,
+    });
     await renderIndex();
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith('/store/purchase');
@@ -42,7 +47,12 @@ describe('(tabs)/index: редирект по активной роли', () => 
   });
 
   it('wholesale_seller → /wholesale/overview', async () => {
-    setContext({ userId: 'u1', role: 'wholesale_seller', organizationId: 'o1', locationId: null });
+    setContext({
+      userId: 'u1',
+      role: 'wholesale_seller',
+      organizationId: 'o1',
+      locationId: null,
+    });
     await renderIndex();
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith('/wholesale/overview');
@@ -50,7 +60,12 @@ describe('(tabs)/index: редирект по активной роли', () => 
   });
 
   it('carrier → /carrier/feed', async () => {
-    setContext({ userId: 'u1', role: 'carrier', organizationId: 'o4', locationId: null });
+    setContext({
+      userId: 'u1',
+      role: 'carrier',
+      organizationId: 'o4',
+      locationId: null,
+    });
     await renderIndex();
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith('/carrier/feed');

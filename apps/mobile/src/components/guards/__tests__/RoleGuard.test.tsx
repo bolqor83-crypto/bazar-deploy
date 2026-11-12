@@ -49,7 +49,7 @@ describe('RoleGuard', () => {
       </RoleGuard>,
     );
     expect(jest.mocked(Redirect)).toHaveBeenCalledWith(
-      { href: '/customer/home' },
+      { href: '/customer/catalog' },
       undefined,
     );
     expect(screen.queryByText('Экран владельца точки')).toBeNull();
