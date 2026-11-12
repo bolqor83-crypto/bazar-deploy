@@ -84,7 +84,7 @@ export function LogoutSection() {
     organizations.find((o) => o.id === active.organizationId)?.name ??
     'Без организации';
   const locationName =
-    locations.find((l) => l.id === active.locationId)?.name ?? '—';
+    locations.find((l) => l.id === active.locationId)?.name ?? null;
 
   const confirmLogout = async () => {
     setBusy(true);
@@ -145,12 +145,22 @@ export function LogoutSection() {
             label="Организация"
             value={organizationName}
           />
-          <ContextRow icon={MapPin} label="Точка" value={locationName} />
+          <ContextRow
+            icon={MapPin}
+            label="Точка"
+            value={locationName ?? 'Не выбрана'}
+          />
         </View>
+        {locationName === null ? (
+          <Text variant="caption" color="textMuted">
+            Точка выбирается при переключении контекста — так заказы и доставки
+            привяжутся к нужному адресу.
+          </Text>
+        ) : null}
       </Card>
 
       <Button
-        variant="secondary"
+        variant="primary"
         size="lg"
         fullWidth
         onPress={openSheet}

@@ -268,11 +268,11 @@ function RoleChip({ label, selected, enabled, onPress }: RoleChipProps) {
 
   const style: StyleProp<ViewStyle> = {
     paddingHorizontal: spacing.md,
-    height: 40,
+    height: 48,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: selected ? colors.primary : colors.border,
-    backgroundColor: selected ? colors.primarySoft : colors.surfaceMuted,
+    borderColor: selected ? colors.primary : colors.borderStrong,
+    backgroundColor: selected ? colors.primarySoft : colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: enabled ? 1 : 0.4,
@@ -292,7 +292,8 @@ function RoleChip({ label, selected, enabled, onPress }: RoleChipProps) {
     >
       <Text
         variant="bodySmall"
-        color={selected ? 'primaryText' : 'textSecondary'}
+        color={selected ? 'primaryText' : enabled ? 'text' : 'textSecondary'}
+        style={selected ? { fontFamily: 'Inter_600SemiBold' } : undefined}
       >
         {label}
       </Text>
