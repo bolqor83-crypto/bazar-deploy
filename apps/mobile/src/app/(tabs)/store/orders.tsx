@@ -1,19 +1,10 @@
 /**
- * Заказы (orders) — экран-заглушка роли «владелец точки».
- * Бизнес-логики нет: структура навигации и осмысленный EmptyState.
+ * Orders — экран роли «владелец точки».
+ * Общая реализация: components/screens/OrdersScreen.ts
+ * (Промт 9, Части D+E: контур задаёт organizationId корзины).
  */
-import { Package } from 'lucide-react-native';
-import { EmptyState } from '@bazar/ui';
-import { RoleScreen } from '../../../components/shell/RoleScreen';
+import { default as OrdersScreen } from '../../../components/screens/OrdersScreen';
 
-export default function OrdersScreen() {
-  return (
-    <RoleScreen role="store_owner" section="orders" title="Заказы">
-      <EmptyState
-        icon={Package}
-        title="Заказов точки пока нет"
-        description="Здесь появятся заказы покупателей выбранной точки."
-      />
-    </RoleScreen>
-  );
+export default function Screen() {
+  return <OrdersScreen basePath="store" />;
 }

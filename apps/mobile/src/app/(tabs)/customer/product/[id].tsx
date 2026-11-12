@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useAddToCart } from '../../../../hooks/useCart';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Button,
@@ -53,6 +54,7 @@ function ProductBody({ id }: { id: string }) {
 
   const [quantity, setQuantity] = useState<number | null>(null);
   const { show } = useToast();
+  const addToCartMutation = useAddToCart();
 
   if (productQuery.isError) {
     return (
@@ -75,10 +77,26 @@ function ProductBody({ id }: { id: string }) {
   const totalRubles = Math.round(totalKopecks / 100);
 
   const addToCart = () => {
-    show({
-      variant: 'info',
-      message: 'Корзина появится в следующем обновлении',
-    });
+    if (!best) {
+      return;
+    }
+    addToCartMutation.mutate(
+      { offerId: best.id, quantity: effectiveQuantity },
+      {
+        onSuccess: () => {
+          show({
+            variant: 'success',
+            message: `${product.name} — в корзине (${effectiveQuantity} ${product.unit})`,
+          });
+        },
+        onError: () => {
+          show({
+            variant: 'info',
+            message: 'Не удалось добавить: проверьте наличие и партию',
+          });
+        },
+      },
+    );
   };
 
   return (

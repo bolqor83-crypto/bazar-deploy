@@ -8,7 +8,6 @@ import type { ActiveContext } from '@bazar/types';
 import { customerContext, mockMemberships } from '../mocks/context';
 import { useContextStore } from '../stores/contextStore';
 
-import OrdersScreen from '../app/(tabs)/customer/orders';
 import DeliveriesScreen from '../app/(tabs)/customer/deliveries';
 import FavoritesScreen from '../app/(tabs)/customer/favorites';
 import CustomerProfileScreen from '../app/(tabs)/customer/profile';
@@ -16,7 +15,6 @@ import CustomerProfileScreen from '../app/(tabs)/customer/profile';
 import PurchaseScreen from '../app/(tabs)/store/purchase';
 import StoreFeedScreen from '../app/(tabs)/store/feed';
 import StorefrontScreen from '../app/(tabs)/store/storefront';
-import StoreOrdersScreen from '../app/(tabs)/store/orders';
 import DebtsScreen from '../app/(tabs)/store/debts';
 import NotesScreen from '../app/(tabs)/store/notes';
 import StoreFinanceScreen from '../app/(tabs)/store/finance';
@@ -64,7 +62,8 @@ const CARRIER: ActiveContext = {
 
 /** Экран → [маршрут, компонент, заголовок, текст EmptyState, контекст]. */
 const SCREENS: readonly Row[] = [
-  ['customer/orders', OrdersScreen, 'Заказы', 'Заказов пока нет', CUSTOMER],
+  // customer/orders и store/orders — реальные экраны заказов
+  // (Промт 9), их тесты — в cart-orders.test.tsx.
   [
     'customer/deliveries',
     DeliveriesScreen,
@@ -106,13 +105,6 @@ const SCREENS: readonly Row[] = [
     StorefrontScreen,
     'Витрина',
     'Витрина точки в разработке',
-    STORE,
-  ],
-  [
-    'store/orders',
-    StoreOrdersScreen,
-    'Заказы',
-    'Заказов точки пока нет',
     STORE,
   ],
   [
@@ -261,7 +253,7 @@ describe('Экраны-заглушки', () => {
   );
 
   it('заглушки не используют текст «Нет данных»', async () => {
-    const screen = await render(<OrdersScreen />);
+    const screen = await render(<FavoritesScreen />);
     expect(screen.queryByText('Нет данных')).toBeNull();
   });
 

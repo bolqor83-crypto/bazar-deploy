@@ -10,7 +10,16 @@ import { ToastProvider } from '@bazar/ui';
 import { fetchProduct } from '../services/api/catalogApi';
 import ProductScreen from '../app/(tabs)/customer/product/[id]';
 
+import { addCartItem } from '../services/api/cartApi';
+
 jest.mock('../services/api/catalogApi');
+jest.mock('../services/api/cartApi', () => ({
+  addCartItem: jest.fn(),
+  fetchCart: jest.fn(),
+  updateCartItem: jest.fn(),
+  removeCartItem: jest.fn(),
+  clearCart: jest.fn(),
+}));
 
 jest.mock('expo-router', () => {
   const actual = jest.requireActual('expo-router');
@@ -22,6 +31,7 @@ jest.mock('expo-router', () => {
 });
 
 const fetchProductMock = jest.mocked(fetchProduct);
+const addCartItemMock = jest.mocked(addCartItem);
 
 const DETAIL: CatalogProductDetail = {
   id: 'p1',
@@ -102,16 +112,19 @@ describe('(tabs)/customer/product/[id]', () => {
     });
   });
 
-  it('нажатие «В корзину» показывает тост о Промте 9', async () => {
+  it('нажатие «В корзину» добавляет позицию и показывает тост', async () => {
+    addCartItemMock.mockResolvedValue({ items: [], subtotal: 0, warnings: [] });
     const screen = await renderWithQuery(<ProductScreen />);
     await waitFor(() => {
       expect(screen.getByText('В корзину · 945 ₽')).toBeTruthy();
     });
     await fireEvent.press(screen.getByTestId('add-to-cart'));
     await waitFor(() => {
-      expect(
-        screen.getByText('Корзина появится в следующем обновлении'),
-      ).toBeTruthy();
+      // 189 ₽ × 5 (минимальная партия) = 945 ₽ — количество в запросе.
+      expect(addCartItemMock).toHaveBeenCalledWith('o1', 5);
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/— в корзине/)).toBeTruthy();
     });
   });
 

@@ -68,10 +68,12 @@ export async function setRefreshToken(token: string | null): Promise<void> {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Требуется Authorization (по умолчанию — да). */
   auth?: boolean;
+  /** Дополнительные заголовки (X-Organization-Id и др.). */
+  headers?: Record<string, string>;
   /** Внутренний флаг: запрос уже повторяется после refresh. */
   _retried?: boolean;
 }
@@ -115,6 +117,7 @@ async function fetchWithTimeout(
         ...(options.auth !== false && accessToken
           ? { Authorization: `Bearer ${accessToken}` }
           : {}),
+        ...(options.headers ?? {}),
       },
       body:
         options.body !== undefined ? JSON.stringify(options.body) : undefined,

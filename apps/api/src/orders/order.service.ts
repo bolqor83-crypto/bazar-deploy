@@ -203,7 +203,7 @@ export class OrderService {
     const created = await this.prisma.$transaction(
       async (tx): Promise<OrderView[]> => {
         const orders: OrderView[] = [];
-        for (const [sellerId, groupItems] of groups) {
+        for (const [, groupItems] of groups) {
           for (const gi of groupItems) {
             await reserveStock(tx, gi.offerId, gi.quantity);
           }

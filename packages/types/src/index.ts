@@ -9,9 +9,12 @@
  * onboarding.ts, см. ADR 0005.
  * Модель каталога (категории, товары, предложения) — в catalog.ts,
  * см. ADR 0009 (Промт 8).
- * Прочие бизнес-сущности будут добавлены в следующих промтах.
+ * Корзина (CartItem, CartView) — в cart.ts, см. ADR 0010 (Промт 9).
+ * Заказы (Order, OrderItem, OrderEvent) — в order.ts, см. ADR 0010.
  */
 export * from './context';
 export * from './auth';
 export * from './onboarding';
 export * from './catalog';
+export * from './cart';
+export * from './order';

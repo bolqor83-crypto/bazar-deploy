@@ -415,11 +415,11 @@ export class FakeCartPrisma {
   };
 
   /** Эмуляция транзакции: снапшот → откат при исключении. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction = async (
-    fn: (tx: any) => Promise<unknown>,
+    // Фейк одновременно играет роль и клиента, и транзакции.
+    fn: (tx: FakeCartPrisma) => Promise<unknown>,
     _options?: unknown,
-  ) => {
+  ): Promise<unknown> => {
     const snapshot = structuredClone({
       offers: [...this.offers],
       carts: [...this.carts],
@@ -431,8 +431,10 @@ export class FakeCartPrisma {
     try {
       return await fn(this);
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const restore = (map: any, entries: any) => {
+      const restore = (
+        map: Map<string, unknown>,
+        entries: [string, unknown][],
+      ) => {
         map.clear();
         for (const [k, v] of entries) map.set(k, v);
       };
@@ -440,7 +442,11 @@ export class FakeCartPrisma {
       restore(this.carts, snapshot.carts);
       restore(this.cartItems, snapshot.cartItems);
       restore(this.orders, snapshot.orders);
-      restore(this.orderCounters, snapshot.orderCounters);
+      // Счётчик — Map<number, …>: восстановление без дженерика.
+      this.orderCounters.clear();
+      for (const [y, v] of snapshot.orderCounters) {
+        this.orderCounters.set(y, v);
+      }
       restore(this.memberships, snapshot.memberships);
       throw error;
     }

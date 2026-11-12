@@ -17,6 +17,7 @@ import {
   History,
   Inbox,
   LayoutDashboard,
+  LayoutGrid,
   Newspaper,
   Package,
   ReceiptText,
@@ -89,9 +90,10 @@ export interface RoleNavConfig {
 
 const customerNav: RoleNavConfig = {
   tabs: [
-    { key: 'catalog', label: 'Каталог', icon: ShoppingCart },
+    { key: 'catalog', label: 'Каталог', icon: LayoutGrid },
     { key: 'orders', label: 'Заказы', icon: Package },
-    { key: 'deliveries', label: 'Доставки', icon: Truck },
+    // Промт 9, Часть D: корзина с badge количества позиций.
+    { key: 'cart', label: 'Корзина', icon: ShoppingCart },
     { key: 'favorites', label: 'Избранное', icon: Heart },
     { key: 'profile', label: 'Профиль', icon: User },
   ],

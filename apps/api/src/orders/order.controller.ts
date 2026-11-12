@@ -8,7 +8,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Headers,
   HttpCode,
