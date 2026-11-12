@@ -60,3 +60,73 @@ jobs:
 
       - name: e2e API (тестовая БД bazar_test)
         run: pnpm --filter api test:e2e
+
+  visual-regression:
+    name: pixelmatch golden (tolerance 0.5%)
+    needs: quality
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      EXPO_NO_TELEMETRY: '1'
+      NEON_DATABASE_URL_DIRECT: ${{ secrets.NEON_DATABASE_URL_DIRECT }}
+      NEON_DATABASE_URL_POOLED: ${{ secrets.NEON_DATABASE_URL_POOLED }}
+      JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Установить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Установить зависимости
+        run: pnpm install --frozen-lockfile
+
+      - name: Установить Chromium для Playwright
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Собрать статику mobile
+        run: pnpm --filter mobile exec expo export --platform web
+        env:
+          EXPO_PUBLIC_API_URL: /api
+
+      - name: Собрать API
+        run: pnpm --filter api build
+
+      - name: Поднять backend + статику на :3000
+        run: |
+          cd apps/api
+          {
+            echo "PORT=3000"
+            echo "NODE_ENV=production"
+            echo "DATABASE_URL_POOLED=$NEON_DATABASE_URL_POOLED"
+            echo "DATABASE_URL_DIRECT=$NEON_DATABASE_URL_DIRECT"
+            echo "JWT_ACCESS_SECRET=$JWT_ACCESS_SECRET"
+            echo "JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET"
+            echo "CORS_ORIGINS="
+            echo "THROTTLER_DISABLED=false"
+            echo "MOBILE_DIST_PATH=$GITHUB_WORKSPACE/apps/mobile/dist"
+          } > .env.ci
+          node --env-file=.env.ci dist/src/main.js &
+          for i in $(seq 1 30); do
+            curl -s --max-time 2 http://localhost:3000/api/health | grep -q '"ok"' && break
+            sleep 2
+          done
+          curl -s http://localhost:3000/api/health
+
+      - name: Pixelmatch golden (tolerance 0.5%)
+        run: pnpm test:visual
+
+      - name: Загрузить diff-артефакты (при падении)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixelmatch-diff
+          path: download/pixelmatch-diff/
+          if-no-files-found: ignore

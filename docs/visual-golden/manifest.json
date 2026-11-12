@@ -1,0 +1,164 @@
+[
+  {
+    "name": "login-light-390",
+    "file": "login-light-390.png",
+    "url": "/login",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Вход в Bazar"
+  },
+  {
+    "name": "login-dark-390",
+    "file": "login-dark-390.png",
+    "url": "/login",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "guest",
+    "waitForText": "Вход в Bazar"
+  },
+  {
+    "name": "login-light-360",
+    "file": "login-light-360.png",
+    "url": "/login",
+    "viewport": 360,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Вход в Bazar"
+  },
+  {
+    "name": "login-light-430",
+    "file": "login-light-430.png",
+    "url": "/login",
+    "viewport": 430,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Вход в Bazar"
+  },
+  {
+    "name": "register-light-390",
+    "file": "register-light-390.png",
+    "url": "/register",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Регистрация"
+  },
+  {
+    "name": "reset-request-light-390",
+    "file": "reset-request-light-390.png",
+    "url": "/reset",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Сброс"
+  },
+  {
+    "name": "catalog-light-390",
+    "file": "catalog-light-390.png",
+    "url": "/customer/catalog",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Каталог"
+  },
+  {
+    "name": "catalog-light-360",
+    "file": "catalog-light-360.png",
+    "url": "/customer/catalog",
+    "viewport": 360,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Каталог"
+  },
+  {
+    "name": "catalog-light-430",
+    "file": "catalog-light-430.png",
+    "url": "/customer/catalog",
+    "viewport": 430,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Каталог"
+  },
+  {
+    "name": "catalog-dark-390",
+    "file": "catalog-dark-390.png",
+    "url": "/customer/catalog",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "waitForText": "Каталог"
+  },
+  {
+    "name": "product-light-390",
+    "file": "product-light-390.png",
+    "url": "/customer/catalog",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Каталог",
+    "openFirstProduct": true
+  },
+  {
+    "name": "product-dark-390",
+    "file": "product-dark-390.png",
+    "url": "/customer/catalog",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "waitForText": "Каталог",
+    "openFirstProduct": true
+  },
+  {
+    "name": "profile-customer-light-390",
+    "file": "profile-customer-light-390.png",
+    "url": "/customer/profile",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Профиль"
+  },
+  {
+    "name": "context-sheet-light-390",
+    "file": "context-sheet-light-390.png",
+    "url": "/customer/catalog",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "waitForText": "Каталог",
+    "openContextSheet": true
+  },
+  {
+    "name": "store-feed-light-390",
+    "file": "store-feed-light-390.png",
+    "url": "/store/feed",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "store_owner",
+    "roleLabel": "Владелец точки",
+    "waitForText": "Лента"
+  },
+  {
+    "name": "wholesale-overview-light-390",
+    "file": "wholesale-overview-light-390.png",
+    "url": "/wholesale/overview",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "roleLabel": "Оптовик",
+    "waitForText": "Обзор"
+  },
+  {
+    "name": "carrier-feed-light-390",
+    "file": "carrier-feed-light-390.png",
+    "url": "/carrier/feed",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "carrier",
+    "roleLabel": "Перевозчик",
+    "waitForText": "Рейсы"
+  }
+]

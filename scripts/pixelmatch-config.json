@@ -1,0 +1,11 @@
+{
+  "maskSelectors": [
+    "[data-pixelmatch-ignore]",
+    "[data-testid='toast']",
+    "[aria-live='polite']",
+    "[data-testid='skeleton-shimmer']",
+    "[data-testid='avatar-placeholder']",
+    "[data-testid='clock']",
+    "[data-testid='datetime']"
+  ]
+}

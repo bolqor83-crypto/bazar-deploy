@@ -252,6 +252,7 @@ function CatalogBody() {
           isHit={item.bestOffer?.badge === 'hit'}
           isPerishable={item.bestOffer?.isPerishable}
           toneIndex={index}
+          testID="catalog-product"
           onPress={() => openProduct(item.id)}
           style={{ flex: 1 }}
         />
