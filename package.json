@@ -30,6 +30,7 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "^58.0.4",
     "husky": "^9.1.7",
+    "libsodium-wrappers": "0.7.15",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "turbo": "^2.11.10",

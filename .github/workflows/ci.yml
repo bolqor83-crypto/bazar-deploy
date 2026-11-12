@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   quality:
@@ -29,4 +30,33 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: lint + typecheck + test
-        run: pnpm turbo lint typecheck test
+        run: pnpm turbo lint typecheck test --concurrency=2
+
+  e2e:
+    name: e2e на PostgreSQL (Neon)
+    needs: quality
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      NEON_DATABASE_URL_DIRECT: ${{ secrets.NEON_DATABASE_URL_DIRECT }}
+      NEON_DATABASE_URL_POOLED: ${{ secrets.NEON_DATABASE_URL_POOLED }}
+      JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Установить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Установить зависимости
+        run: pnpm install --frozen-lockfile
+
+      - name: e2e API (тестовая БД bazar_test)
+        run: pnpm --filter api test:e2e
