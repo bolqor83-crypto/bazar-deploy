@@ -37,11 +37,17 @@ function toTestDb(uri) {
 function applyTestEnv() {
   const dotenv = readDotEnv();
   const get = (name) => process.env[name] ?? dotenv[name];
+  // CI (Промт 9): секреты называются NEON_DATABASE_URL_*;
+  // локально — DATABASE_URL_* из apps/api/.env.
   const direct = toTestDb(
-    get('TEST_DATABASE_URL_DIRECT') ?? get('DATABASE_URL_DIRECT'),
+    get('TEST_DATABASE_URL_DIRECT') ??
+      get('DATABASE_URL_DIRECT') ??
+      get('NEON_DATABASE_URL_DIRECT'),
   );
   const pooled = toTestDb(
-    get('TEST_DATABASE_URL_POOLED') ?? get('DATABASE_URL_POOLED'),
+    get('TEST_DATABASE_URL_POOLED') ??
+      get('DATABASE_URL_POOLED') ??
+      get('NEON_DATABASE_URL_POOLED'),
   );
   if (direct) process.env.DATABASE_URL_DIRECT = direct;
   if (pooled) process.env.DATABASE_URL_POOLED = pooled;
