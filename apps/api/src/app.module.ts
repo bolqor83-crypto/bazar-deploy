@@ -24,6 +24,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { CartModule } from './cart/cart.module';
+import { OrderModule } from './orders/order.module';
 import { HealthModule } from './health/health.module';
 import { LocationsModule } from './locations/locations.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -77,6 +79,8 @@ const ValidationPipeConfig = new ValidationPipe({
     OrganizationsModule,
     LocationsModule,
     CatalogModule,
+    CartModule,
+    OrderModule,
     HealthModule,
   ],
   providers: [

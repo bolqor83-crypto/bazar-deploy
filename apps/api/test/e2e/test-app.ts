@@ -35,12 +35,16 @@ export async function createTestApp(): Promise<TestApp> {
   };
 }
 
-/** Очистка всех таблиц (каскады уносят членства, сессии, точки). */
+/** Очистка всех таблиц (каскады уносят корзины, сессии, точки). */
 export async function clearDatabase(prisma: PrismaService): Promise<void> {
+  // Заказы первыми: buyer/seller без onDelete Cascade (заказ живёт
+  // дольше участника в предметной области).
+  await prisma.order.deleteMany();
   await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.orderCounter.deleteMany();
 }
 
 /** Регистрация через API → пара токенов. */

@@ -26,6 +26,9 @@ model User {
   updatedAt    DateTime     @updatedAt
   memberships  Membership[]
   sessions     Session[]
+  carts        Cart[]
+  orders       Order[]      @relation("OrderBuyer")
+  orderEvents  OrderEvent[] @relation("OrderActor")
 }
 
 /// Сессия refresh-токена. В БД лежит только SHA-256-хеш токена.
@@ -58,6 +61,7 @@ model Organization {
   memberships Membership[]
   locations   BusinessLocation[]
   offers      ProductOffer[]
+  ordersAsSeller Order[]          @relation("OrderSeller")
 }
 
 /// Категория каталога (Промт 8). slug — адрес фильтра, icon — имя
@@ -96,21 +100,120 @@ model Product {
 /// склад, минимальная партия, бейдж («hit» — хит) и скоропорт.
 /// badge — строка или null; набор значений расширяется без миграций.
 model ProductOffer {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   productId      String
   organizationId String
   priceKopecks   Int
   stock          Int
-  minQuantity    Int          @default(1)
+  minQuantity    Int           @default(1)
   badge          String?
-  isPerishable   Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isPerishable   Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
 
   @@index([productId])
   @@index([organizationId])
+}
+
+/// Корзина пользователя в контуре (Промт 9, Часть D).
+/// organizationId — торговый контур: «"» (розница/customer) или id
+/// организации оптового контура. Пустая строка вместо NULL — иначе
+/// @@unique([userId, organizationId]) в PostgreSQL не ловит дубли
+/// (NULL ≠ NULL).
+model Cart {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String     @default("")
+  items          CartItem[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([userId, organizationId])
+}
+
+/// Позиция корзины: предложение продавца + количество.
+/// @@unique([cartId, offerId]) — один оффер одна строка (количество
+/// меняется PATCH'ем, а не новой строкой).
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, offerId])
+}
+
+/// Заказ (Промт 9, Часть E): создаётся из корзины, группируется
+/// по продавцу — позиции разных организаций раскладываются в
+/// отдельные заказы. Номер BZ-YYYY-NNNNNN генерируется в транзакции.
+model Order {
+  id             String       @id @default(cuid())
+  number         String       @unique
+  buyerId        String
+  buyer          User         @relation("OrderBuyer", fields: [buyerId], references: [id])
+  sellerId       String
+  seller         Organization @relation("OrderSeller", fields: [sellerId], references: [id])
+  organizationId String?
+  status         String       @default("PENDING")
+  subtotal       Int
+  deliveryCost   Int          @default(0)
+  total          Int
+  address        String?
+  comment        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  items          OrderItem[]
+  events         OrderEvent[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+/// Позиция заказа: снапшот предложения на момент покупки
+/// (title/unit/price фиксируются — каталог меняется, заказ нет).
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     ProductOffer @relation(fields: [offerId], references: [id])
+  title     String
+  unit      String
+  price     Int
+  quantity  Int
+  total     Int
+
+  @@index([orderId])
+}
+
+/// Событие жизненного цикла заказа (аудит статусов).
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String
+  actorId   String?
+  actor     User?    @relation("OrderActor", fields: [actorId], references: [id])
+  payload   String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+/// Служебный счётчик номеров заказов: год → последовательность.
+/// Инкремент внутри транзакции создания заказа (атомарность номера).
+model OrderCounter {
+  year Int @id
+  seq  Int @default(0)
 }
 
 /// Членство пользователя в организации.
