@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "ci": "turbo lint typecheck test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint:visual": "node scripts/check-visual-rules.mjs"
   },
   "lint-staged": {
     "*.{js,cjs,mjs,ts,tsx}": [

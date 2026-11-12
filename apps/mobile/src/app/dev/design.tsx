@@ -1,22 +1,25 @@
 /**
  * /dev/design — витрина дизайн-системы Bazar (Промт 2).
  *
- * Показывает все 12 компонентов в текущей теме. Доступен только
- * в dev-сборках: в продакшене редиректит на главную.
+ * Показывает все компоненты дизайн-системы в текущей теме. Доступен
+ * только в dev-сборках: в продакшене редиректит на главную.
  */
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
-import { User } from 'lucide-react-native';
+import { Carrot, SlidersHorizontal, User } from 'lucide-react-native';
 import {
   Badge,
   Button,
   Card,
+  CategoryChip,
   DeliveryCard,
   Dialog,
   Divider,
+  EmptyCatalogState,
   EmptyState,
   ErrorState,
+  FilterChip,
   IconButton,
   Input,
   LocationSelector,
@@ -24,9 +27,15 @@ import {
   OrderSummary,
   PartyCard,
   PriceDisplay,
+  PriceRangeInput,
   ProductCard,
+  ProductDetailCard,
+  ProductGallery,
   QuantitySelector,
+  SearchBar,
+  SectionHeader,
   Skeleton,
+  SortPicker,
   StockIndicator,
   Text,
   ToastProvider,
@@ -71,6 +80,13 @@ function ShowcaseBody() {
   const [quantity, setQuantity] = useState(3);
   const [location, setLocation] = useState<string | null>('l1');
   const [delivery, setDelivery] = useState<'pickup' | 'delivery'>('pickup');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<
+    'popular' | 'price-asc' | 'price-desc' | 'name'
+  >('popular');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [activeCategory, setActiveCategory] = useState('vegetables');
 
   return (
     <ToastProvider>
@@ -89,7 +105,7 @@ function ShowcaseBody() {
           color="textSecondary"
           style={{ marginBottom: spacing.lg }}
         >
-          22 компонента · токены · темы light/dark/system · режим: {mode}
+          31 компонент · токены · темы light/dark/system · режим: {mode}
         </Text>
 
         <Button variant="ghost" size="sm" onPress={cycleMode}>
@@ -453,9 +469,119 @@ function ShowcaseBody() {
         </Section>
 
         <Divider inset="none" />
+
+        <Section title="Каталог (Промт 8)">
+          <View style={{ gap: spacing.md }}>
+            <SearchBar
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Поиск: помидоры, яблоки…"
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing.sm }}
+            >
+              <CategoryChip
+                label="Все"
+                active={activeCategory === 'all'}
+                onPress={() => setActiveCategory('all')}
+              />
+              <CategoryChip
+                label="Овощи"
+                icon={Carrot}
+                active={activeCategory === 'vegetables'}
+                onPress={() => setActiveCategory('vegetables')}
+              />
+              <CategoryChip
+                label="Фрукты"
+                active={activeCategory === 'fruits'}
+                onPress={() => setActiveCategory('fruits')}
+              />
+              <CategoryChip
+                label="Зелень"
+                active={activeCategory === 'greens'}
+                onPress={() => setActiveCategory('greens')}
+              />
+            </ScrollView>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: spacing.sm,
+              }}
+            >
+              <SortPicker value={sort} onChange={setSort} />
+              <FilterChip
+                label="Фильтры"
+                icon={SlidersHorizontal}
+                active={priceMin !== '' || priceMax !== ''}
+                onPress={() => {}}
+              />
+              {search ? (
+                <FilterChip label={search} onRemove={() => setSearch('')} />
+              ) : null}
+            </View>
+
+            <PriceRangeInput
+              min={priceMin}
+              max={priceMax}
+              onMinChange={setPriceMin}
+              onMaxChange={setPriceMax}
+            />
+
+            <SectionHeader
+              title="Товар дня"
+              actionLabel="Все"
+              onAction={() => {}}
+            />
+
+            <ProductGallery
+              images={[
+                'https://picsum.photos/seed/a/800/600',
+                'https://picsum.photos/seed/b/800/600',
+              ]}
+              slideWidth={280}
+            />
+
+            <ProductDetailCard
+              name="Помидоры розовые"
+              description="Розовые томаты грунтовые, калибр 5+, мясистые, сладкие."
+              unit="1 кг"
+              priceKopecks={18_900}
+              stock="in"
+              minQuantity={5}
+              isHit
+              isPerishable
+              sellerName="Опт-Юг"
+              offers={[
+                {
+                  id: 'o1',
+                  organizationName: 'Опт-Юг',
+                  priceKopecks: 18_900,
+                  stock: 53,
+                  minQuantity: 5,
+                },
+                {
+                  id: 'o2',
+                  organizationName: 'Сеть «У дома»',
+                  priceKopecks: 23_700,
+                  stock: 82,
+                  minQuantity: 1,
+                },
+              ]}
+            />
+
+            <EmptyCatalogState hasFilters onReset={() => {}} />
+          </View>
+        </Section>
+
+        <Divider inset="none" />
         <View style={{ marginTop: spacing.xl }}>
           <Text variant="caption" color="textMuted" align="center">
-            Bazar · дизайн-система · Промты 2 и 6
+            Bazar · дизайн-система · Промты 2, 6 и 8
           </Text>
         </View>
       </ScrollView>
