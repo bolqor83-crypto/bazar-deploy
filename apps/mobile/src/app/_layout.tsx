@@ -10,13 +10,15 @@
  * 4. Пока что-либо не готово — держим сплэш, показываем скелетон.
  * 5. SplashScreen.hideAsync() и рендер стеков.
  *
- * Провайдеры: BazarUIProvider (тема + тосты + safe area).
- * Статус-бар следует теме.
+ * Провайдеры: BazarUIProvider (тема + тосты + safe area) и
+ * QueryClientProvider (TanStack Query — Промт 8: кэш каталога,
+ * пагинация, pull-to-refresh). Статус-бар следует теме.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -78,6 +80,23 @@ function BootSkeleton() {
 }
 
 export default function RootLayout() {
+  // QueryClient создаётся один раз (ленивая инициализация состояния,
+  // не рендера): иначе каждый ре-рендер рождает новый кэш.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Каталог живёт 5 минут: свежесть без молотилки запросов
+            // при каждом возвращении на экран.
+            staleTime: 5 * 60_000,
+            retry: 1,
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
+
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -115,8 +134,10 @@ export default function RootLayout() {
   }
 
   return (
-    <BazarUIProvider>
-      <AppStack />
-    </BazarUIProvider>
+    <QueryClientProvider client={queryClient}>
+      <BazarUIProvider>
+        <AppStack />
+      </BazarUIProvider>
+    </QueryClientProvider>
   );
 }

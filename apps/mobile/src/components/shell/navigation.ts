@@ -15,7 +15,6 @@ import {
   Ellipsis,
   Heart,
   History,
-  Home,
   Inbox,
   LayoutDashboard,
   Newspaper,
@@ -65,7 +64,7 @@ export function routeFor(role: Role, sectionKey: string): string {
 
 /** Первый экран роли — цель редиректа. */
 export const FIRST_SECTION: Record<Role, string> = {
-  customer: 'home',
+  customer: 'catalog',
   store_owner: 'purchase',
   wholesale_seller: 'overview',
   carrier: 'feed',
@@ -90,7 +89,7 @@ export interface RoleNavConfig {
 
 const customerNav: RoleNavConfig = {
   tabs: [
-    { key: 'home', label: 'Главная', icon: Home },
+    { key: 'catalog', label: 'Каталог', icon: ShoppingCart },
     { key: 'orders', label: 'Заказы', icon: Package },
     { key: 'deliveries', label: 'Доставки', icon: Truck },
     { key: 'favorites', label: 'Избранное', icon: Heart },
@@ -110,9 +109,19 @@ const storeNav: RoleNavConfig = {
   more: [
     { key: 'debts', label: 'Долги', icon: ReceiptText, route: '/store/debts' },
     { key: 'notes', label: 'Заметки', icon: StickyNote, route: '/store/notes' },
-    { key: 'finance', label: 'Финансы', icon: Banknote, route: '/store/finance' },
+    {
+      key: 'finance',
+      label: 'Финансы',
+      icon: Banknote,
+      route: '/store/finance',
+    },
     { key: 'profile', label: 'Профиль', icon: User, route: '/store/profile' },
-    { key: 'settings', label: 'Настройки', icon: Settings, route: '/store/settings' },
+    {
+      key: 'settings',
+      label: 'Настройки',
+      icon: Settings,
+      route: '/store/settings',
+    },
   ],
 };
 
@@ -125,11 +134,36 @@ const wholesaleNav: RoleNavConfig = {
     { key: MORE_KEY, label: 'Ещё', icon: Ellipsis },
   ],
   more: [
-    { key: 'clients', label: 'Клиенты', icon: Users, route: '/wholesale/clients' },
-    { key: 'finance', label: 'Финансы', icon: Banknote, route: '/wholesale/finance' },
-    { key: 'analytics', label: 'Аналитика', icon: BarChart3, route: '/wholesale/analytics' },
-    { key: 'profile', label: 'Профиль', icon: User, route: '/wholesale/profile' },
-    { key: 'settings', label: 'Настройки', icon: Settings, route: '/wholesale/settings' },
+    {
+      key: 'clients',
+      label: 'Клиенты',
+      icon: Users,
+      route: '/wholesale/clients',
+    },
+    {
+      key: 'finance',
+      label: 'Финансы',
+      icon: Banknote,
+      route: '/wholesale/finance',
+    },
+    {
+      key: 'analytics',
+      label: 'Аналитика',
+      icon: BarChart3,
+      route: '/wholesale/analytics',
+    },
+    {
+      key: 'profile',
+      label: 'Профиль',
+      icon: User,
+      route: '/wholesale/profile',
+    },
+    {
+      key: 'settings',
+      label: 'Настройки',
+      icon: Settings,
+      route: '/wholesale/settings',
+    },
   ],
 };
 
