@@ -37,7 +37,8 @@ export class CatalogController {
       q: query.q,
       sort: query.sort,
       page: query.page,
-      pageSize: query.pageSize,
+      // limit — алиас pageSize (Промт 9); прямой параметр приоритетнее.
+      pageSize: query.pageSize ?? query.limit,
       minPrice: query.minPrice,
       maxPrice: query.maxPrice,
     });

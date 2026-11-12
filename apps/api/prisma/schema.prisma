@@ -1,12 +1,8 @@
 // Схема данных Bazar (Промт 7: минимальный фундамент).
 //
-// Провайдер конфигурируется через DATABASE_URL. Текущая демо-сборка
-// работает на SQLite (см. ADR 0008: Docker/PostgreSQL и ключи Neon
-// в песочнице недоступны, SQLite — последний fallback для demo).
-// Переключение на PostgreSQL — замена DATABASE_URL + провайдера;
-// перечисления здесь эмулируются строками с проверкой в DTO.
-//
-// За пределами Промта 7: Order, Debt, Delivery (Промт 9+).
+// С Промта 9 провайдер — PostgreSQL (Neon, ADR 0010): pooled-URI —
+// для runtime, direct-URI — для миграций. SQLite остаётся локальным
+// fallback без сети (архив миграций — _sqlite-migrations-backup).
 // Промт 8 добавил каталог: Category → Product → ProductOffer.
 
 generator client {
@@ -14,8 +10,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL_POOLED")
+  directUrl = env("DATABASE_URL_DIRECT")
 }
 
 /// Пользователь. Пароль хранится как хеш Argon2id — никогда не

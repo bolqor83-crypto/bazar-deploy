@@ -59,6 +59,14 @@ export class ListProductsQueryDto {
   @Max(50)
   pageSize?: number;
 
+  /** Алиас pageSize (Промт 9): ?limit=5 — то же, что ?pageSize=5. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+
   /** Цена «от», целые рубли (лучшая цена товара). */
   @IsOptional()
   @Type(() => Number)

@@ -17,7 +17,18 @@ import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from './catalog-data';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  // Промт 9, ADR 0010: seed с интерактивными $transaction —
+  // только direct-подключение (PgBouncer их не пропускает).
+  datasources: {
+    db: {
+      url:
+        process.env.DATABASE_URL_DIRECT ??
+        process.env.DATABASE_URL_POOLED ??
+        process.env.DATABASE_URL,
+    },
+  },
+});
 
 /** Параметры Argon2id — OWASP, те же, что в приложении. */
 const ARGON2_OPTIONS = {
@@ -96,37 +107,41 @@ async function seed(): Promise<void> {
 async function seedIvan(): Promise<void> {
   const passwordHash = await hash(IVAN_PASSWORD, ARGON2_OPTIONS);
 
-  await prisma.$transaction(async (tx) => {
-    const ivan = await tx.user.create({
-      data: {
-        phone: IVAN_PHONE,
-        name: IVAN_NAME,
-        passwordHash,
-      },
-    });
-
-    for (const org of ORGANIZATIONS) {
-      const organization = await tx.organization.create({
+  await prisma.$transaction(
+    async (tx) => {
+      const ivan = await tx.user.create({
         data: {
-          name: org.name,
-          type: org.type,
-          memberships: {
-            create: { userId: ivan.id, role: org.role },
-          },
+          phone: IVAN_PHONE,
+          name: IVAN_NAME,
+          passwordHash,
         },
       });
-      for (const loc of org.locations) {
-        await tx.businessLocation.create({
+
+      for (const org of ORGANIZATIONS) {
+        const organization = await tx.organization.create({
           data: {
-            organizationId: organization.id,
-            name: loc.name,
-            address: loc.address,
-            city: loc.city,
+            name: org.name,
+            type: org.type,
+            memberships: {
+              create: { userId: ivan.id, role: org.role },
+            },
           },
         });
+        for (const loc of org.locations) {
+          await tx.businessLocation.create({
+            data: {
+              organizationId: organization.id,
+              name: loc.name,
+              address: loc.address,
+              city: loc.city,
+            },
+          });
+        }
       }
-    }
-  });
+    },
+    // Neon: холодный старт compute — щедрый таймаут.
+    { timeout: 120_000, maxWait: 20_000 },
+  );
 
   process.stdout.write(
     'Seed: Иван Петров создан — 4 организации, 4 точки, пароль qwerty123\n',
@@ -147,51 +162,55 @@ async function seedCatalog(): Promise<void> {
   const sellers = await prisma.organization.findMany();
   const orgByName = new Map(sellers.map((org) => [org.name, org.id]));
 
-  await prisma.$transaction(async (tx) => {
-    const categoryIds = new Map<string, string>();
-    for (const category of SEED_CATEGORIES) {
-      const created = await tx.category.create({
-        data: {
-          slug: category.slug,
-          name: category.name,
-          icon: category.icon,
-          sortOrder: category.sortOrder,
-        },
-      });
-      categoryIds.set(category.slug, created.id);
-    }
-
-    for (const product of SEED_PRODUCTS) {
-      const created = await tx.product.create({
-        data: {
-          categoryId: categoryIds.get(product.category) as string,
-          name: product.name,
-          unit: product.unit,
-          description: product.description,
-          images: JSON.stringify(product.images),
-        },
-      });
-      for (const offer of product.offers) {
-        const organizationId = orgByName.get(offer.organization);
-        if (!organizationId) {
-          throw new Error(
-            `Seed: организация «${offer.organization}» не найдена`,
-          );
-        }
-        await tx.productOffer.create({
+  await prisma.$transaction(
+    async (tx) => {
+      const categoryIds = new Map<string, string>();
+      for (const category of SEED_CATEGORIES) {
+        const created = await tx.category.create({
           data: {
-            productId: created.id,
-            organizationId,
-            priceKopecks: offer.priceKopecks,
-            stock: offer.stock,
-            minQuantity: offer.minQuantity,
-            badge: offer.badge,
-            isPerishable: offer.isPerishable,
+            slug: category.slug,
+            name: category.name,
+            icon: category.icon,
+            sortOrder: category.sortOrder,
           },
         });
+        categoryIds.set(category.slug, created.id);
       }
-    }
-  });
+
+      for (const product of SEED_PRODUCTS) {
+        const created = await tx.product.create({
+          data: {
+            categoryId: categoryIds.get(product.category) as string,
+            name: product.name,
+            unit: product.unit,
+            description: product.description,
+            images: JSON.stringify(product.images),
+          },
+        });
+        for (const offer of product.offers) {
+          const organizationId = orgByName.get(offer.organization);
+          if (!organizationId) {
+            throw new Error(
+              `Seed: организация «${offer.organization}» не найдена`,
+            );
+          }
+          await tx.productOffer.create({
+            data: {
+              productId: created.id,
+              organizationId,
+              priceKopecks: offer.priceKopecks,
+              stock: offer.stock,
+              minQuantity: offer.minQuantity,
+              badge: offer.badge,
+              isPerishable: offer.isPerishable,
+            },
+          });
+        }
+      }
+    },
+    // 90 предложений подряд — одна транзакция с запасом на сеть.
+    { timeout: 180_000, maxWait: 20_000 },
+  );
 
   const products = await prisma.product.count();
   const offers = await prisma.productOffer.count();

@@ -152,4 +152,23 @@ describe('Каталог (e2e)', () => {
     expect(res.status).toBe(404);
     expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
   });
+
+  it('limit — алиас pageSize (Промт 9): ограничивает выдачу', async () => {
+    const res = await request(testApp.server)
+      .get('/api/catalog/products')
+      .query({ limit: 5 });
+    expect(res.status).toBe(200);
+    // В фикстуре 2 товара — limit=5 отдаёт их все, но pageSize
+    // отражает запрошенный limit (алиас пробрасывается в пагинацию).
+    expect(res.body.pageSize).toBe(5);
+    expect(res.body.items.length).toBeLessThanOrEqual(5);
+
+    const one = await request(testApp.server)
+      .get('/api/catalog/products')
+      .query({ limit: 1 });
+    expect(one.status).toBe(200);
+    expect(one.body.items).toHaveLength(1);
+    expect(one.body.pageSize).toBe(1);
+    expect(one.body.hasMore).toBe(true);
+  });
 });
