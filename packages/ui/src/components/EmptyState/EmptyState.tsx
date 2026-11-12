@@ -24,13 +24,23 @@ export interface EmptyStateProps {
   action?: EmptyStateAction;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
+  testID?: string;
 }
 
-export function EmptyState({ icon: Icon, title, description, action, style, children }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+  style,
+  children,
+  testID,
+}: EmptyStateProps) {
   const { colors, spacing } = useTheme();
 
   return (
     <View
+      testID={testID}
       style={[
         {
           alignItems: 'center',

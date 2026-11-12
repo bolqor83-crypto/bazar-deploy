@@ -43,6 +43,7 @@ export interface ButtonProps {
   disabled?: boolean;
   onPress?: () => void;
   children?: ReactNode;
+  testID?: string;
 }
 
 /** Одна пульсирующая точка индикатора загрузки. */
@@ -95,6 +96,7 @@ export function Button({
   disabled = false,
   onPress,
   children,
+  testID,
 }: ButtonProps) {
   const { colors, radii } = useTheme();
   const sizeToken = SIZES[size];
@@ -130,6 +132,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled, busy: loading }}
+      testID={testID}
       disabled={disabled || loading}
       hitSlop={size === 'sm' ? HIT_SLOP : undefined}
       onPress={handlePress}

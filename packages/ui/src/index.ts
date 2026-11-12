@@ -9,6 +9,7 @@ export {
   colorsLight,
   durations,
   easings,
+  PLACEHOLDER_TONES,
   radii,
   shadowsDark,
   shadowsLight,
@@ -21,6 +22,7 @@ export {
   hapticWarning,
   hapticError,
   hapticSelection,
+  placeholderTone,
   shadowStyle,
   __resetHapticThrottleForTests,
 } from './tokens';
@@ -29,6 +31,7 @@ export type {
   ColorToken,
   DurationToken,
   FontWeight,
+  PlaceholderTone,
   RadiusToken,
   ShadowLevel,
   ShadowToken,
@@ -169,3 +172,38 @@ export type {
   DeliveryCardProps,
   DeliveryMethod,
 } from './components/DeliveryCard';
+
+// Промт 8: компоненты каталога
+export { SearchBar } from './components/SearchBar';
+export type { SearchBarProps } from './components/SearchBar';
+
+export { CategoryChip } from './components/CategoryChip';
+export type { CategoryChipProps } from './components/CategoryChip';
+
+export { FilterChip } from './components/FilterChip';
+export type { FilterChipProps } from './components/FilterChip';
+
+export { PriceRangeInput } from './components/PriceRangeInput';
+export type { PriceRangeInputProps } from './components/PriceRangeInput';
+
+export { ProductGallery } from './components/ProductGallery';
+export type { ProductGalleryProps } from './components/ProductGallery';
+
+export { SectionHeader } from './components/SectionHeader';
+export type { SectionHeaderProps } from './components/SectionHeader';
+
+export { EmptyCatalogState } from './components/EmptyCatalogState';
+export type { EmptyCatalogStateProps } from './components/EmptyCatalogState';
+
+export { SortPicker, SORT_OPTIONS } from './components/SortPicker';
+export type { SortPickerProps, SortValue } from './components/SortPicker';
+
+export {
+  ProductDetailCard,
+  stockLevelFor,
+  unitShort,
+} from './components/ProductDetailCard';
+export type {
+  ProductDetailCardProps,
+  DetailOffer,
+} from './components/ProductDetailCard';

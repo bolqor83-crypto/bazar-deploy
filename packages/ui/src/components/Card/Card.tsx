@@ -21,6 +21,7 @@ export interface CardProps {
   selected?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
+  testID?: string;
 }
 
 export function Card({
@@ -29,6 +30,7 @@ export function Card({
   selected = false,
   style,
   children,
+  testID,
 }: CardProps) {
   const { colors, radii, spacing, isDark } = useTheme();
 
@@ -55,6 +57,7 @@ export function Card({
       <Pressable
         accessibilityRole="button"
         accessibilityState={selected ? { selected: true } : undefined}
+        testID={testID}
         onPress={() => {
           hapticTap();
           onPress();
@@ -66,5 +69,9 @@ export function Card({
     );
   }
 
-  return <View style={cardStyle}>{children}</View>;
+  return (
+    <View testID={testID} style={cardStyle}>
+      {children}
+    </View>
+  );
 }
