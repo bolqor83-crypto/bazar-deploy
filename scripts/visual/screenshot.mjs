@@ -129,6 +129,77 @@ async function openContextSheet(page) {
   await page.waitForTimeout(600);
 }
 
+/** Телефон демо-аккаунта в формате хранения (E.164 без пробелов). */
+const DEMO_PHONE_RAW = '+79001234567';
+
+/** POST /auth/login из Node — токен для подготовки состояния. */
+async function apiLogin() {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: DEMO_PHONE_RAW, password: DEMO_PASSWORD }),
+  });
+  if (!res.ok) {
+    throw new Error(`apiLogin: ${res.status} ${await res.text()}`);
+  }
+  const body = await res.json();
+  return body.accessToken;
+}
+
+/** Первое предложение первого товара каталога (стабильный выбор seed). */
+async function firstOffer(token) {
+  const auth = { Authorization: `Bearer ${token}` };
+  const productsRes = await fetch(
+    `${BASE_URL}/api/catalog/products?pageSize=1`,
+    { headers: auth },
+  );
+  if (!productsRes.ok) {
+    throw new Error(`products: ${productsRes.status}`);
+  }
+  const products = await productsRes.json();
+  const product = products.items[0];
+  const offersRes = await fetch(
+    `${BASE_URL}/api/catalog/products/${product.id}/offers`,
+    { headers: auth },
+  );
+  if (!offersRes.ok) {
+    throw new Error(`offers: ${offersRes.status}`);
+  }
+  const offers = await offersRes.json();
+  return offers.items[0];
+}
+
+/**
+ * Детерминированное состояние корзины Ивана (Промт 9, Часть C):
+ * очистить и положить ровно одну позицию — первого товара каталога
+ * ×2 (или minQuantity). Корзина участвует в golden трёх экранов
+ * (cart, checkout) и в badge таб-бара на всех экранах покупателя —
+ * без сброса каждый прогон CI наследовал бы состояние прошлого.
+ */
+async function resetDemoCart(token, offer) {
+  const auth = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+  const clear = await fetch(`${BASE_URL}/api/cart`, {
+    method: 'DELETE',
+    headers: auth,
+  });
+  if (!clear.ok) {
+    throw new Error(`clear cart: ${clear.status}`);
+  }
+  const quantity = Math.max(2, offer.minQuantity ?? 1);
+  const add = await fetch(`${BASE_URL}/api/cart/items`, {
+    method: 'POST',
+    headers: auth,
+    body: JSON.stringify({ offerId: offer.id, quantity }),
+  });
+  if (!add.ok) {
+    throw new Error(`add item: ${add.status} ${await add.text()}`);
+  }
+  return quantity;
+}
+
 /**
  * Снять набор записей манифеста. Возвращает Map<name, Buffer PNG>.
  * Группировка: guest-контекст и user-контекст (один логин на всех).
@@ -156,6 +227,19 @@ export async function captureSet(entries) {
     // --- Экраны пользователя: один логин, переключение ролей. ---
     const userEntries = entries.filter((e) => e.authState === 'user');
     if (userEntries.length > 0) {
+      // Детерминированная корзина Ивана до съёмки: 1 позиция
+      // (влияет на cart/checkout golden и badge таб-бара).
+      try {
+        const token = await apiLogin();
+        const offer = await firstOffer(token);
+        const quantity = await resetDemoCart(token, offer);
+        console.log(
+          `подготовка: корзина Ивана = 1 позиция × ${quantity} (${offer.id})`,
+        );
+      } catch (e) {
+        console.warn(`подготовка корзины не удалась: ${e.message}`);
+      }
+
       const userContext = await browser.newContext({
         deviceScaleFactor: 2,
         isMobile: true,
@@ -191,6 +275,37 @@ export async function captureSet(entries) {
         }
         if (entry.openContextSheet) {
           await openContextSheet(page);
+        }
+        if (entry.openFirstOrder) {
+          // Открыть первый заказ из списка: карточки order-card-<i>.
+          // Клик надёжен не везде (медленный CI: гидратация React
+          // опаздывает за появлением DOM) — до 3 попыток, успех
+          // контролируем сменой URL на /orders/<id>.
+          await page
+            .waitForSelector('[data-testid^="order-card-"]', {
+              timeout: 15_000,
+            })
+            .catch(() => {});
+          let opened = false;
+          for (let attempt = 0; attempt < 3 && !opened; attempt += 1) {
+            await page
+              .locator('[data-testid^="order-card-"]')
+              .first()
+              .click({ timeout: 5000 })
+              .catch(() => {});
+            try {
+              await page.waitForURL(/\/orders\/[^/]+/, { timeout: 8000 });
+              opened = true;
+            } catch {
+              await page.waitForTimeout(1500);
+            }
+          }
+          await page
+            .waitForSelector('[data-testid="order-timeline"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
         }
         await applyMasks(page);
         shots.set(entry.name, await page.screenshot({ fullPage: false }));
