@@ -23,7 +23,13 @@ import {
 const DIFF_DIR = path.resolve('download/pixelmatch-diff');
 
 async function main() {
-  const manifest = readManifest();
+  let manifest = readManifest();
+  // VISUAL_ONLY=name1,name2 — фильтр записей (самотест ускоряется
+  // с ~15 минут до секунд: сравнивается только затронутый экран).
+  if (process.env.VISUAL_ONLY) {
+    const wanted = new Set(String(process.env.VISUAL_ONLY).split(','));
+    manifest = manifest.filter((e) => wanted.has(e.name));
+  }
   fs.mkdirSync(DIFF_DIR, { recursive: true });
 
   let passed = 0;

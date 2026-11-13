@@ -11,6 +11,10 @@
  * 2. Заметный блок 100x100 (0.76% > 0.5%) — check ПАДАЕТ (exit 1).
  * 3. Восстановление golden — check проходит (exit 0).
  *
+ * Каждый запуск чека фильтруется через VISUAL_ONLY=login-light-390:
+ * самотест проверяет границы tolerance за секунды, а не за 3 полных
+ * прохода по всем 22 экранам.
+ *
  * Запуск: node scripts/pixelmatch-selftest.mjs (сервер :3000 поднят).
  */
 import fs from 'node:fs';
@@ -24,7 +28,10 @@ const backup = fs.readFileSync(abs);
 
 function runCheck() {
   try {
-    execSync('node scripts/pixelmatch-check.mjs', { stdio: 'pipe' });
+    execSync('node scripts/pixelmatch-check.mjs', {
+      stdio: 'pipe',
+      env: { ...process.env, VISUAL_ONLY: 'login-light-390' },
+    });
     return 0;
   } catch (e) {
     return e.status ?? 1;

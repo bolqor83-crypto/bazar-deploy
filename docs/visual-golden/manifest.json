@@ -119,6 +119,57 @@
     "waitForText": "Профиль"
   },
   {
+    "name": "cart-light-390",
+    "file": "cart-light-390.png",
+    "url": "/customer/cart",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Оформить заказ"
+  },
+  {
+    "name": "cart-dark-390",
+    "file": "cart-dark-390.png",
+    "url": "/customer/cart",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Оформить заказ"
+  },
+  {
+    "name": "checkout-light-390",
+    "file": "checkout-light-390.png",
+    "url": "/customer/cart/checkout",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Оформление заказа"
+  },
+  {
+    "name": "orders-light-390",
+    "file": "orders-light-390.png",
+    "url": "/customer/orders",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Заказы"
+  },
+  {
+    "name": "order-detail-light-390",
+    "file": "order-detail-light-390.png",
+    "url": "/customer/orders",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Заказы",
+    "openFirstOrder": true
+  },
+  {
     "name": "context-sheet-light-390",
     "file": "context-sheet-light-390.png",
     "url": "/customer/catalog",
