@@ -3,7 +3,8 @@
  * содержит осмысленный EmptyState и корректный заголовок.
  */
 import { render } from '@testing-library/react-native';
-import type { ComponentType } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ComponentType, ReactNode } from 'react';
 import type { ActiveContext } from '@bazar/types';
 import { customerContext, mockMemberships } from '../mocks/context';
 import { useContextStore } from '../stores/contextStore';
@@ -39,6 +40,16 @@ import CarrierProfileScreen from '../app/(tabs)/carrier/profile';
 
 type ScreenModule = ComponentType;
 type Row = [string, ScreenModule, string, string, ActiveContext];
+
+/** Рендер с провайдером запросов (RoleScreen → useCartBadge). */
+function renderWithQuery(ui: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  );
+}
 
 const CUSTOMER: ActiveContext = { ...customerContext };
 const STORE: ActiveContext = {
@@ -245,7 +256,7 @@ describe('Экраны-заглушки', () => {
     '%s: рендерится с заголовком и EmptyState',
     async (_route, Screen, title, emptyTitle, active) => {
       useContextStore.setState({ active, memberships: mockMemberships });
-      const screen = await render(<Screen />);
+      const screen = await renderWithQuery(<Screen />);
       // Заголовок есть и в шапке, и в подписи вкладки таб-бара
       expect(screen.getAllByText(title).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(emptyTitle)).toBeTruthy();
@@ -253,13 +264,13 @@ describe('Экраны-заглушки', () => {
   );
 
   it('заглушки не используют текст «Нет данных»', async () => {
-    const screen = await render(<FavoritesScreen />);
+    const screen = await renderWithQuery(<FavoritesScreen />);
     expect(screen.queryByText('Нет данных')).toBeNull();
   });
 
   it('экран «Закупка» содержит действие «Создать закупку»', async () => {
     useContextStore.setState({ active: STORE, memberships: mockMemberships });
-    const screen = await render(<PurchaseScreen />);
+    const screen = await renderWithQuery(<PurchaseScreen />);
     expect(
       screen.getByRole('button', { name: 'Создать закупку' }),
     ).toBeTruthy();

@@ -6,7 +6,7 @@
  * содержит новое состояние корзины).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CartView } from '@bazar/types';
+import type { CartView, Role } from '@bazar/types';
 import {
   addCartItem,
   clearCart,
@@ -14,6 +14,7 @@ import {
   removeCartItem,
   updateCartItem,
 } from '../services/api/cartApi';
+import { useAuthStore } from '../stores/authStore';
 import { useContextStore } from '../stores/contextStore';
 
 /** Ключ кэша корзины активного контура. */
@@ -94,4 +95,29 @@ export function useClearCart() {
       client.setQueryData(['cart', organizationId], cart);
     },
   });
+}
+
+/**
+ * Количество позиций корзины для badge таб-бара (Часть D).
+ *
+ * Включается только для аутентифицированного покупателя: без
+ * токена запрос не отправляется (экраны гостя и тесты сторов
+ * без сессии не дают фоновых 401). Badge — производное состояние:
+ * ошибки загрузки молча игнорируются (retry: false), при пустой
+ * или недоступной корзине индикатор просто не показывается.
+ */
+export function useCartBadge(role: Role): number {
+  const organizationId = useContextStore(
+    (state) => state.active.organizationId,
+  );
+  const token = useAuthStore((state) => state.token);
+  const enabled = role === 'customer' && token !== null;
+  const cart = useQuery({
+    queryKey: ['cart', organizationId],
+    queryFn: fetchCart,
+    enabled,
+    retry: false,
+    staleTime: 15_000,
+  });
+  return enabled && cart.data ? cart.data.items.length : 0;
 }

@@ -70,15 +70,15 @@ export default function CartScreen({ basePath }: CartScreenProps) {
         gap: spacing.xs,
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Text variant="h2">Корзина</Text>
-        {items.length > 0 ? (
+      {items.length > 0 ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            minHeight: 40,
+          }}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -87,8 +87,8 @@ export default function CartScreen({ basePath }: CartScreenProps) {
           >
             Очистить
           </Button>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
       {cart && cart.warnings.length > 0 ? (
         <Text variant="caption" color="textSecondary">
           {cart.warnings.length === 1 && cart.warnings[0]

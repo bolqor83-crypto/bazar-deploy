@@ -27,6 +27,8 @@ import CartScreen from '../components/screens/CartScreen';
 import CheckoutScreen from '../components/screens/CheckoutScreen';
 import OrdersScreen from '../components/screens/OrdersScreen';
 import OrderDetailScreen from '../components/screens/OrderDetailScreen';
+import CustomerCartRoute from '../app/(tabs)/customer/cart';
+import { useAuthStore } from '../stores/authStore';
 
 jest.mock('../services/api/cartApi');
 jest.mock('../services/api/orderApi');
@@ -303,5 +305,57 @@ describe('OrderDetailScreen', () => {
     await waitFor(() =>
       expect(screen.getByText('Заказ не загрузился')).toBeTruthy(),
     );
+  });
+});
+
+describe('Оболочка корзины (RoleScreen + badge таб-бара)', () => {
+  it('экран корзины покупателя: шапка, таб-бар, badge позиций', async () => {
+    useAuthStore.setState({
+      state: 'authenticated',
+      user: {
+        id: 'u1',
+        phone: '+79001234567',
+        name: 'Иван',
+        createdAt: '2026-11-01T00:00:00Z',
+        memberships: [],
+      },
+      token: 'test-token',
+      error: null,
+    });
+    fetchCartMock.mockResolvedValue(fullCart);
+    const screen = await renderWithQuery(<CustomerCartRoute />);
+    // Заголовок шапки + подсвеченная вкладка «Корзина»
+    await waitFor(() =>
+      expect(screen.getAllByText('Корзина').length).toBeGreaterThanOrEqual(2),
+    );
+    // Badge таб-бара — количество позиций корзины (1 позиция)
+    await waitFor(() => expect(screen.getByText('1')).toBeTruthy());
+    // Таб-бар покупателя: Каталог, Заказы, Корзина, Избранное, Профиль
+    expect(screen.getByText('Каталог')).toBeTruthy();
+    expect(screen.getByText('Заказы')).toBeTruthy();
+    expect(screen.getByText('Избранное')).toBeTruthy();
+    expect(screen.getByText('Профиль')).toBeTruthy();
+    useAuthStore.setState({ state: 'unknown', user: null, token: null });
+  });
+
+  it('пустая корзина: badge в таб-баре не показывается', async () => {
+    useAuthStore.setState({
+      state: 'authenticated',
+      user: {
+        id: 'u1',
+        phone: '+79001234567',
+        name: 'Иван',
+        createdAt: '2026-11-01T00:00:00Z',
+        memberships: [],
+      },
+      token: 'test-token',
+      error: null,
+    });
+    fetchCartMock.mockResolvedValue({ items: [], subtotal: 0, warnings: [] });
+    const screen = await renderWithQuery(<CustomerCartRoute />);
+    await waitFor(() => expect(screen.getByText('Корзина пуста')).toBeTruthy());
+    // Позиций нет — отдельного badge-числа в таб-баре нет
+    expect(screen.queryByText('1')).toBeNull();
+    useAuthStore.setState({ state: 'unknown', user: null, token: null });
   });
 });

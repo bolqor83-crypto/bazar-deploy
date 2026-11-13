@@ -15,7 +15,6 @@ import {
   FilterChip,
   OrderCard,
   Skeleton,
-  Text,
   useTheme,
 } from '@bazar/ui';
 import { useOrders } from '../../hooks/useOrders';
@@ -67,12 +66,11 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
     <View
       style={{
         paddingHorizontal: spacing.lg,
-        paddingTop: spacing.lg,
+        paddingTop: spacing.md,
         paddingBottom: spacing.sm,
         gap: spacing.sm,
       }}
     >
-      <Text variant="h2">Заказы</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
