@@ -215,6 +215,8 @@ export default function CheckoutScreen({ basePath }: CheckoutScreenProps) {
           paddingBottom: 140,
         }}
       >
+        {/* Шапка подэкрана: назад + заголовок (как в карточке заказа). */}
+        {header}
         {/* Сводка корзины: компактно. */}
         <Card>
           <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>

@@ -15,7 +15,12 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { AlertCircle, CheckCircle2, Info, type LucideIcon } from 'lucide-react-native';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Info,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { durations, hapticError, hapticSuccess, springs } from '../../tokens';
 import { Text } from '../Text';
@@ -60,7 +65,11 @@ function ToastCard({ onDismiss }: { onDismiss: () => void }) {
   };
 
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0 }} pointerEvents="box-none">
+    <View
+      testID="toast"
+      style={{ position: 'absolute', top: 0, left: 0, right: 0 }}
+      pointerEvents="box-none"
+    >
       <Animated.View style={animatedStyle} pointerEvents="auto">
         <Animated.View
           style={[
@@ -104,7 +113,12 @@ function ToastContent({ onDismiss }: { onDismiss: () => void }) {
       accessibilityRole="alert"
       accessibilityLabel={`Уведомление: ${toast.message}`}
       onPress={onDismiss}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        flex: 1,
+      }}
     >
       <Icon size={22} color={iconColor} />
       <Text variant="bodySmall" style={{ flex: 1 }}>
