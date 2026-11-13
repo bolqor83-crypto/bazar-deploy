@@ -36,7 +36,14 @@ export interface OrderItem {
 /** Событие жизненного цикла заказа. */
 export interface OrderEvent {
   id: string;
-  type: 'CREATED' | 'CONFIRMED' | 'CANCELLED' | 'STATUS_CHANGED';
+  type:
+    | 'CREATED'
+    | 'CONFIRMED'
+    | 'PREPARING'
+    | 'READY'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | 'STATUS_CHANGED';
   createdAt: string;
 }
 
@@ -73,3 +80,27 @@ export interface CreateOrderInput {
   comment?: string;
   deliveryMethod: OrderDeliveryMethod;
 }
+
+/** Заказ в кабинете продавца: заказ + карточка покупателя. */
+export interface SellerOrder extends Order {
+  buyer: { id: string; name: string; phone: string };
+}
+
+/** Страница списка заказов продавца. */
+export interface SellerOrderList {
+  items: SellerOrder[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+/** Действия продавца по заказу (Промт 10, Часть C). */
+export const SELLER_ORDER_ACTIONS = [
+  'confirm',
+  'preparing',
+  'ready',
+  'complete',
+  'cancel',
+] as const;
+export type SellerOrderAction = (typeof SELLER_ORDER_ACTIONS)[number];

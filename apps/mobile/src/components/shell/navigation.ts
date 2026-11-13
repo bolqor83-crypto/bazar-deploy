@@ -11,6 +11,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import {
   Banknote,
   BarChart3,
+  Bell,
   ClipboardList,
   Ellipsis,
   Heart,
@@ -138,6 +139,12 @@ const wholesaleNav: RoleNavConfig = {
     { key: MORE_KEY, label: 'Ещё', icon: Ellipsis },
   ],
   more: [
+    {
+      key: 'notifications',
+      label: 'Уведомления',
+      icon: Bell,
+      route: '/wholesale/notifications',
+    },
     {
       key: 'requests',
       label: 'Запросы',

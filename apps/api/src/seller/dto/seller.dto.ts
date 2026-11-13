@@ -11,6 +11,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -137,4 +138,32 @@ export class UpdateOfferDto {
   @IsArray()
   @IsString({ each: true })
   images?: string[];
+}
+
+/** Фильтр списка заказов продавца (Промт 10, Часть C):
+ *  статусы через запятую (CONFIRMED,PREPARING), поиск по номеру/имени. */
+export class ListSellerOrdersQueryDto {
+  /** Статусы через запятую: ?status=CONFIRMED,PREPARING */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  pageSize?: number;
 }

@@ -55,8 +55,11 @@ export interface OrderCardProps {
   itemCount: number;
   /** Итог заказа, копейки. */
   totalKopecks: number;
-  /** Продавец. */
+  /** Продавец (вид покупателя). */
   sellerName?: string;
+  /** Контрагент вместо продавца: имя покупателя в кабинете
+   *  продавца (Промт 10, Часть C). Приоритетнее sellerName. */
+  partyName?: string;
   /** Переход к деталям. */
   onPress: () => void;
   testID?: string;
@@ -69,11 +72,13 @@ export function OrderCard({
   itemCount,
   totalKopecks,
   sellerName,
+  partyName,
   onPress,
   testID,
 }: OrderCardProps) {
   const { colors, spacing, radii } = useTheme();
   const previewCount = Math.min(3, itemCount);
+  const party = partyName ?? sellerName;
 
   return (
     <Pressable
@@ -105,7 +110,7 @@ export function OrderCard({
           </Text>
           <Text variant="caption" color="textSecondary">
             {formatDate(createdAt)}
-            {sellerName ? ` · ${sellerName}` : ''}
+            {party ? ` · ${party}` : ''}
           </Text>
         </View>
         <OrderStatus status={STATUS_MAP[status]} />

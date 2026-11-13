@@ -5,6 +5,7 @@
  * организации из X-Organization-Id).
  */
 import {
+  BadRequestException,
   Body,
   Controller,
   DefaultValuePipe,
@@ -22,12 +23,15 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { SellerService } from './seller.service';
+import { SellerOrderService } from './seller-order.service';
+import type { SellerAction } from './seller-order.service';
 import {
   CurrentSeller,
   SellerMembershipGuard,
   type SellerContext,
 } from './guards/seller-membership.guard';
 import {
+  ListSellerOrdersQueryDto,
   OfferDto,
   ProductDto,
   UpdateOfferDto,
@@ -39,7 +43,10 @@ import {
 @UseGuards(SellerMembershipGuard)
 @Controller('seller')
 export class SellerController {
-  constructor(private readonly seller: SellerService) {}
+  constructor(
+    private readonly seller: SellerService,
+    private readonly sellerOrders: SellerOrderService,
+  ) {}
 
   // -------------------------------------------------------------------
   // Products
@@ -143,5 +150,59 @@ export class SellerController {
   @ApiOperation({ summary: 'Удалить или архивировать предложение' })
   deleteOffer(@CurrentSeller() seller: SellerContext, @Param('id') id: string) {
     return this.seller.deleteOffer(seller, id);
+  }
+
+  // -------------------------------------------------------------------
+  // Orders (Промт 10, Часть C)
+  // -------------------------------------------------------------------
+
+  @Get('orders')
+  @Throttle({ default: { limit: 100, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Заказы организации: статусы через запятую, поиск, пагинация',
+  })
+  listOrders(
+    @CurrentSeller() seller: SellerContext,
+    @Query() query: ListSellerOrdersQueryDto,
+  ) {
+    const statuses = (query.status ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    return this.sellerOrders.list(seller, {
+      statuses,
+      search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+  }
+
+  @Get('orders/:id')
+  @Throttle({ default: { limit: 100, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Детали заказа с покупателем и событиями' })
+  getOrder(@CurrentSeller() seller: SellerContext, @Param('id') id: string) {
+    return this.sellerOrders.detail(seller, id);
+  }
+
+  /** Единый маршрут действий: /seller/orders/:id/confirm и т.д. */
+  @Post('orders/:id/:action')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Действие по заказу: confirm/preparing/ready/complete/cancel',
+  })
+  orderAction(
+    @CurrentSeller() seller: SellerContext,
+    @Param('id') id: string,
+    @Param('action') action: string,
+  ) {
+    const allowed = ['confirm', 'preparing', 'ready', 'complete', 'cancel'];
+    if (!allowed.includes(action)) {
+      throw new BadRequestException({
+        code: 'UNKNOWN_ACTION',
+        message: 'Неизвестное действие',
+      });
+    }
+    return this.sellerOrders.act(seller, id, action as SellerAction);
   }
 }

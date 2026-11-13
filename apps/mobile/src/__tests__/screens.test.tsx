@@ -25,7 +25,8 @@ import StoreSettingsScreen from '../app/(tabs)/store/settings';
 import OverviewScreen from '../app/(tabs)/wholesale/overview';
 // wholesale/products — рабочий экран кабинета продавца (Промт 10):
 // его тесты в seller-screens.test.tsx.
-import WholesaleOrdersScreen from '../app/(tabs)/wholesale/orders';
+// wholesale/orders — рабочий экран заказов продавца (Часть C):
+// его тесты в seller-orders.test.tsx.
 import RequestsScreen from '../app/(tabs)/wholesale/requests';
 import ClientsScreen from '../app/(tabs)/wholesale/clients';
 import WholesaleFinanceScreen from '../app/(tabs)/wholesale/finance';
@@ -38,6 +39,15 @@ import MyRequestsScreen from '../app/(tabs)/carrier/my-requests';
 import InTransitScreen from '../app/(tabs)/carrier/in-transit';
 import HistoryScreen from '../app/(tabs)/carrier/history';
 import CarrierProfileScreen from '../app/(tabs)/carrier/profile';
+
+// Профиль покупателя тянет счётчик уведомлений (Часть C) — мокаем,
+// чтобы смоук-тесты не зависели от сети.
+jest.mock('../services/api/notificationApi', () => ({
+  fetchNotifications: jest.fn(),
+  fetchUnreadCount: jest.fn().mockResolvedValue(0),
+  markNotificationRead: jest.fn(),
+  markAllNotificationsRead: jest.fn(),
+}));
 
 type ScreenModule = ComponentType;
 type Row = [string, ScreenModule, string, string, ActiveContext];
@@ -148,13 +158,6 @@ const SCREENS: readonly Row[] = [
     OverviewScreen,
     'Обзор',
     'Показатели соберутся с первыми заказами',
-    WHOLESALE,
-  ],
-  [
-    'wholesale/orders',
-    WholesaleOrdersScreen,
-    'Заказы',
-    'Заказов пока нет',
     WHOLESALE,
   ],
   [

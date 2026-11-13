@@ -14,6 +14,7 @@
  * Кабинет продавца (SellerProduct, SellerOffer) — в seller.ts,
  * см. ADR 0011 (Промт 10).
  * Доставки (Delivery, DeliveryEvent) — в delivery.ts, см. ADR 0011.
+ * Уведомления (Notification) — в notification.ts, см. ADR 0011.
  */
 export * from './context';
 export * from './auth';
@@ -23,3 +24,4 @@ export * from './cart';
 export * from './order';
 export * from './seller';
 export * from './delivery';
+export * from './notification';

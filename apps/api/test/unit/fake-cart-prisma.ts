@@ -50,6 +50,7 @@ export interface FakeOrder {
   createdAt: Date;
   updatedAt: Date;
   seller: { id: string; name: string };
+  buyer?: { id: string; name: string; phone: string };
   items: {
     id: string;
     orderId: string;
@@ -70,6 +71,19 @@ export interface FakeOrder {
   }[];
 }
 
+/** Уведомление (Промт 10, Часть C). */
+export interface FakeNotification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  payload: string | null;
+  orderId: string | null;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
 export class FakeCartPrisma {
   readonly offers = new Map<string, FakeOffer>();
   readonly carts = new Map<string, FakeCart>();
@@ -78,8 +92,14 @@ export class FakeCartPrisma {
   readonly orderCounters = new Map<number, { year: number; seq: number }>();
   readonly memberships = new Map<
     string,
-    { userId: string; organizationId: string }
+    { userId: string; organizationId: string; role?: string }
   >();
+  readonly users = new Map<
+    string,
+    { id: string; name: string; phone: string }
+  >();
+  /** Уведомления — массив: порядок создания важен для проверок. */
+  readonly notifications: FakeNotification[] = [];
 
   private counter = 0;
   nextId(prefix: string): string {
@@ -321,13 +341,36 @@ export class FakeCartPrisma {
     },
     findUnique: async ({ where }: { where: { id: string } }) =>
       this.orders.get(where.id) ?? null,
+    findFirst: async ({
+      where,
+      include,
+    }: {
+      where: { id?: string; sellerId?: string };
+      include?: unknown;
+    }) => {
+      void include;
+      for (const order of this.orders.values()) {
+        if (where.id && order.id !== where.id) continue;
+        if (where.sellerId && order.sellerId !== where.sellerId) continue;
+        return order;
+      }
+      return null;
+    },
     findMany: async ({
       where,
       orderBy,
       skip,
       take,
     }: {
-      where?: { buyerId?: string; status?: string };
+      where?: {
+        buyerId?: string;
+        sellerId?: string;
+        status?: string | { in: string[] };
+        OR?: {
+          number?: { contains: string; mode?: string };
+          buyer?: { name?: { contains: string; mode?: string } };
+        }[];
+      };
       orderBy?: unknown;
       skip?: number;
       take?: number;
@@ -336,30 +379,78 @@ export class FakeCartPrisma {
       let rows = [...this.orders.values()];
       if (where?.buyerId)
         rows = rows.filter((o) => o.buyerId === where.buyerId);
-      if (where?.status) rows = rows.filter((o) => o.status === where.status);
+      if (where?.sellerId)
+        rows = rows.filter((o) => o.sellerId === where.sellerId);
+      if (where?.status) {
+        rows =
+          typeof where.status === 'string'
+            ? rows.filter((o) => o.status === where.status)
+            : rows.filter((o) =>
+                (where.status as { in: string[] }).in.includes(o.status),
+              );
+      }
+      if (where?.OR) {
+        const term = where.OR[0]?.number?.contains ?? '';
+        const lower = term.toLowerCase();
+        rows = rows.filter(
+          (o) =>
+            o.number.toLowerCase().includes(lower) ||
+            (o.buyer?.name ?? '').toLowerCase().includes(lower),
+        );
+      }
+      rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       return rows.slice(skip ?? 0, (skip ?? 0) + (take ?? rows.length));
     },
     count: async ({
       where,
     }: {
-      where?: { buyerId?: string; status?: string };
+      where?: {
+        buyerId?: string;
+        sellerId?: string;
+        status?: string | { in: string[] };
+        OR?: {
+          number?: { contains: string; mode?: string };
+          buyer?: { name?: { contains: string; mode?: string } };
+        }[];
+      };
     }) => {
       let rows = [...this.orders.values()];
       if (where?.buyerId)
         rows = rows.filter((o) => o.buyerId === where.buyerId);
-      if (where?.status) rows = rows.filter((o) => o.status === where.status);
+      if (where?.sellerId)
+        rows = rows.filter((o) => o.sellerId === where.sellerId);
+      if (where?.status) {
+        rows =
+          typeof where.status === 'string'
+            ? rows.filter((o) => o.status === where.status)
+            : rows.filter((o) =>
+                (where.status as { in: string[] }).in.includes(o.status),
+              );
+      }
+      if (where?.OR) {
+        const term = where.OR[0]?.number?.contains ?? '';
+        const lower = term.toLowerCase();
+        rows = rows.filter(
+          (o) =>
+            o.number.toLowerCase().includes(lower) ||
+            (o.buyer?.name ?? '').toLowerCase().includes(lower),
+        );
+      }
       return rows.length;
     },
     update: async ({
       where,
       data,
+      include,
     }: {
       where: { id: string };
       data: {
         status?: string;
         events?: { create: { type: string; actorId: string; payload: string } };
       };
+      include?: unknown;
     }) => {
+      void include;
       const order = this.orders.get(where.id);
       if (!order) throw new Error('order not found');
       if (data.status) order.status = data.status;
@@ -412,6 +503,44 @@ export class FakeCartPrisma {
       }
       return null;
     },
+    // Промт 10, Часть C: получатели уведомлений продавца.
+    findMany: async ({
+      where,
+    }: {
+      where: { organizationId?: string; role?: string };
+    }) => {
+      const result: { userId: string }[] = [];
+      for (const m of this.memberships.values()) {
+        if (where.organizationId && m.organizationId !== where.organizationId)
+          continue;
+        if (where.role && m.role !== where.role) continue;
+        result.push({ userId: m.userId });
+      }
+      return result;
+    },
+  };
+
+  readonly user = {
+    findUnique: async ({ where }: { where: { id: string } }) =>
+      this.users.get(where.id) ?? null,
+  };
+
+  // Промт 10, Часть C: уведомления (создание внутри транзакций).
+  readonly notification = {
+    createMany: async ({
+      data,
+    }: {
+      data: Omit<FakeNotification, 'id' | 'createdAt'>[];
+    }) => {
+      for (const item of data) {
+        this.notifications.push({
+          id: this.nextId('notif'),
+          createdAt: new Date(),
+          ...item,
+        });
+      }
+      return { count: data.length };
+    },
   };
 
   /** Эмуляция транзакции: снапшот → откат при исключении. */
@@ -427,6 +556,7 @@ export class FakeCartPrisma {
       orders: [...this.orders],
       orderCounters: [...this.orderCounters],
       memberships: [...this.memberships],
+      notifications: this.notifications,
     });
     try {
       return await fn(this);
@@ -448,6 +578,8 @@ export class FakeCartPrisma {
         this.orderCounters.set(y, v);
       }
       restore(this.memberships, snapshot.memberships);
+      this.notifications.length = 0;
+      this.notifications.push(...snapshot.notifications);
       throw error;
     }
   };

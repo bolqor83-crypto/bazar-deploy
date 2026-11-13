@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { notifyOrderEvent, rubles } from '../notifications/notify.helper';
 import type { DeliveryMethod } from './dto/order.dto';
 
 /** Статусы заказа (строки, значения валидируются DTO). */
@@ -171,6 +172,10 @@ export class OrderService {
       },
     });
     const byId = new Map(offers.map((o) => [o.id, o]));
+    const buyer = await this.prisma.user.findUnique({
+      where: { id: input.buyerId },
+      select: { id: true, name: true },
+    });
 
     for (const item of input.items) {
       const offer = byId.get(item.offerId);
@@ -253,6 +258,21 @@ export class OrderService {
               },
             },
             include: includeView,
+          });
+          // Уведомить продавцов организации о новом заказе
+          // (Промт 10, Часть C) — атомарно с созданием.
+          const members = await tx.membership.findMany({
+            where: { organizationId: sellerId, role: 'WHOLESALE_SELLER' },
+            select: { userId: true },
+          });
+          await notifyOrderEvent(tx, {
+            userIds: members.map((m) => m.userId),
+            type: 'NEW_ORDER',
+            title: `Новый заказ ${number}`,
+            body: `Покупатель ${buyer?.name ?? '—'} оформил заказ на ${rubles(subtotal)}.`,
+            orderId: order.id,
+            orderNumber: number,
+            extra: { total: subtotal },
           });
           orders.push(toView(order));
         }
@@ -340,11 +360,14 @@ export class OrderService {
     return toView(order);
   }
 
-  /** Отмена заказа: buyer/seller, только PENDING/CONFIRMED, stock назад. */
+  /** Отмена заказа: buyer/seller, только PENDING/CONFIRMED, stock назад.
+   *
+   * Уведомления (Промт 10, Часть C): отмена покупателем — продавцам
+   * организации, отмена продавцом — покупателю. */
   async cancel(userId: string, orderId: string): Promise<OrderView> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true },
+      include: { items: true, seller: { select: { name: true } } },
     });
     if (!order) {
       throw new NotFoundException({
@@ -379,7 +402,7 @@ export class OrderService {
             data: { stock: { increment: item.quantity } },
           });
         }
-        return tx.order.update({
+        const row = await tx.order.update({
           where: { id: orderId },
           data: {
             status: 'CANCELLED',
@@ -393,6 +416,37 @@ export class OrderService {
           },
           include: includeView,
         });
+        if (isBuyer) {
+          // Покупатель отменил — уведомить продавцов организации.
+          const members = await tx.membership.findMany({
+            where: {
+              organizationId: order.sellerId,
+              role: 'WHOLESALE_SELLER',
+            },
+            select: { userId: true },
+          });
+          await notifyOrderEvent(tx, {
+            userIds: members.map((m) => m.userId),
+            type: 'ORDER_CANCELLED',
+            title: `Заказ ${order.number} отменён покупателем`,
+            body: `Покупатель отменил заказ ${order.number}. Товары вернулись на склад.`,
+            orderId: order.id,
+            orderNumber: order.number,
+            extra: { by: 'buyer' },
+          });
+        } else {
+          // Продавец отменил (через общий маршрут) — уведомить покупателя.
+          await notifyOrderEvent(tx, {
+            userIds: [order.buyerId],
+            type: 'ORDER_CANCELLED',
+            title: `Заказ ${order.number} отменён продавцом`,
+            body: `Продавец ${order.seller.name} отменил заказ ${order.number}. Резерв товаров снят.`,
+            orderId: order.id,
+            orderNumber: order.number,
+            extra: { by: 'seller' },
+          });
+        }
+        return row;
       },
       { timeout: 30_000, maxWait: 10_000 },
     );

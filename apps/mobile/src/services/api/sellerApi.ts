@@ -1,6 +1,6 @@
 /**
  * Клиент кабинета продавца (Промт 10, Часть B/C):
- * /api/seller/products и /api/seller/offers.
+ * /api/seller/products, /api/seller/offers, /api/seller/orders.
  *
  * Заголовок X-Organization-Id — активная организация контекста
  * (guard на сервере проверит membership WHOLESALE_SELLER).
@@ -10,6 +10,9 @@ import type {
   CreateSellerProductInput,
   SellerOffer,
   SellerOfferList,
+  SellerOrder,
+  SellerOrderAction,
+  SellerOrderList,
   SellerProduct,
   UpdateSellerOfferInput,
   UpdateSellerProductInput,
@@ -60,9 +63,7 @@ export async function updateSellerProduct(
 }
 
 /** Архивировать товар (soft-delete). */
-export async function archiveSellerProduct(
-  id: string,
-): Promise<SellerProduct> {
+export async function archiveSellerProduct(id: string): Promise<SellerProduct> {
   return apiRequest<SellerProduct>(`/seller/products/${id}`, {
     method: 'DELETE',
     auth: true,
@@ -141,4 +142,46 @@ export async function fetchSellerCategories(): Promise<
     items: { id: string; name: string; slug: string }[];
   }>('/catalog/categories', { auth: true });
   return result.items;
+}
+
+/** Заказы организации-продавца: статусы через запятую, поиск,
+ *  пагинация (Промт 10, Часть C). */
+export async function fetchSellerOrders(options: {
+  statuses?: string[];
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<SellerOrderList> {
+  const query = new URLSearchParams();
+  if (options.statuses && options.statuses.length > 0) {
+    query.set('status', options.statuses.join(','));
+  }
+  if (options.search) query.set('search', options.search);
+  if (options.page) query.set('page', String(options.page));
+  if (options.pageSize) query.set('pageSize', String(options.pageSize));
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return apiRequest<SellerOrderList>(`/seller/orders${suffix}`, {
+    auth: true,
+    headers: sellerHeaders(),
+  });
+}
+
+/** Детали заказа продавца: покупатель, позиции, события. */
+export async function fetchSellerOrder(id: string): Promise<SellerOrder> {
+  return apiRequest<SellerOrder>(`/seller/orders/${id}`, {
+    auth: true,
+    headers: sellerHeaders(),
+  });
+}
+
+/** Действие по заказу: confirm/preparing/ready/complete/cancel. */
+export async function postSellerOrderAction(
+  id: string,
+  action: SellerOrderAction,
+): Promise<SellerOrder> {
+  return apiRequest<SellerOrder>(`/seller/orders/${id}/${action}`, {
+    method: 'POST',
+    auth: true,
+    headers: sellerHeaders(),
+  });
 }
