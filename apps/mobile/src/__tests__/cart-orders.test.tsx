@@ -134,6 +134,8 @@ describe('CartScreen', () => {
     const screen = await renderWithQuery(<CartScreen basePath="customer" />);
     await waitFor(() => expect(screen.getByText('Корзина пуста')).toBeTruthy());
     expect(screen.getByText('Перейти в каталог')).toBeTruthy();
+    // без позиций нет и кнопки очистки
+    expect(screen.queryByTestId('cart-clear')).toBeNull();
   });
 
   it('ошибка загрузки: ErrorState с повтором', async () => {
@@ -186,6 +188,36 @@ describe('CartScreen', () => {
       expect(updateCartItemMock).toHaveBeenCalledWith('item-1', 11),
     );
   });
+
+  it('уменьшение количества вызывает PATCH с меньшим значением', async () => {
+    fetchCartMock.mockResolvedValue(fullCart);
+    updateCartItemMock.mockResolvedValue(fullCart);
+    const screen = await renderWithQuery(<CartScreen basePath="customer" />);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Уменьшить количество')).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByLabelText('Уменьшить количество'));
+    await waitFor(() =>
+      expect(updateCartItemMock).toHaveBeenCalledWith('item-1', 9),
+    );
+  });
+
+  it('warnings: сводка и подпись у проблемной позиции', async () => {
+    const warnedCart: CartView = {
+      ...fullCart,
+      warnings: [
+        {
+          itemId: 'item-1',
+          message: 'Осталось 3 на складе — уменьшите количество',
+        },
+      ],
+    };
+    fetchCartMock.mockResolvedValue(warnedCart);
+    const screen = await renderWithQuery(<CartScreen basePath="customer" />);
+    await waitFor(() =>
+      expect(screen.getAllByText(/Осталось 3 на складе/).length).toBe(2),
+    );
+  });
 });
 
 describe('CheckoutScreen', () => {
@@ -221,6 +253,91 @@ describe('CheckoutScreen', () => {
     );
     await waitFor(() => expect(screen.getByText(/Корзина пуста/)).toBeTruthy());
   });
+
+  it('итог заказа отображается в блоке Итого', async () => {
+    fetchCartMock.mockResolvedValue(fullCart);
+    const screen = await renderWithQuery(
+      <CheckoutScreen basePath="customer" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('checkout-total')).toBeTruthy(),
+    );
+    // subtotal 189 000 коп = 1 890 ₽ (NBSP-разделитель ru-RU)
+    expect(screen.getByTestId('checkout-total').props.children).toMatch(
+      /1\u00a0890/,
+    );
+  });
+
+  it('нажатие на недоступную доставку не меняет выбор', async () => {
+    fetchCartMock.mockResolvedValue(fullCart);
+    const screen = await renderWithQuery(
+      <CheckoutScreen basePath="customer" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('checkout-delivery')).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId('checkout-delivery'));
+    await waitFor(() => expect(createOrderMock).not.toHaveBeenCalled());
+    // самовывоз остаётся выбранным: сворке доставки недоступна
+    expect(screen.getByText('Скоро')).toBeTruthy();
+  });
+
+  it('комментарий продавцу передаётся в создание заказа', async () => {
+    fetchCartMock.mockResolvedValue(fullCart);
+    createOrderMock.mockResolvedValue([order]);
+    const screen = await renderWithQuery(
+      <CheckoutScreen basePath="customer" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('checkout-comment')).toBeTruthy(),
+    );
+    await fireEvent.changeText(
+      screen.getByTestId('checkout-comment'),
+      'Позвонить за час',
+    );
+    fireEvent.press(screen.getByTestId('checkout-submit'));
+    await waitFor(() => expect(createOrderMock).toHaveBeenCalledTimes(1));
+    expect(createOrderMock.mock.calls[0]?.[0]?.comment).toBe(
+      'Позвонить за час',
+    );
+  });
+
+  it('пустой комментарий не передаётся (undefined)', async () => {
+    fetchCartMock.mockResolvedValue(fullCart);
+    createOrderMock.mockResolvedValue([order]);
+    const screen = await renderWithQuery(
+      <CheckoutScreen basePath="customer" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('checkout-submit')).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId('checkout-submit'));
+    await waitFor(() => expect(createOrderMock).toHaveBeenCalledTimes(1));
+    expect(createOrderMock.mock.calls[0]?.[0]?.comment).toBeUndefined();
+  });
+
+  it('сводка ограничена четырьмя позициями', async () => {
+    const first = fullCart.items[0];
+    if (!first) throw new Error('fixture пуст');
+    const bigCart: CartView = {
+      ...fullCart,
+      items: Array.from({ length: 5 }, (_, i) => ({
+        ...first,
+        id: `item-${i + 1}`,
+        offer: {
+          ...first.offer,
+          product: { ...first.offer.product, name: `Товар ${i + 1}` },
+        },
+      })),
+    };
+    fetchCartMock.mockResolvedValue(bigCart);
+    const screen = await renderWithQuery(
+      <CheckoutScreen basePath="customer" />,
+    );
+    await waitFor(() => expect(screen.getByText(/Товар 1/)).toBeTruthy());
+    expect(screen.getByText(/Товар 4/)).toBeTruthy();
+    expect(screen.queryByText(/Товар 5/)).toBeNull();
+  });
 });
 
 describe('OrdersScreen', () => {
@@ -231,6 +348,16 @@ describe('OrdersScreen', () => {
       expect(screen.getByText('BZ-2026-000001')).toBeTruthy(),
     );
     expect(screen.getByText('Новый')).toBeTruthy();
+  });
+
+  it('карточка показывает продавца и дату', async () => {
+    fetchOrdersMock.mockResolvedValue(orderList);
+    const screen = await renderWithQuery(<OrdersScreen basePath="customer" />);
+    await waitFor(() =>
+      expect(screen.getByText('BZ-2026-000001')).toBeTruthy(),
+    );
+    expect(screen.getByText(/Опт-Юг/)).toBeTruthy();
+    expect(screen.getByText(/12 ноя/)).toBeTruthy();
   });
 
   it('пустой список: EmptyState с переходом в каталог', async () => {
@@ -258,6 +385,13 @@ describe('OrdersScreen', () => {
     await waitFor(() =>
       expect(fetchOrdersMock).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'CANCELLED' }),
+      ),
+    );
+    // «Все» — без фильтра статуса
+    fireEvent.press(screen.getByTestId('orders-filter-all'));
+    await waitFor(() =>
+      expect(fetchOrdersMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: undefined }),
       ),
     );
   });
@@ -304,6 +438,57 @@ describe('OrderDetailScreen', () => {
     );
     await waitFor(() =>
       expect(screen.getByText('Заказ не загрузился')).toBeTruthy(),
+    );
+  });
+
+  it('COMPLETED: отменить нельзя — кнопки нет', async () => {
+    fetchOrderMock.mockResolvedValue({ ...order, status: 'COMPLETED' });
+    const screen = await renderWithQuery(
+      <OrderDetailScreen basePath="customer" orderId="order-1" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText('BZ-2026-000001')).toBeTruthy(),
+    );
+    expect(screen.queryByTestId('order-cancel')).toBeNull();
+  });
+
+  it('CANCELLED: кнопки отмены нет, ось обрывается на «Отменён»', async () => {
+    fetchOrderMock.mockResolvedValue({
+      ...order,
+      status: 'CANCELLED',
+      events: [
+        ...order.events,
+        { id: 'e2', type: 'CANCELLED', createdAt: '2026-11-12T06:00:00Z' },
+      ],
+    });
+    const screen = await renderWithQuery(
+      <OrderDetailScreen basePath="customer" orderId="order-1" />,
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText('Отменён').length).toBeGreaterThanOrEqual(1),
+    );
+    expect(screen.queryByTestId('order-cancel')).toBeNull();
+  });
+
+  it('CONFIRMED: отмена доступна (кнопка есть)', async () => {
+    fetchOrderMock.mockResolvedValue({ ...order, status: 'CONFIRMED' });
+    const screen = await renderWithQuery(
+      <OrderDetailScreen basePath="customer" orderId="order-1" />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('order-cancel')).toBeTruthy(),
+    );
+  });
+
+  it('кнопка «Связаться с продавцом» присутствует', async () => {
+    fetchOrderMock.mockResolvedValue(order);
+    const screen = await renderWithQuery(
+      <OrderDetailScreen basePath="customer" orderId="order-1" />,
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Связаться с продавцом' }),
+      ).toBeTruthy(),
     );
   });
 });

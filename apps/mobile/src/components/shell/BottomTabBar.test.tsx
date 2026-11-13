@@ -15,8 +15,13 @@ const ITEMS = [
 async function setup(props: Partial<Parameters<typeof BottomTabBar>[0]> = {}) {
   return render(
     <BazarUIProvider>
-      <BottomTabBar items={ITEMS} activeKey="home" onChange={() => {}} {...props} />
-    </BazarUIProvider>
+      <BottomTabBar
+        items={ITEMS}
+        activeKey="home"
+        onChange={() => {}}
+        {...props}
+      />
+    </BazarUIProvider>,
   );
 }
 
@@ -28,14 +33,37 @@ describe('BottomTabBar', () => {
     expect(screen.getByRole('tab', { name: 'Доставки' })).toBeTruthy();
   });
 
+  it('badge пункта: число позиций корзины', async () => {
+    const screen = await setup({
+      items: [
+        { key: 'home', label: 'Главная', icon: Home },
+        { key: 'cart', label: 'Корзина', icon: Package, badge: 2 },
+        { key: 'deliveries', label: 'Доставки', icon: Truck },
+      ],
+    });
+    expect(screen.getByText('2')).toBeTruthy();
+  });
+
+  it('badge больше 99 обрезается до «99+», ноль не показывается', async () => {
+    const screen = await setup({
+      items: [
+        { key: 'home', label: 'Главная', icon: Home },
+        { key: 'cart', label: 'Корзина', icon: Package, badge: 150 },
+        { key: 'deliveries', label: 'Доставки', icon: Truck, badge: 0 },
+      ],
+    });
+    expect(screen.getByText('99+')).toBeTruthy();
+    expect(screen.queryByText('0')).toBeNull();
+  });
+
   it('активная вкладка отмечена selected', async () => {
     const screen = await setup();
-    expect(screen.getByRole('tab', { name: 'Главная' }).props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: true })
-    );
-    expect(screen.getByRole('tab', { name: 'Заказы' }).props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: false })
-    );
+    expect(
+      screen.getByRole('tab', { name: 'Главная' }).props.accessibilityState,
+    ).toEqual(expect.objectContaining({ selected: true }));
+    expect(
+      screen.getByRole('tab', { name: 'Заказы' }).props.accessibilityState,
+    ).toEqual(expect.objectContaining({ selected: false }));
   });
 
   it('onChange вызывается с ключом пункта', async () => {
@@ -51,13 +79,17 @@ describe('BottomTabBar', () => {
     const bar = screen.getByRole('tab', { name: 'Главная' }).parent;
     const barStyle = bar?.props?.style;
     const flat = Array.isArray(barStyle) ? barStyle.flat() : [barStyle];
-    expect(flat.find((s: { height?: number }) => s?.height === 64)).toBeTruthy();
+    expect(
+      flat.find((s: { height?: number }) => s?.height === 64),
+    ).toBeTruthy();
 
     for (const label of ['Главная', 'Заказы', 'Доставки']) {
       const item = screen.getByRole('tab', { name: label });
       const style = item.props.style;
       const itemFlat = Array.isArray(style) ? style.flat() : [style];
-      const minHeight = itemFlat.find((s: { minHeight?: number }) => typeof s?.minHeight === 'number');
+      const minHeight = itemFlat.find(
+        (s: { minHeight?: number }) => typeof s?.minHeight === 'number',
+      );
       expect(minHeight?.minHeight ?? 0).toBeGreaterThanOrEqual(48);
     }
   });
