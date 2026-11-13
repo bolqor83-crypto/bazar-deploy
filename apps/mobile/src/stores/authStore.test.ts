@@ -10,10 +10,11 @@
  * путь включается явным объявлением window.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import type { AuthUser } from '@bazar/types';
 import { AuthError } from '@bazar/types';
 import * as client from '../services/api/client';
-import { REFRESH_TOKEN_KEY } from '../services/api/client';
+import { REFRESH_TOKEN_KEY } from '../services/storage/tokenStorage';
 import { authApi, type AuthResult } from '../services/api/authApi';
 import { __resetAuthStoreForTests, useAuthStore } from './authStore';
 import { useContextStore } from './contextStore';
@@ -154,6 +155,7 @@ describe('authStore', () => {
 
   beforeEach(async () => {
     await AsyncStorage.clear();
+    (SecureStore as unknown as { __store: Map<string, string> }).__store.clear();
     resetStores();
     jest.clearAllMocks();
     tryRefreshSpy = jest.spyOn(client, 'tryRefresh').mockResolvedValue(false);
@@ -177,11 +179,23 @@ describe('authStore', () => {
 
   it('hydrate с валидным refresh → authenticated + контекст по приоритету', async () => {
     setClientWindow();
+    // Legacy-токен из Промтов 7–9: лежит в AsyncStorage.
     await AsyncStorage.setItem(REFRESH_TOKEN_KEY, 'refresh-u1');
     tryRefreshSpy.mockResolvedValue(true);
     jest.mocked(authApi.getSession).mockResolvedValue(makeResult(IVAN));
 
     await useAuthStore.getState().hydrate();
+
+    // Миграция при hydrate: токен переехал в SecureStore,
+    // AsyncStorage очищен.
+    await expect(
+      AsyncStorage.getItem(REFRESH_TOKEN_KEY),
+    ).resolves.toBeNull();
+    expect(
+      (SecureStore as unknown as { __store: Map<string, string> }).__store.get(
+        REFRESH_TOKEN_KEY,
+      ),
+    ).toBe('refresh-u1');
 
     expect(useAuthStore.getState().state).toBe('authenticated');
     expect(useAuthStore.getState().user?.id).toBe('u1');

@@ -8,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import type { User } from '@prisma/client';
 import { AuthService } from '../../src/auth/auth.service';
 import { OtpService } from '../../src/auth/otp.service';
+import { OtpSendRateLimiter } from '../../src/sms/otp-send-rate-limiter.service';
+import { ConsoleSmsProvider } from '../../src/sms/console-sms.provider';
 import { TokenService } from '../../src/auth/token.service';
 import { verifyPassword } from '../../src/auth/password';
 import { AppLogger } from '../../src/common/app-logger';
@@ -23,17 +25,21 @@ describe('AuthService (unit)', () => {
   let otp: OtpService;
   let prisma: FakePrisma;
   let jwt: JwtService;
+  let otpRateLimiter: OtpSendRateLimiter;
 
   beforeEach(() => {
     prisma = new FakePrisma();
     jwt = new JwtService({ secret: TEST_SECRET });
     tokens = new TokenService(prisma as unknown as PrismaService, jwt);
     otp = new OtpService();
+    otpRateLimiter = new OtpSendRateLimiter();
     service = new AuthService(
       prisma as unknown as PrismaService,
       tokens,
       otp,
       new AppLogger(),
+      otpRateLimiter,
+      new ConsoleSmsProvider(new AppLogger()),
     );
   });
 

@@ -58,6 +58,23 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// expo-secure-store: in-memory мок (Промт 10 — refresh-токен).
+// Тесты tokenStorage проверяют вызовы именно этих функций.
+jest.mock('expo-secure-store', () => {
+  const store = new Map();
+  return {
+    __esModule: true,
+    __store: store,
+    setItemAsync: jest.fn(async (key, value) => {
+      store.set(key, value);
+    }),
+    getItemAsync: jest.fn(async (key) => store.get(key) ?? null),
+    deleteItemAsync: jest.fn(async (key) => {
+      store.delete(key);
+    }),
+  };
+});
+
 // Haptics: без нативных вызовов
 jest.mock('expo-haptics', () => ({
   __esModule: true,

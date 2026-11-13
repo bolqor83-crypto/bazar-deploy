@@ -1,13 +1,14 @@
 /**
  * Одноразовые коды подтверждения (OTP).
  *
- * Хранение in-memory с TTL 5 минут — демо-режим Промта 7 (в схеме
- * Промта модель OtpCode отсутствует; переезд в БД и SMS-провайдер —
- * открытый вопрос ADR 0008 / Промт 8).
+ * Хранение in-memory с TTL 5 минут. Промт 10: 3 попытки ввода
+ * (после третьей неверной — код сгорает), отправка — через
+ * SmsProvider с rate limit 3/10 мин на номер (Перенос в БД —
+ * открытый вопрос ADR 0011).
  *
- * В NODE_ENV !== 'production' код возвращается в ответе (devCode) —
- * так устроен демо-вход по OTP без SMS. В production ответ всегда
- * { sent: true } без кода.
+ * В NODE_ENV !== 'production' и console-провайдере код
+ * возвращается в ответе (devCode) — так устроен демо-вход без
+ * контракта с оператором (решение — AuthService.sendOtp).
  */
 import { Injectable } from '@nestjs/common';
 import { ApiError } from '../common/filters/api-error';
@@ -21,8 +22,8 @@ interface OtpRecord {
 }
 
 const OTP_TTL_MS = 5 * 60 * 1000;
-/** Максимум попыток ввода одного кода. */
-const OTP_MAX_ATTEMPTS = 5;
+/** Максимум попыток ввода одного кода (Промт 10: 3). */
+const OTP_MAX_ATTEMPTS = 3;
 
 function generateCode(): string {
   // Равномерные 6 цифр без ведущих потерь: 0–999999 → padStart.
@@ -46,7 +47,7 @@ export class OtpService {
 
   /**
    * Проверяет код. Неверный — ошибка AUTH_OTP_INVALID (попытки
-   * считаются, после 5 — код сгорает). Просроченный — AUTH_OTP_EXPIRED.
+   * считаются, после 3 — код сгорает). Просроченный — AUTH_OTP_EXPIRED.
    */
   verify(phone: string, purpose: OtpPurpose, code: string): void {
     const key = `${phone}:${purpose}`;

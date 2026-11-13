@@ -29,6 +29,7 @@ import { OrderModule } from './orders/order.module';
 import { HealthModule } from './health/health.module';
 import { LocationsModule } from './locations/locations.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SmsModule } from './sms/sms.module';
 import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 
@@ -74,6 +75,7 @@ const ValidationPipeConfig = new ValidationPipe({
         ]
       : []),
     PrismaModule,
+    SmsModule,
     AuthModule,
     UsersModule,
     OrganizationsModule,

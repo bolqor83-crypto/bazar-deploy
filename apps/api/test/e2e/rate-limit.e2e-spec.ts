@@ -49,10 +49,24 @@ describe('Rate limiting (e2e)', () => {
   });
 
   it('register и otp/send делят отдельные бакеты', async () => {
-    // login исчерпан, но otp/send имеет свой бакет 5/мин.
+    // login исчерпан, но otp/send имеет свой бакет 10/час.
     const otp = await request(testApp.server)
       .post('/api/auth/otp/send')
       .send({ phone: '+79005556677' });
     expect(otp.status).toBe(200);
+  });
+
+  it('4-я отправка OTP на номер за 10 минут — 429 (Промт 10)', async () => {
+    const phone = '+79007778899';
+    const attempts: { status: number; code?: string }[] = [];
+    for (let i = 0; i < 4; i += 1) {
+      const response = await request(testApp.server)
+        .post('/api/auth/otp/send')
+        .send({ phone, purpose: 'login' });
+      attempts.push({ status: response.status, code: response.body?.code });
+    }
+    expect(attempts.slice(0, 3).every((a) => a.status === 200)).toBe(true);
+    expect(attempts[3].status).toBe(429);
+    expect(attempts[3].code).toBe('AUTH_RATE_LIMIT');
   });
 });

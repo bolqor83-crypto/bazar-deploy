@@ -41,12 +41,12 @@ describe('OtpService (unit)', () => {
     jest.useRealTimers();
   });
 
-  it('после 5 неверных попыток код сгорает', () => {
+  it('после 3 неверных попыток код сгорает (Промт 10)', () => {
     const code = service.issue('+79001112233', 'login');
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
       expect(() => service.verify('+79001112233', 'login', '000000')).toThrow();
     }
-    // Код удалён после 5 неудач — верный уже не примут.
+    // Код удалён после 3 неудач — верный уже не примут.
     expect(() => service.verify('+79001112233', 'login', code)).toThrowError(
       expect.objectContaining({ code: 'AUTH_OTP_INVALID' }),
     );

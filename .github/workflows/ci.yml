@@ -130,3 +130,23 @@ jobs:
           name: pixelmatch-diff
           path: download/pixelmatch-diff/
           if-no-files-found: ignore
+
+  deploy-to-render:
+    name: Деплой на Render
+    needs: [quality, e2e, visual-regression]
+    # Не блокирует merge: job последний, ничего от него не зависит.
+    # Деплоим только main после пуша; PR-сборки не триггерят прод.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Триггер деплоя через Render API
+        run: |
+          response=$(curl -s --max-time 30 -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json")
+          echo "$response" | head -c 200
+          echo "$response" | grep -q '"id"' || {
+            echo "::warning::Render deploy не запущен — проверь секреты RENDER_SERVICE_ID/RENDER_API_KEY"
+            exit 1
+          }

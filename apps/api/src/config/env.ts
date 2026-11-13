@@ -34,6 +34,34 @@ const schema = z.object({
     .transform((v) => v === 'true'),
   /** Корень статики mobile (ServeStaticModule). Пусто — не отдавать. */
   MOBILE_DIST_PATH: z.string().default(''),
+  /**
+   * SMS-провайдер (Промт 10): console | twilio | none.
+   * Пусто — console в dev/test, none в production.
+   */
+  SMS_PROVIDER: z
+    .string()
+    .default('')
+    .transform((v) => {
+      const value = v.trim().toLowerCase();
+      if (value) return value;
+      return process.env.NODE_ENV === 'production' ? 'none' : 'console';
+    }),
+  /** Twilio: аккаунт (SID), токен и отправитель. Только для SMS_PROVIDER=twilio. */
+  TWILIO_ACCOUNT_SID: z.string().default(''),
+  TWILIO_AUTH_TOKEN: z.string().default(''),
+  TWILIO_FROM_NUMBER: z.string().default(''),
+  /**
+   * S3-совместимое хранилище медиа (Промт 10, Часть B):
+   * Cloudflare R2 / Backblaze B2 / AWS. Пусто — presign отключён
+   * (503 S3_NOT_CONFIGURED), загрузка фото недоступна.
+   */
+  S3_ENDPOINT: z.string().default(''),
+  S3_REGION: z.string().default('auto'),
+  S3_BUCKET: z.string().default(''),
+  S3_ACCESS_KEY_ID: z.string().default(''),
+  S3_SECRET_ACCESS_KEY: z.string().default(''),
+  /** База публичных URL загруженных файлов (CDN / публичный bucket). */
+  S3_PUBLIC_BASE_URL: z.string().default(''),
 });
 
 export type Env = z.infer<typeof schema>;

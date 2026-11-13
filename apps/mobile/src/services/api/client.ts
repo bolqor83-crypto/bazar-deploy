@@ -1,12 +1,14 @@
 /**
- * HTTP-клиент API Bazar (Промт 7, Часть D).
+ * HTTP-клиент API Bazar (Промт 7, Часть D; Промт 10 — SecureStore).
  *
  * База — EXPO_PUBLIC_API_URL (при сборке — относительный /api:
  * NestJS отдаёт и API, и статику mobile на одном порту).
  *
  * Access-токен живёт только в памяти этого модуля (не в
  * AsyncStorage): утечка персистентного файла не даёт доступ к API.
- * Refresh-токен хранится в AsyncStorage (SecureStore — Промт 8).
+ * Refresh-токен — в безопасном хранилище (Промт 10, Часть A):
+ * native — expo-secure-store (Keystore/Keychain), web —
+ * sessionStorage. Слой — services/storage/tokenStorage.
  *
  * Автоматический refresh при 401: один раз на запрос; неудача —
  * сессия считается истёкшей, вызывается зарегистрированный
@@ -14,11 +16,13 @@
  *
  * Таймаут 15 секунд: слабый сигнал — операционный сценарий проекта.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthError, type AuthErrorCode } from '@bazar/types';
-
-/** Ключ refresh-токена в AsyncStorage. */
-export const REFRESH_TOKEN_KEY = 'bazar.auth.refresh';
+import {
+  clearStoredRefreshToken,
+  getStoredRefreshToken,
+  migrateLegacyRefreshToken,
+  setStoredRefreshToken,
+} from '../storage/tokenStorage';
 
 const TIMEOUT_MS = 15_000;
 
@@ -48,23 +52,20 @@ export function setSessionExpiredHandler(
 
 /** Refresh-токен — персистентный (восстановление сессии). */
 export async function getRefreshToken(): Promise<string | null> {
-  try {
-    return await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return getStoredRefreshToken();
 }
 
 export async function setRefreshToken(token: string | null): Promise<void> {
-  try {
-    if (token === null) {
-      await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
-    } else {
-      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, token);
-    }
-  } catch {
-    // Хранилище недоступно: сессия просто не переживёт перезапуск.
-  }
+  await setStoredRefreshToken(token);
+}
+
+/**
+ * Миграция refresh-токена из AsyncStorage (Промты 7–9) в
+ * безопасное хранилище. Вызывается из hydrate до попытки
+ * восстановить сессию.
+ */
+export async function migrateRefreshTokenStorage(): Promise<void> {
+  await migrateLegacyRefreshToken();
 }
 
 interface RequestOptions {
@@ -211,7 +212,8 @@ export async function pingApi(): Promise<boolean> {
   }
 }
 
-/** Полная очистка токенов клиента (logout). */
-export function clearTokens(): void {
+/** Полная очистка токенов клиента (logout): память + хранилище. */
+export async function clearTokens(): Promise<void> {
   accessToken = null;
+  await clearStoredRefreshToken();
 }

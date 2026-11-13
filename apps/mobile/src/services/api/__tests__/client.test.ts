@@ -2,21 +2,26 @@
  * Тесты HTTP-клиента API (Промт 7): заголовки, авто-refresh при 401,
  * таймаут, network-ошибки, health-check.
  *
- * Глобальный fetch замокан; AsyncStorage — штатный jest-мок
- * (in-memory), поэтому refresh-токен реально кладётся и читается.
+ * Глобальный fetch замокан; refresh-токен живёт в моке
+ * expo-secure-store (Промт 10) — реально кладётся и читается,
+ * AsyncStorage больше не участвует.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { AuthError } from '@bazar/types';
 import {
   apiRequest,
   getAccessToken,
   getRefreshToken,
   pingApi,
-  REFRESH_TOKEN_KEY,
   setAccessToken,
   setRefreshToken,
   setSessionExpiredHandler,
 } from '../client';
+import { REFRESH_TOKEN_KEY } from '../../storage/tokenStorage';
+
+const secure = SecureStore as unknown as {
+  __store: Map<string, string>;
+};
 
 function jsonResponse(status: number, body: unknown): Response {
   return {
@@ -40,7 +45,7 @@ describe('api/client', () => {
   });
 
   beforeEach(async () => {
-    await AsyncStorage.clear();
+    secure.__store.clear();
     setAccessToken(null);
     setSessionExpiredHandler(null);
     fetchMock.mockReset();
@@ -169,7 +174,7 @@ describe('api/client', () => {
       code: 'AUTH_SESSION_EXPIRED',
     });
     await expect(getRefreshToken()).resolves.toBeNull();
-    await expect(AsyncStorage.getItem(REFRESH_TOKEN_KEY)).resolves.toBeNull();
+    expect(secure.__store.get(REFRESH_TOKEN_KEY)).toBeUndefined();
     expect(handler).toHaveBeenCalled();
   });
 

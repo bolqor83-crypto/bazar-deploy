@@ -182,6 +182,10 @@ describe('Аутентификация (e2e)', () => {
     expect(health.status).toBe(200);
     expect(health.body).toMatchObject({ status: 'ok', db: 'ok' });
     expect(typeof health.body.version).toBe('string');
+    // Промт 10: расширенный health — sms/s3/uptime.
+    expect(['console', 'twilio', 'none']).toContain(health.body.sms);
+    expect(['ok', 'disabled']).toContain(health.body.s3);
+    expect(typeof health.body.uptimeSec).toBe('number');
   });
 
   it('OpenAPI: /api/docs-json отдаёт спеку с Bearer-схемой', async () => {

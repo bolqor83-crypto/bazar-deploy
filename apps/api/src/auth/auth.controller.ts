@@ -1,8 +1,10 @@
 /**
  * Контроллер аутентификации: /api/auth/*.
  *
- * Rate limiting (Промт 7): login/register/otp/send/password/reset —
- * 5 запросов в минуту на IP; refresh — 30 в минуту.
+ * Rate limiting (Промт 10): login/register/password/reset —
+ * 5 запросов в минуту на IP; otp/send — 10 в час на IP (плюс
+ * 3/10 мин на номер в сервисе); otp/verify — 10/мин (3 попытки
+ * ввода + запросы нового кода); refresh — 30 в минуту.
  */
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -77,7 +79,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
   @Post('otp/send')
   @HttpCode(200)
   @ApiOperation({ summary: 'Отправка OTP-кода (в dev код в ответе)' })
@@ -87,7 +89,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('otp/verify')
   @HttpCode(200)
   @ApiOperation({ summary: 'Вход по OTP-коду' })

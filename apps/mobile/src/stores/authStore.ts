@@ -21,6 +21,7 @@ import type {
 import { AuthError } from '@bazar/types';
 import {
   clearTokens,
+  migrateRefreshTokenStorage,
   setSessionExpiredHandler,
   tryRefresh,
 } from '../services/api/client';
@@ -157,7 +158,9 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
       return;
     }
 
-    // Есть ли refresh-токен для восстановления сессии.
+    // Есть ли refresh-токен для восстановления сессии. Сначала —
+    // миграция из AsyncStorage (Промты 7–9) в безопасное хранилище.
+    await migrateRefreshTokenStorage();
     const refreshed = await tryRefresh();
     if (!refreshed) {
       set({ state: 'unauthenticated', user: null, token: null, error: null });

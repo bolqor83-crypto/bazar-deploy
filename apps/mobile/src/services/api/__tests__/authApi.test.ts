@@ -1,12 +1,15 @@
 /**
  * Тесты authApi: маппинг контракта API в типы @bazar/types,
- * сохранение токенов (access — память, refresh — AsyncStorage).
+ * сохранение токенов (access — память, refresh — SecureStore,
+ * Промт 10).
  *
  * Мок клиентского модуля: вызовы проверяются на уровне контракта.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as client from '../client';
 import { authApi } from '../authApi';
+
+const secure = SecureStore as unknown as { __store: Map<string, string> };
 
 jest.mock('../client', () => {
   const actual = jest.requireActual('../client');
@@ -69,7 +72,7 @@ const API_RESPONSE = {
 
 describe('authApi', () => {
   beforeEach(async () => {
-    await AsyncStorage.clear();
+    secure.__store.clear();
     client.setAccessToken(null);
     apiRequestMock.mockReset();
   });
@@ -103,9 +106,7 @@ describe('authApi', () => {
 
     // Токены: access в памяти, refresh в хранилище.
     expect(client.getAccessToken()).toBe('access-u1');
-    await expect(AsyncStorage.getItem('bazar.auth.refresh')).resolves.toBe(
-      'refresh-u1',
-    );
+    expect(secure.__store.get('bazar.auth.refresh')).toBe('refresh-u1');
   });
 
   it('register и loginWithOtp используют свои эндпоинты', async () => {
@@ -175,7 +176,7 @@ describe('authApi', () => {
   });
 
   it('logout: отзыв refresh-сессии; без токена — без запроса', async () => {
-    await AsyncStorage.setItem('bazar.auth.refresh', 'refresh-u1');
+    await client.setRefreshToken('refresh-u1');
     apiRequestMock.mockResolvedValueOnce({});
 
     await authApi.logout();
@@ -186,7 +187,7 @@ describe('authApi', () => {
     });
 
     // Без refresh-токена logout не ходит в сеть.
-    await AsyncStorage.removeItem('bazar.auth.refresh');
+    await client.setRefreshToken(null);
     apiRequestMock.mockClear();
     await authApi.logout();
     expect(apiRequestMock).not.toHaveBeenCalled();

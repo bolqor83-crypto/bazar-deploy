@@ -7,7 +7,7 @@
  * Все критичные операции логируются с userId и requestId. Пароли,
  * хеши и токены в логи не попадают.
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppLogger } from '../common/app-logger';
 import { ApiError } from '../common/filters/api-error';
@@ -16,6 +16,9 @@ import { loadEnv } from '../config/env';
 import { OtpService, type OtpPurpose } from './otp.service';
 import { hashPassword, verifyPassword } from './password';
 import { TokenService, type TokenPair } from './token.service';
+import { SMS_PROVIDER } from '../sms/sms.module';
+import { OtpSendRateLimiter } from '../sms/otp-send-rate-limiter.service';
+import type { SmsProvider } from '../sms/sms-provider.interface';
 import type { RequestContext } from './decorators/request-context.decorator';
 import type {
   LoginDto,
@@ -35,6 +38,8 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly otp: OtpService,
     private readonly logger: AppLogger,
+    private readonly otpRateLimiter: OtpSendRateLimiter,
+    @Inject(SMS_PROVIDER) private readonly sms: SmsProvider,
   ) {}
 
   /** Членства с организациями и точками для ответа о пользователе. */
@@ -144,20 +149,31 @@ export class AuthService {
   }
 
   /**
-   * Отправка OTP. В dev-режиме код возвращается в ответе — демо
-   * без SMS-провайдера. В production — только { sent: true }.
+   * Отправка OTP через SmsProvider (Промт 10). Rate limit:
+   * 3/10 мин на номер (OtpSendRateLimiter) + 10/час на IP
+   * (декоратор маршрута). В dev-режиме код возвращается в ответе —
+   * демо без контракта с оператором. В production — { sent: true }.
    */
   async sendOtp(
     phone: string,
     purpose: OtpPurpose,
   ): Promise<{ sent: true; devCode?: string }> {
+    this.otpRateLimiter.checkAndCount(phone);
     const code = this.otp.issue(phone, purpose);
+    const isProduction = loadEnv().NODE_ENV === 'production';
+    // SMS уходит всегда; сбой доставки — честная 502, код не выдан.
+    await this.sms.send(
+      phone,
+      `Bazar: код подтверждения ${code}. Действителен 5 минут.`,
+    );
     this.logger.event('auth.otp_send', {
       phoneMasked: maskPhone(phone),
       purpose,
+      provider: this.sms.name,
     });
-    if (loadEnv().NODE_ENV === 'production') {
-      // Интеграция SMS-провайдера — Промт 8 (заглушка).
+    // devCode — только с console-провайдером вне production:
+    // реальная доставка не даёт кода наружу.
+    if (isProduction || this.sms.name !== 'console') {
       return { sent: true };
     }
     return { sent: true, devCode: code };
