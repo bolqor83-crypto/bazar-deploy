@@ -62,6 +62,8 @@ const schema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().default(''),
   /** База публичных URL загруженных файлов (CDN / публичный bucket). */
   S3_PUBLIC_BASE_URL: z.string().default(''),
+  /** Каталог локального хранилища медиа (fallback без S3). */
+  MEDIA_DIR: z.string().default(''),
 });
 
 export type Env = z.infer<typeof schema>;

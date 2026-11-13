@@ -53,15 +53,16 @@ model Session {
 /// Организация. type: WHOLESALE | RETAIL | LOGISTICS (строка вместо
 /// enum — ограничение SQLite, значения проверяются в DTO).
 model Organization {
-  id          String             @id @default(cuid())
-  name        String
-  type        String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  memberships Membership[]
-  locations   BusinessLocation[]
-  offers      ProductOffer[]
-  ordersAsSeller Order[]          @relation("OrderSeller")
+  id             String             @id @default(cuid())
+  name           String
+  type           String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  memberships    Membership[]
+  locations      BusinessLocation[]
+  offers         ProductOffer[]
+  products       Product[]          @relation("ProductOwner")
+  ordersAsSeller Order[]            @relation("OrderSeller")
 }
 
 /// Категория каталога (Промт 8). slug — адрес фильтра, icon — имя
@@ -81,42 +82,82 @@ model Category {
 /// Товар каталога. images — JSON-массив строк-URL (SQLite не имеет
 /// нативных массивов); до загрузки фото клиент показывает плашку-
 /// заглушку. Цены живут в ProductOffer: один товар — много продавцов.
+/// Промт 10: subtitle, archivedAt (soft-delete продавцом) и
+/// организация-владелец (null — системные товары сида Промта 8).
 model Product {
-  id          String          @id @default(cuid())
-  categoryId  String
-  name        String
-  unit        String
-  description String          @default("")
-  images      String          @default("[]")
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  category    Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  offers      ProductOffer[]
+  id             String         @id @default(cuid())
+  categoryId     String
+  name           String
+  subtitle       String?
+  unit           String
+  description    String         @default("")
+  images         String         @default("[]")
+  organizationId String?
+  archivedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  category       Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  organization   Organization?  @relation("ProductOwner", fields: [organizationId], references: [id])
+  offers         ProductOffer[]
 
   @@index([categoryId])
+  @@index([organizationId])
 }
 
 /// Предложение организации на товар: цена в копейках (без дробей),
 /// склад, минимальная партия, бейдж («hit» — хит) и скоропорт.
 /// badge — строка или null; набор значений расширяется без миграций.
+/// Промт 10: archivedAt — архив предложения (stock=0 скрывает из
+/// каталога, архив — из кабинета продавца активных).
 model ProductOffer {
-  id             String        @id @default(cuid())
+  id             String              @id @default(cuid())
   productId      String
   organizationId String
   priceKopecks   Int
   stock          Int
-  minQuantity    Int           @default(1)
+  minQuantity    Int                 @default(1)
   badge          String?
-  isPerishable   Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  isPerishable   Boolean             @default(false)
+  archivedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  product        Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   cartItems      CartItem[]
   orderItems     OrderItem[]
+  priceHistory   OfferPriceHistory[]
+  stockChanges   StockChange[]
 
   @@index([productId])
   @@index([organizationId])
+}
+
+/// История цены предложения (Промт 10): каждая смена price — новая
+/// запись. Аудит для продавца («collapsed История цены» в карточке).
+model OfferPriceHistory {
+  id           String       @id @default(cuid())
+  offerId      String
+  offer        ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  priceKopecks Int
+  actorId      String?
+  createdAt    DateTime     @default(now())
+
+  @@index([offerId])
+}
+
+/// Журнал изменения склада (Промт 10): previousStock → newStock
+/// с причиной (поставка / продажа / корректировка / отмена заказа).
+model StockChange {
+  id            String       @id @default(cuid())
+  offerId       String
+  offer         ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  previousStock Int
+  newStock      Int
+  reason        String
+  actorId       String?
+  createdAt     DateTime     @default(now())
+
+  @@index([offerId])
 }
 
 /// Корзина пользователя в контуре (Промт 9, Часть D).
@@ -140,14 +181,14 @@ model Cart {
 /// @@unique([cartId, offerId]) — один оффер одна строка (количество
 /// меняется PATCH'ем, а не новой строкой).
 model CartItem {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart      Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
   offerId   String
   offer     ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
   quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@unique([cartId, offerId])
 }
@@ -181,16 +222,16 @@ model Order {
 /// Позиция заказа: снапшот предложения на момент покупки
 /// (title/unit/price фиксируются — каталог меняется, заказ нет).
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  offerId   String
-  offer     ProductOffer @relation(fields: [offerId], references: [id])
-  title     String
-  unit      String
-  price     Int
-  quantity  Int
-  total     Int
+  id       String       @id @default(cuid())
+  orderId  String
+  order    Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  offerId  String
+  offer    ProductOffer @relation(fields: [offerId], references: [id])
+  title    String
+  unit     String
+  price    Int
+  quantity Int
+  total    Int
 
   @@index([orderId])
 }

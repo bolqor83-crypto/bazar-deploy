@@ -16,6 +16,7 @@ import {
   Heart,
   History,
   Inbox,
+  Layers,
   LayoutDashboard,
   LayoutGrid,
   Newspaper,
@@ -128,14 +129,21 @@ const storeNav: RoleNavConfig = {
 };
 
 const wholesaleNav: RoleNavConfig = {
+  // Промт 10: «Предложения» (партии) вместо заглушки «Запросы».
   tabs: [
     { key: 'overview', label: 'Обзор', icon: LayoutDashboard },
     { key: 'products', label: 'Товары', icon: Package },
     { key: 'orders', label: 'Заказы', icon: ClipboardList },
-    { key: 'requests', label: 'Запросы', icon: Inbox },
+    { key: 'offers', label: 'Предложения', icon: Layers },
     { key: MORE_KEY, label: 'Ещё', icon: Ellipsis },
   ],
   more: [
+    {
+      key: 'requests',
+      label: 'Запросы',
+      icon: Inbox,
+      route: '/wholesale/requests',
+    },
     {
       key: 'clients',
       label: 'Клиенты',

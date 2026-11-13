@@ -216,3 +216,9 @@ export type { OrderCardProps } from './components/OrderCard';
 
 export { OrderTimeline } from './components/OrderTimeline';
 export type { OrderTimelineProps } from './components/OrderTimeline';
+
+export { OfferRow } from './components/OfferRow';
+export type { OfferRowProps } from './components/OfferRow';
+
+export { DeliveryTimeline } from './components/DeliveryTimeline';
+export type { DeliveryTimelineProps } from './components/DeliveryTimeline';

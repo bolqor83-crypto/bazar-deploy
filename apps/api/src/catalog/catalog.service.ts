@@ -20,6 +20,7 @@ interface ProductWithRelations {
   description: string;
   images: string;
   categoryId: string;
+  archivedAt: Date | null;
   category: { id: string; slug: string; name: string; icon: string };
   offers: {
     id: string;
@@ -28,6 +29,7 @@ interface ProductWithRelations {
     minQuantity: number;
     badge: string | null;
     isPerishable: boolean;
+    archivedAt: Date | null;
     organizationId: string;
     organization: { id: string; name: string };
   }[];
@@ -91,13 +93,24 @@ export interface ListProductsFilter {
 }
 
 /** Дешёвое предложение товара (минимальная цена, сырая запись). */
+/** Видимые предложения: не в архиве и со складом (Промт 10:
+ * stock=0 и archivedAt скрывают оффер из каталога). */
+function visibleOffers(
+  product: ProductWithRelations,
+): ProductWithRelations['offers'][number][] {
+  return product.offers.filter(
+    (offer) => offer.archivedAt === null && offer.stock > 0,
+  );
+}
+
 function bestOfferOf(
   product: ProductWithRelations,
 ): ProductWithRelations['offers'][number] | null {
-  if (product.offers.length === 0) {
+  const visible = visibleOffers(product);
+  if (visible.length === 0) {
     return null;
   }
-  const sorted = [...product.offers].sort(
+  const sorted = [...visible].sort(
     (a, b) => a.priceKopecks - b.priceKopecks,
   );
   return sorted[0];
@@ -148,9 +161,10 @@ export class CatalogService {
     const sort: CatalogSort = filter.sort ?? 'popular';
 
     const products = (await this.prisma.product.findMany({
-      where: filter.category
-        ? { category: { slug: filter.category } }
-        : undefined,
+      where: {
+        archivedAt: null,
+        ...(filter.category ? { category: { slug: filter.category } } : {}),
+      },
       include: { category: true, offers: { include: { organization: true } } },
     })) as ProductWithRelations[];
 
@@ -229,7 +243,7 @@ export class CatalogService {
       include: { category: true, offers: { include: { organization: true } } },
     })) as ProductWithRelations | null;
 
-    if (!product) {
+    if (!product || product.archivedAt) {
       throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Товар не найден');
     }
 
@@ -243,7 +257,7 @@ export class CatalogService {
         name: product.category.name,
       },
       images: parseImages(product.images),
-      offers: [...product.offers]
+      offers: visibleOffers(product)
         .sort((a, b) => a.priceKopecks - b.priceKopecks)
         .map((offer) => this.toOfferView(offer)),
     };

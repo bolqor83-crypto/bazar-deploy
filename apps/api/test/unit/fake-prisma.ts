@@ -307,7 +307,11 @@ export class FakePrisma {
       include,
       select,
     }: {
-      where?: { categoryId?: string; category?: { slug: string } };
+      where?: {
+        categoryId?: string;
+        category?: { slug: string };
+        archivedAt?: null;
+      };
       include?: { category?: boolean; offers?: boolean };
       select?: { categoryId?: boolean };
     } = {}) => {
@@ -321,6 +325,10 @@ export class FakePrisma {
           if (!category || category.slug !== where.category.slug) {
             continue;
           }
+        }
+        // Промт 10: каталог не показывает архивные товары.
+        if (where?.archivedAt === null && product.archivedAt) {
+          continue;
         }
         if (select?.categoryId) {
           result.push({ categoryId: product.categoryId });
@@ -371,6 +379,7 @@ export class FakePrisma {
     create: async ({ data }: { data: Record<string, unknown> }) => {
       const record = {
         id: this.nextId('prod'),
+        archivedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         ...data,
@@ -405,6 +414,7 @@ export class FakePrisma {
     create: async ({ data }: { data: Record<string, unknown> }) => {
       const record = {
         id: this.nextId('offer'),
+        archivedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         ...data,

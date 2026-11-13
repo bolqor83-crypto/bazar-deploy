@@ -23,7 +23,8 @@ import StoreProfileScreen from '../app/(tabs)/store/profile';
 import StoreSettingsScreen from '../app/(tabs)/store/settings';
 
 import OverviewScreen from '../app/(tabs)/wholesale/overview';
-import ProductsScreen from '../app/(tabs)/wholesale/products';
+// wholesale/products — рабочий экран кабинета продавца (Промт 10):
+// его тесты в seller-screens.test.tsx.
 import WholesaleOrdersScreen from '../app/(tabs)/wholesale/orders';
 import RequestsScreen from '../app/(tabs)/wholesale/requests';
 import ClientsScreen from '../app/(tabs)/wholesale/clients';
@@ -147,13 +148,6 @@ const SCREENS: readonly Row[] = [
     OverviewScreen,
     'Обзор',
     'Показатели соберутся с первыми заказами',
-    WHOLESALE,
-  ],
-  [
-    'wholesale/products',
-    ProductsScreen,
-    'Товары',
-    'Товаров пока нет',
     WHOLESALE,
   ],
   [

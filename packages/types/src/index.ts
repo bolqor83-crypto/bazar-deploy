@@ -11,6 +11,9 @@
  * см. ADR 0009 (Промт 8).
  * Корзина (CartItem, CartView) — в cart.ts, см. ADR 0010 (Промт 9).
  * Заказы (Order, OrderItem, OrderEvent) — в order.ts, см. ADR 0010.
+ * Кабинет продавца (SellerProduct, SellerOffer) — в seller.ts,
+ * см. ADR 0011 (Промт 10).
+ * Доставки (Delivery, DeliveryEvent) — в delivery.ts, см. ADR 0011.
  */
 export * from './context';
 export * from './auth';
@@ -18,3 +21,5 @@ export * from './onboarding';
 export * from './catalog';
 export * from './cart';
 export * from './order';
+export * from './seller';
+export * from './delivery';
