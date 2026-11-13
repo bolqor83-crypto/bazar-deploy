@@ -139,6 +139,19 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Render не имеет GitHub-коннекта к приватному bazar — деплой
+      # идёт из публичного зеркала bazar-deploy (решение Промта 10,
+      # ADR 0011). Зеркало синхронизируется перед каждым деплоем.
+      - name: Синхронизировать зеркало bazar-deploy
+        run: |
+          git remote add mirror https://x-access-token:${{ secrets.MIRROR_PAT }}@github.com/bolqor83-crypto/bazar-deploy.git
+          git push mirror HEAD:main
+
       - name: Триггер деплоя через Render API
         run: |
           response=$(curl -s --max-time 30 -X POST \
