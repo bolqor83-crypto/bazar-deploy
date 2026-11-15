@@ -14,6 +14,7 @@ import {
   clearDatabase,
   createTestApp,
   registerUser,
+  seedOfferStock,
   type TestApp,
 } from './test-app';
 
@@ -117,9 +118,14 @@ describe('Deliveries (e2e)', () => {
         productId: product.id,
         organizationId: orgId,
         priceKopecks: 18900,
-        stock: 50,
         minQuantity: 5,
       },
+    });
+    // Промт 11: остаток — INITIAL-движение + баланс.
+    await seedOfferStock(testApp.prisma, {
+      offerId: offer.id,
+      organizationId: orgId,
+      qty: 50,
     });
     offerId = offer.id;
   });

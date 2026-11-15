@@ -23,7 +23,6 @@ describe('CartService (unit)', () => {
       productId: 'product-1',
       organizationId: 'org-1',
       priceKopecks: 18900,
-      stock: 50,
       minQuantity: 5,
       badge: null,
       isPerishable: false,
@@ -35,13 +34,15 @@ describe('CartService (unit)', () => {
       productId: 'product-2',
       organizationId: 'org-1',
       priceKopecks: 10400,
-      stock: 30,
       minQuantity: 1,
       badge: null,
       isPerishable: false,
       product: { id: 'product-2', name: 'Огурцы', unit: '1 кг' },
       organization: { id: 'org-1', name: 'Опт-Юг' },
     });
+    // Промт 11: остатки — балансы на складе (INITIAL).
+    prisma.seedStock('offer-1', 'org-1', 50);
+    prisma.seedStock('offer-2', 'org-1', 30);
   });
 
   it('пустая корзина без записей', async () => {
@@ -83,9 +84,15 @@ describe('CartService (unit)', () => {
     );
   });
 
-  it('stock 0 — OUT_OF_STOCK', async () => {
-    const offer = prisma.offers.get('offer-2') as { stock: number };
-    offer.stock = 0;
+  it('нулевой доступный остаток — OUT_OF_STOCK', async () => {
+    // Промт 11: обнуление баланса (списание всего доступного).
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-2',
+    );
+    if (balance) {
+      balance.physicalQty = 0;
+      balance.availableQty = 0;
+    }
     await expect(service.addItem(USER, '', 'offer-2', 1)).rejects.toThrow(
       BadRequestException,
     );
@@ -123,8 +130,14 @@ describe('CartService (unit)', () => {
 
   it('warnings: склад уменьшился ниже количества', async () => {
     await service.addItem(USER, '', 'offer-1', 10);
-    const offer = prisma.offers.get('offer-1') as { stock: number };
-    offer.stock = 3;
+    // Промт 11: доступный остаток упал до 3 (списание).
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-1',
+    );
+    if (balance) {
+      balance.physicalQty = 3;
+      balance.availableQty = 3;
+    }
     const cart = await service.getCart(USER, '');
     expect(cart.warnings).toHaveLength(1);
     expect(cart.warnings[0].message).toContain('3');

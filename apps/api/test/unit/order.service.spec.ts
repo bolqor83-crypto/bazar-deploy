@@ -1,7 +1,11 @@
 /**
  * Unit-тесты OrderService (Промт 9, Часть E): группировка по
- * продавцу, нумерация BZ-YYYY-NNNNNN, stock-резерв с откатом
+ * продавцу, нумерация BZ-YYYY-NNNNNN, резерв остатков с откатом
  * (снапшот-эмуляция транзакции фейка), отмена с восстановлением.
+ *
+ * Промт 11: резерв — event-sourced (RESERVED при создании,
+ * UNRESERVED при отмене PENDING, RETURN_IN при отмене CONFIRMED),
+ * баланс вместо ProductOffer.stock (ADR 0012).
  */
 import { BadRequestException } from '@nestjs/common';
 import { OrderService } from '../../src/orders/order.service';
@@ -24,7 +28,6 @@ describe('OrderService (unit)', () => {
       productId: 'product-1',
       organizationId: 'org-a',
       priceKopecks: 18900,
-      stock: 50,
       minQuantity: 5,
       badge: null,
       isPerishable: false,
@@ -36,13 +39,15 @@ describe('OrderService (unit)', () => {
       productId: 'product-2',
       organizationId: 'org-b',
       priceKopecks: 10400,
-      stock: 30,
       minQuantity: 1,
       badge: null,
       isPerishable: false,
       product: { id: 'product-2', name: 'Огурцы', unit: '1 кг' },
       organization: { id: 'org-b', name: 'Сеть «У дома»' },
     });
+    // Промт 11: остатки — балансы (INITIAL-движения).
+    prisma.seedStock('offer-a', 'org-a', 50);
+    prisma.seedStock('offer-b', 'org-b', 30);
   });
 
   const input = (items: { offerId: string; quantity: number }[]) => ({
@@ -52,7 +57,11 @@ describe('OrderService (unit)', () => {
     deliveryMethod: 'pickup' as const,
   });
 
-  it('создание: номер, итог, событие CREATED, резерв stock', async () => {
+  /** Баланс оффера (единственный склад в фикстурах). */
+  const balanceOf = (offerId: string) =>
+    [...prisma.stockBalances.values()].find((b) => b.offerId === offerId);
+
+  it('создание: номер, итог, событие CREATED, резерв RESERVED', async () => {
     const orders = await service.create(
       input([{ offerId: 'offer-a', quantity: 10 }]),
     );
@@ -64,7 +73,18 @@ describe('OrderService (unit)', () => {
     expect(orders[0].events[0].type).toBe('CREATED');
     expect(orders[0].seller.name).toBe('Опт-Юг');
     expect(orders[0].items[0].title).toBe('Помидоры');
-    expect(prisma.offers.get('offer-a')?.stock).toBe(40);
+
+    // Промт 11: резерв — движение RESERVED, reservedQty += 10,
+    // физический остаток не тронут, доступность упала.
+    const balance = balanceOf('offer-a');
+    expect(balance?.reservedQty).toBe(10);
+    expect(balance?.physicalQty).toBe(50);
+    expect(balance?.availableQty).toBe(40);
+    const reservedMovements = [...prisma.stockMovements.values()].filter(
+      (m) => m.type === 'RESERVED' && m.refId === orders[0].id,
+    );
+    expect(reservedMovements).toHaveLength(1);
+    expect(reservedMovements[0].quantityDelta).toBe(-10);
   });
 
   it('группировка: два продавца → два заказа, номера последовательны', async () => {
@@ -80,18 +100,18 @@ describe('OrderService (unit)', () => {
     const numbers = orders.map((o) => o.number).sort();
     expect(numbers[0].endsWith('-000001')).toBe(true);
     expect(numbers[1].endsWith('-000002')).toBe(true);
-    expect(prisma.offers.get('offer-a')?.stock).toBe(45);
-    expect(prisma.offers.get('offer-b')?.stock).toBe(27);
+    expect(balanceOf('offer-a')?.availableQty).toBe(45);
+    expect(balanceOf('offer-b')?.availableQty).toBe(27);
   });
 
   it('ниже минимальной партии — отказ без резерва', async () => {
     await expect(
       service.create(input([{ offerId: 'offer-a', quantity: 2 }])),
     ).rejects.toThrow(BadRequestException);
-    expect(prisma.offers.get('offer-a')?.stock).toBe(50);
+    expect(prisma.availableOf('offer-a')).toBe(50);
   });
 
-  it('нехватка stock — откат всей группы (оба склада целы)', async () => {
+  it('нехватка остатка — откат всей группы (оба склада целы)', async () => {
     await expect(
       service.create(
         input([
@@ -100,12 +120,14 @@ describe('OrderService (unit)', () => {
         ]),
       ),
     ).rejects.toThrow(BadRequestException);
-    expect(prisma.offers.get('offer-a')?.stock).toBe(50);
-    expect(prisma.offers.get('offer-b')?.stock).toBe(30);
+    expect(prisma.availableOf('offer-a')).toBe(50);
+    expect(prisma.availableOf('offer-b')).toBe(30);
     expect(prisma.orders.size).toBe(0);
     expect(prisma.orderCounters.get(new Date().getFullYear())?.seq ?? 0).toBe(
       0,
     );
+    // Движений не появилось (откат).
+    expect(prisma.stockMovements.size).toBe(2); // только INITIAL-фикстуры
   });
 
   it('список: только заказы покупателя', async () => {
@@ -125,15 +147,25 @@ describe('OrderService (unit)', () => {
     await expect(service.detail(OTHER, order.id)).rejects.toThrow();
   });
 
-  it('отмена: статус, событие, восстановление stock', async () => {
+  it('отмена PENDING: UNRESERVED, доступность восстановлена', async () => {
     const [order] = await service.create(
       input([{ offerId: 'offer-a', quantity: 10 }]),
     );
-    expect(prisma.offers.get('offer-a')?.stock).toBe(40);
+    expect(prisma.availableOf('offer-a')).toBe(40);
     const cancelled = await service.cancel(BUYER, order.id);
     expect(cancelled.status).toBe('CANCELLED');
     expect(cancelled.events.at(-1)?.type).toBe('CANCELLED');
-    expect(prisma.offers.get('offer-a')?.stock).toBe(50);
+
+    // Промт 11: резерв снят движением UNRESERVED.
+    const balance = balanceOf('offer-a');
+    expect(balance?.reservedQty).toBe(0);
+    expect(balance?.physicalQty).toBe(50);
+    expect(balance?.availableQty).toBe(50);
+    const unreserved = [...prisma.stockMovements.values()].filter(
+      (m) => m.type === 'UNRESERVED' && m.refId === order.id,
+    );
+    expect(unreserved).toHaveLength(1);
+    expect(unreserved[0].quantityDelta).toBe(10);
   });
 
   it('повторная отмена — NOT_CANCELLABLE', async () => {

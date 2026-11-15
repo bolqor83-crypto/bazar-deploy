@@ -67,40 +67,41 @@ describe('CatalogService (unit)', () => {
     });
 
     // Помидоры: два предложения — «Опт-Юг» дешевле.
-    await prisma.productOffer.create({
+    const tomatoSouth = await prisma.productOffer.create({
       data: {
         productId: tomatoes.id,
         organizationId: orgSouthId,
         priceKopecks: 18900,
-        stock: 50,
         minQuantity: 5,
         badge: 'hit',
         isPerishable: true,
       },
     });
-    await prisma.productOffer.create({
+    const tomatoHome = await prisma.productOffer.create({
       data: {
         productId: tomatoes.id,
         organizationId: orgHomeId,
         priceKopecks: 23700,
-        stock: 20,
         minQuantity: 1,
         badge: null,
         isPerishable: true,
       },
     });
     // Огурцы: одно предложение.
-    await prisma.productOffer.create({
+    const cucumberSouth = await prisma.productOffer.create({
       data: {
         productId: cucumbers.id,
         organizationId: orgSouthId,
         priceKopecks: 10400,
-        stock: 120,
         minQuantity: 1,
         badge: null,
         isPerishable: false,
       },
     });
+    // Промт 11: остатки — балансы (INITIAL).
+    prisma.seedStock(tomatoSouth.id, 50);
+    prisma.seedStock(tomatoHome.id, 20);
+    prisma.seedStock(cucumberSouth.id, 120);
     // Яблоки: без предложений (витрина может быть пустой у товара).
     void apples;
   });

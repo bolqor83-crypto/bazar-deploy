@@ -3,7 +3,12 @@
  * фильтры/сортировка/пагинация, деталь товара, 404.
  */
 import request from 'supertest';
-import { clearDatabase, createTestApp, type TestApp } from './test-app';
+import {
+  clearDatabase,
+  createTestApp,
+  seedOfferStock,
+  type TestApp,
+} from './test-app';
 
 describe('Каталог (e2e)', () => {
   let testApp: TestApp;
@@ -48,27 +53,36 @@ describe('Каталог (e2e)', () => {
       },
     });
 
-    await testApp.prisma.productOffer.create({
+    const offerTomatoes = await testApp.prisma.productOffer.create({
       data: {
         productId: tomatoes.id,
         organizationId: org.id,
         priceKopecks: 18900,
-        stock: 50,
         minQuantity: 5,
         badge: 'hit',
         isPerishable: true,
       },
     });
-    await testApp.prisma.productOffer.create({
+    const offerCucumbers = await testApp.prisma.productOffer.create({
       data: {
         productId: cucumbers.id,
         organizationId: org.id,
         priceKopecks: 10400,
-        stock: 120,
         minQuantity: 1,
         badge: null,
         isPerishable: false,
       },
+    });
+    // Промт 11: остатки — INITIAL-движения + балансы.
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerTomatoes.id,
+      organizationId: org.id,
+      qty: 50,
+    });
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerCucumbers.id,
+      organizationId: org.id,
+      qty: 120,
     });
   });
 

@@ -19,6 +19,20 @@ export class FakePrisma {
   readonly categories = new Map<string, Record<string, unknown>>();
   readonly products = new Map<string, Record<string, unknown>>();
   readonly offers = new Map<string, Record<string, unknown>>();
+  /** Склады (Промт 11). */
+  readonly stockLocations = new Map<string, Record<string, unknown>>();
+  /** Балансы остатков офферов (Промт 11): offerId → доступно. */
+  readonly stockBalances = new Map<string, { availableQty: number }>();
+
+  /** Начальный остаток оффера (Промт 11): баланс для каталога. */
+  seedStock(offerId: string, qty: number): void {
+    this.stockBalances.set(offerId, { availableQty: qty });
+  }
+
+  /** Доступный остаток оффера — для проверок тестов. */
+  availableOf(offerId: string): number {
+    return this.stockBalances.get(offerId)?.availableQty ?? 0;
+  }
 
   /** Счётчик create для авто-идентификаторов. */
   private counter = 0;
@@ -344,6 +358,10 @@ export class FakePrisma {
             .map((o) => ({
               ...o,
               organization: this.organizations.get(o.organizationId as string),
+              // Промт 11: остаток — из балансов (ADR 0012).
+              stockBalances: this.stockBalances.has(o.id as string)
+                ? [this.stockBalances.get(o.id as string)]
+                : [],
             }));
         }
         result.push(record);
@@ -371,6 +389,10 @@ export class FakePrisma {
           .map((o) => ({
             ...o,
             organization: this.organizations.get(o.organizationId as string),
+            // Промт 11: остаток — из балансов (ADR 0012).
+            stockBalances: this.stockBalances.has(o.id as string)
+              ? [this.stockBalances.get(o.id as string)]
+              : [],
           }));
       }
       return record;
@@ -424,8 +446,47 @@ export class FakePrisma {
     },
   };
 
+  /** Склады (Промт 11): onboarding создаёт default-склад. */
+  readonly stockLocation = {
+    findFirst: async ({
+      where,
+    }: { where?: { organizationId?: string } } = {}) => {
+      let rows = [...this.stockLocations.values()];
+      if (where?.organizationId) {
+        rows = rows.filter((l) => l.organizationId === where.organizationId);
+      }
+      return rows[0] ?? null;
+    },
+    findMany: async ({
+      where,
+    }: { where?: { organizationId?: string } } = {}) => {
+      let rows = [...this.stockLocations.values()];
+      if (where?.organizationId) {
+        rows = rows.filter((l) => l.organizationId === where.organizationId);
+      }
+      return rows;
+    },
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const record = {
+        id: this.nextId('stock-loc'),
+        createdAt: new Date(),
+        ...data,
+      };
+      this.stockLocations.set(record.id, record);
+      return record;
+    },
+  };
+
   /** Транзакция-массив: выполняем последовательно. */
-  $transaction(operations: Promise<unknown>[]): Promise<unknown[]> {
-    return Promise.all(operations);
+  $transaction(operations: Promise<unknown>[]): Promise<unknown[]>;
+  /** Транзакция-функция (Промт 11: onboarding + склад). */
+  $transaction<T>(fn: (tx: FakePrisma) => Promise<T>): Promise<T>;
+  $transaction(
+    operationsOrFn: Promise<unknown>[] | ((tx: FakePrisma) => Promise<unknown>),
+  ): Promise<unknown> {
+    if (Array.isArray(operationsOrFn)) {
+      return Promise.all(operationsOrFn);
+    }
+    return operationsOrFn(this);
   }
 }

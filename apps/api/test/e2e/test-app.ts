@@ -35,8 +35,69 @@ export async function createTestApp(): Promise<TestApp> {
   };
 }
 
+/**
+ * Начальный остаток оффера для e2e (Промт 11): default-склад
+ * организации + INITIAL-движение + баланс. Замена прямой записи
+ * ProductOffer.stock (колонка удалена, ADR 0012).
+ */
+export async function seedOfferStock(
+  prisma: PrismaService,
+  input: { offerId: string; organizationId: string; qty: number },
+): Promise<void> {
+  let location = await prisma.stockLocation.findFirst({
+    where: { organizationId: input.organizationId },
+  });
+  if (!location) {
+    location = await prisma.stockLocation.create({
+      data: {
+        organizationId: input.organizationId,
+        name: 'Основной склад',
+        type: 'WAREHOUSE',
+        isDefault: true,
+      },
+    });
+  }
+  await prisma.stockMovement.create({
+    data: {
+      offerId: input.offerId,
+      locationId: location.id,
+      type: 'INITIAL',
+      quantityDelta: input.qty,
+      reason: 'Начальный остаток (e2e seed)',
+      refType: 'initial',
+      refId: input.offerId,
+    },
+  });
+  await prisma.stockBalance.create({
+    data: {
+      offerId: input.offerId,
+      locationId: location.id,
+      physicalQty: input.qty,
+      reservedQty: 0,
+      availableQty: input.qty,
+    },
+  });
+}
+
+/** Доступный остаток оффера (сумма по складам) для проверок. */
+export async function offerAvailable(
+  prisma: PrismaService,
+  offerId: string,
+): Promise<number> {
+  const agg = await prisma.stockBalance.aggregate({
+    where: { offerId },
+    _sum: { availableQty: true },
+  });
+  return agg._sum.availableQty ?? 0;
+}
+
 /** Очистка всех таблиц (каскады уносят корзины, сессии, точки). */
 export async function clearDatabase(prisma: PrismaService): Promise<void> {
+  // Склад (Промт 11): движения первыми — FK на офферы/склады
+  // без каскада; балансы и склады каскадом с организациями.
+  await prisma.stockMovement.deleteMany();
+  await prisma.stockBalance.deleteMany();
+  await prisma.stockLocation.deleteMany();
   // Доставки первыми: orderId → Order с ON DELETE RESTRICT (события
   // каскадом вместе с заявкой), затем заказы: buyer/seller без
   // onDelete Cascade (заказ живёт дольше участника в предметной
