@@ -126,6 +126,14 @@ export default function CarrierFeedScreen() {
               </Button>
             </DeliveryRequestCard>
           ))}
+          <Text
+            variant="caption"
+            color="textMuted"
+            style={{ textAlign: 'center', paddingTop: spacing.xs }}
+          >
+            Показаны все свободные заявки — новые появятся, как только их
+            оформят точки и оптовики
+          </Text>
         </ScrollView>
       )}
 

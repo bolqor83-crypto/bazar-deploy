@@ -14,6 +14,7 @@ import type { DeliveryStatus } from '@bazar/types';
 import {
   Button,
   DeliveryRequestCard,
+  Dialog,
   EmptyState,
   ErrorState,
   FilterChip,
@@ -71,6 +72,7 @@ export default function MyDeliveriesScreen() {
   const { spacing } = useTheme();
   const { show } = useToast();
   const [segment, setSegment] = useState<SegmentKey>('active');
+  const [confirmDelivery, setConfirmDelivery] = useState<string | null>(null);
   const mineQuery = useCarrierDeliveries('mine');
   const act = useCarrierDeliveryAction();
 
@@ -99,7 +101,7 @@ export default function MyDeliveriesScreen() {
   };
 
   return (
-    <RoleScreen role="carrier" section="my-deliveries" title="Мои доставки">
+    <RoleScreen role="carrier" section="my-deliveries" title="Рейсы">
       {mineQuery.isError ? (
         <ErrorState
           title="Доставки не загрузились"
@@ -137,49 +139,108 @@ export default function MyDeliveriesScreen() {
               }
             />
           ) : (
-            items.map((delivery) => {
-              const next = NEXT_STEP[delivery.status];
-              return (
-                <DeliveryRequestCard
-                  key={delivery.id}
-                  testID={`my-delivery-card-${delivery.id}`}
-                  number={delivery.number}
-                  status={delivery.status}
-                  pickupAddress={delivery.pickupAddress}
-                  dropoffAddress={delivery.dropoffAddress}
-                  weightKg={delivery.weightKg}
-                  volumeL={delivery.volumeL}
-                  priceKopecks={delivery.price}
-                  requesterName={delivery.requesterName}
-                  onPress={() =>
-                    router.push(`/carrier/deliveries/${delivery.id}`)
-                  }
+            <>
+              {segment === 'active' ? (
+                <Text
+                  variant="caption"
+                  color="textMuted"
+                  style={{ textAlign: 'center', paddingTop: spacing.xs }}
                 >
-                  {next ? (
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      loading={act.isPending}
-                      onPress={() =>
-                        onAction(delivery.id, next.action, next.label)
-                      }
-                      testID={`my-delivery-next-${delivery.id}`}
-                    >
-                      {next.label}
-                    </Button>
-                  ) : null}
-                  {delivery.status === 'DELIVERED' ? (
-                    <Text variant="caption" color="textSecondary">
-                      Груз доставлен — ждём подтверждения получателя
-                    </Text>
-                  ) : null}
-                </DeliveryRequestCard>
-              );
-            })
+                  Завершённые и отменённые рейсы — во вкладке «История»
+                </Text>
+              ) : null}
+              {items.map((delivery) => {
+                const next = NEXT_STEP[delivery.status];
+                return (
+                  <DeliveryRequestCard
+                    key={delivery.id}
+                    testID={`my-delivery-card-${delivery.id}`}
+                    number={delivery.number}
+                    status={delivery.status}
+                    pickupAddress={delivery.pickupAddress}
+                    dropoffAddress={delivery.dropoffAddress}
+                    weightKg={delivery.weightKg}
+                    volumeL={delivery.volumeL}
+                    priceKopecks={delivery.price}
+                    requesterName={delivery.requesterName}
+                    onPress={() =>
+                      router.push(`/carrier/deliveries/${delivery.id}`)
+                    }
+                  >
+                    {next ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        loading={act.isPending}
+                        onPress={() => {
+                          // «Доставил» — переход к подтверждению получателя:
+                          // страхуемся от случайного тапа в списке.
+                          if (next.action === 'delivered') {
+                            setConfirmDelivery(delivery.id);
+                          } else {
+                            onAction(delivery.id, next.action, next.label);
+                          }
+                        }}
+                        testID={`my-delivery-next-${delivery.id}`}
+                      >
+                        {next.label}
+                      </Button>
+                    ) : null}
+                    {delivery.status === 'DELIVERED' ? (
+                      <Text variant="caption" color="textSecondary">
+                        Груз доставлен — ждём подтверждения получателя
+                      </Text>
+                    ) : null}
+                  </DeliveryRequestCard>
+                );
+              })}
+            </>
           )}
         </ScrollView>
       )}
+
+      {/* Подтверждение финального шага: защита от случайного тапа. */}
+      <Dialog
+        visible={confirmDelivery !== null}
+        onClose={() => setConfirmDelivery(null)}
+        title="Отметить доставку выполненной?"
+        dismissable
+      >
+        <Text
+          variant="body"
+          color="textSecondary"
+          style={{ marginBottom: spacing.lg }}
+        >
+          Получатель получит уведомление и подтвердит получение. До его
+          подтверждения статус можно увидеть в деталях рейса.
+        </Text>
+        <View style={{ gap: spacing.sm }}>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={act.isPending}
+            onPress={() => {
+              const id = confirmDelivery;
+              setConfirmDelivery(null);
+              if (id)
+                onAction(id, 'delivered', 'Доставка отмечена выполненной');
+            }}
+            testID="my-delivery-delivered-confirm"
+          >
+            Да, доставил
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            fullWidth
+            onPress={() => setConfirmDelivery(null)}
+          >
+            Ещё в пути
+          </Button>
+        </View>
+      </Dialog>
     </RoleScreen>
   );
 }

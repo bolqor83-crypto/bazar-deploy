@@ -229,7 +229,7 @@ const SCREENS: readonly Row[] = [
   [
     'carrier/my-deliveries',
     MyDeliveriesScreen,
-    'Мои доставки',
+    'Рейсы',
     'Активных рейсов нет',
     CARRIER,
   ],

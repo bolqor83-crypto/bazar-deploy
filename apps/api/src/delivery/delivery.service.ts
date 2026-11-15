@@ -114,6 +114,7 @@ export interface DeliveryView {
   volumeL: number | null;
   cargoNotes: string | null;
   price: number | null;
+  cancelReason: string | null;
   createdAt: Date;
   updatedAt: Date;
   events: {

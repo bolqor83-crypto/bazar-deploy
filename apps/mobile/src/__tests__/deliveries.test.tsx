@@ -272,12 +272,14 @@ describe('Мои доставки', () => {
     expect(screen.queryByText('DL-2026-000002')).toBeNull();
   });
 
-  it('кнопка шага вызывает действие по рейсу', async () => {
+  it('кнопка шага вызывает действие по рейсу (с подтверждением)', async () => {
     deliveryApi.postCarrierDeliveryAction.mockResolvedValue(
       makeDelivery({ status: 'DELIVERED' }),
     );
     const screen = await renderWithQuery(<MyDeliveriesScreen />);
+    // IN_TRANSIT → «Доставил»: финальный шаг страхуется подтверждением.
     fireEvent.press(await screen.findByTestId('my-delivery-next-delivery-1'));
+    fireEvent.press(await screen.findByText('Да, доставил'));
     await waitFor(() =>
       expect(deliveryApi.postCarrierDeliveryAction).toHaveBeenCalledWith(
         'delivery-1',
@@ -285,6 +287,17 @@ describe('Мои доставки', () => {
         undefined,
       ),
     );
+  });
+
+  it('«Доставил» можно отменить до подтверждения', async () => {
+    deliveryApi.postCarrierDeliveryAction.mockResolvedValue(
+      makeDelivery({ status: 'DELIVERED' }),
+    );
+    const screen = await renderWithQuery(<MyDeliveriesScreen />);
+    fireEvent.press(await screen.findByTestId('my-delivery-next-delivery-1'));
+    fireEvent.press(await screen.findByText('Ещё в пути'));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(deliveryApi.postCarrierDeliveryAction).not.toHaveBeenCalled();
   });
 
   it('сегмент «История»: завершённые и отменённые', async () => {

@@ -21,21 +21,32 @@ import {
   fetchDelivery,
   postCarrierDeliveryAction,
 } from '../services/api/deliveryApi';
+import { useContextStore } from '../stores/contextStore';
+
+/** Активная организация перевозчика (в ключе запроса — смена
+ *  организации пересобирает запрос, а не стреляет с пустым
+ *  заголовком X-Organization-Id). */
+function useCarrierOrgId(): string | null {
+  return useContextStore((s) => s.active.organizationId);
+}
 
 /** Лента перевозчика (feed/mine). */
 export function useCarrierDeliveries(scope: CarrierDeliveryScope) {
+  const organizationId = useCarrierOrgId();
   return useQuery({
-    queryKey: ['carrier-deliveries', scope],
+    queryKey: ['carrier-deliveries', scope, organizationId],
     queryFn: () => fetchCarrierDeliveries({ scope, pageSize: 30 }),
+    enabled: organizationId !== null,
   });
 }
 
 /** Детали доставки для перевозчика. */
 export function useCarrierDelivery(id: string) {
+  const organizationId = useCarrierOrgId();
   return useQuery({
-    queryKey: ['deliveries', 'detail', id],
+    queryKey: ['carrier-deliveries', 'detail', id, organizationId],
     queryFn: () => fetchCarrierDelivery(id),
-    enabled: id.length > 0,
+    enabled: id.length > 0 && organizationId !== null,
   });
 }
 
@@ -53,9 +64,9 @@ export function useCreateDelivery() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateDeliveryInput) => createDelivery(input),
-    onSuccess: (delivery: Delivery) => {
-      client.setQueryData(['deliveries', 'detail', delivery.id], delivery);
+    onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['orders'] });
+      void client.invalidateQueries({ queryKey: ['deliveries'] });
       void client.invalidateQueries({ queryKey: ['carrier-deliveries'] });
     },
   });
@@ -74,8 +85,7 @@ export function useCarrierDeliveryAction() {
       action: CarrierDeliveryAction;
       priceKopecks?: number;
     }) => postCarrierDeliveryAction(id, action, priceKopecks),
-    onSuccess: (delivery: Delivery) => {
-      client.setQueryData(['deliveries', 'detail', delivery.id], delivery);
+    onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['carrier-deliveries'] });
       void client.invalidateQueries({ queryKey: ['orders'] });
     },
@@ -87,8 +97,8 @@ export function useCompleteDelivery() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => completeDelivery(id),
-    onSuccess: (delivery: Delivery) => {
-      client.setQueryData(['deliveries', 'detail', delivery.id], delivery);
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['deliveries'] });
       void client.invalidateQueries({ queryKey: ['orders'] });
       void client.invalidateQueries({ queryKey: ['carrier-deliveries'] });
     },
@@ -101,8 +111,8 @@ export function useCancelDelivery() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       cancelDelivery(id, reason),
-    onSuccess: (delivery: Delivery) => {
-      client.setQueryData(['deliveries', 'detail', delivery.id], delivery);
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['deliveries'] });
       void client.invalidateQueries({ queryKey: ['orders'] });
       void client.invalidateQueries({ queryKey: ['carrier-deliveries'] });
     },

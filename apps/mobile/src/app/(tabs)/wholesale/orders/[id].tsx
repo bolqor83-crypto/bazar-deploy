@@ -186,7 +186,7 @@ export default function SellerOrderDetailScreen() {
             }}
           >
             {circleButton('Назад')}
-            <Text variant="h2" mono style={{ flex: 1 }} numberOfLines={1}>
+            <Text variant="h2" mono style={{ flex: 1 }} numberOfLines={2}>
               {order.number}
             </Text>
             <OrderStatus status={STATUS_MAP[order.status] ?? 'new'} />
@@ -201,6 +201,14 @@ export default function SellerOrderDetailScreen() {
               testID="seller-order-timeline"
             />
           </Card>
+
+          {/* Промт 10, Часть D: заявка на доставку по заказу. */}
+          <OrderDeliveryBlock
+            orderId={order.id}
+            orderStatus={order.status}
+            delivery={order.delivery}
+            basePath="wholesale"
+          />
 
           <Card>
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
@@ -281,14 +289,6 @@ export default function SellerOrderDetailScreen() {
               {order.address ? order.address : 'Самовывоз со склада'}
             </Text>
           </Card>
-
-          {/* Промт 10, Часть D: заявка на доставку по заказу. */}
-          <OrderDeliveryBlock
-            orderId={order.id}
-            orderStatus={order.status}
-            delivery={order.delivery}
-            basePath="wholesale"
-          />
 
           {order.comment ? (
             <Card>

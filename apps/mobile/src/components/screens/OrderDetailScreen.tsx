@@ -110,7 +110,7 @@ export default function OrderDetailScreen({
       }}
     >
       {circleButton('Назад')}
-      <Text variant="h2" mono>
+      <Text variant="h2" mono numberOfLines={2}>
         {order?.number ?? 'Заказ'}
       </Text>
     </View>
@@ -163,7 +163,7 @@ export default function OrderDetailScreen({
           }}
         >
           {circleButton('Назад')}
-          <Text variant="h2" mono style={{ flex: 1 }} numberOfLines={1}>
+          <Text variant="h2" mono style={{ flex: 1 }} numberOfLines={2}>
             {order.number}
           </Text>
           <OrderStatus status={STATUS_MAP[order.status] ?? 'new'} />
@@ -175,6 +175,14 @@ export default function OrderDetailScreen({
           </Text>
           <OrderTimeline status={order.status} testID="order-timeline" />
         </Card>
+
+        {/* Промт 10, Часть D: заявка на доставку по заказу. */}
+        <OrderDeliveryBlock
+          orderId={order.id}
+          orderStatus={order.status}
+          delivery={order.delivery}
+          basePath="customer"
+        />
 
         <PartyCard
           name={order.seller.name}
@@ -253,14 +261,6 @@ export default function OrderDetailScreen({
             {order.address ? order.address : 'Самовывоз с точки продавца'}
           </Text>
         </Card>
-
-        {/* Промт 10, Часть D: заявка на доставку по заказу. */}
-        <OrderDeliveryBlock
-          orderId={order.id}
-          orderStatus={order.status}
-          delivery={order.delivery}
-          basePath="customer"
-        />
 
         {order.comment ? (
           <Card>

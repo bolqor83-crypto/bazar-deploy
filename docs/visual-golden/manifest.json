@@ -210,6 +210,90 @@
     "authState": "user",
     "role": "carrier",
     "roleLabel": "Перевозчик",
-    "waitForText": "Рейсы"
+    "waitForText": "Лента"
+  },
+  {
+    "name": "carrier-feed-dark-390",
+    "file": "carrier-feed-dark-390.png",
+    "url": "/carrier/feed",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "Лента"
+  },
+  {
+    "name": "carrier-my-deliveries-light-390",
+    "file": "carrier-my-deliveries-light-390.png",
+    "url": "/carrier/my-deliveries",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "Мои доставки"
+  },
+  {
+    "name": "carrier-my-deliveries-dark-430",
+    "file": "carrier-my-deliveries-dark-430.png",
+    "url": "/carrier/my-deliveries",
+    "viewport": 430,
+    "theme": "dark",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "Мои доставки"
+  },
+  {
+    "name": "carrier-history-light-390",
+    "file": "carrier-history-light-390.png",
+    "url": "/carrier/history",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "История"
+  },
+  {
+    "name": "carrier-delivery-detail-light-390",
+    "file": "carrier-delivery-detail-light-390.png",
+    "url": "/carrier/my-deliveries",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "Мои доставки",
+    "openPreparedDelivery": true
+  },
+  {
+    "name": "carrier-delivery-detail-dark-390",
+    "file": "carrier-delivery-detail-dark-390.png",
+    "url": "/carrier/my-deliveries",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "carrier",
+    "waitForText": "Мои доставки",
+    "openPreparedDelivery": true
+  },
+  {
+    "name": "order-with-delivery-light-390",
+    "file": "order-with-delivery-light-390.png",
+    "url": "/customer/orders",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Заказы",
+    "openPreparedOrder": true
+  },
+  {
+    "name": "order-with-delivery-dark-430",
+    "file": "order-with-delivery-dark-430.png",
+    "url": "/customer/orders",
+    "viewport": 430,
+    "theme": "dark",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Заказы",
+    "openPreparedOrder": true
   }
 ]

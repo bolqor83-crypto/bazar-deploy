@@ -220,12 +220,14 @@ export function normalizeForRole(
     }
 
     case 'carrier': {
-      // Организация опциональна: если указана чужая — работаем без неё.
+      // Промт 10, Часть D: экраны перевозчика требуют организацию
+      // (X-Organization-Id guard'а) — добираем первую по членству,
+      // как у продавца и точки. Чужая организация — сброс на свою.
       const orgId =
         ctx.organizationId &&
         orgBelongsToRole(ctx.organizationId, 'carrier', memberships)
           ? ctx.organizationId
-          : null;
+          : firstOrgIdOf('carrier');
       return {
         userId: ctx.userId,
         role: 'carrier',

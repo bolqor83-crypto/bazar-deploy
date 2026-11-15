@@ -305,6 +305,19 @@ describe('contextStore', () => {
       );
       expect(result.organizationId).toBe('o4');
     });
+
+    it('carrier с чужой организацией добирает свою первую (Промт 10 D)', () => {
+      const result = normalizeForRole(
+        {
+          userId: 'u1',
+          role: 'carrier',
+          organizationId: 'o1',
+          locationId: null,
+        },
+        mockMemberships,
+      );
+      expect(result.organizationId).toBe('o4');
+    });
   });
 
   // ---------------------------------------------------------------------

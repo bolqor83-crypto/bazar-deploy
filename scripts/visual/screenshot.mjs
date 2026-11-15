@@ -49,11 +49,22 @@ export function maskSelectors() {
 /** Подготовка страницы: вьюпорт, тема, отключение анимаций. */
 export async function preparePage(context, entry) {
   const page = await context.newPage();
+  await setupPage(page, entry);
+  return page;
+}
+
+/** Настройка существующей страницы под запись (без создания). */
+export async function setupPage(page, entry) {
   const vp = VIEWPORTS[entry.viewport] ?? VIEWPORTS[390];
   await page.setViewportSize(vp);
   await page.emulateMedia({
     colorScheme: entry.theme === 'dark' ? 'dark' : 'light',
   });
+  return page;
+}
+
+/** initScript отключения анимаций — один раз на страницу. */
+export async function disableAnimations(page) {
   await page.addInitScript(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -67,7 +78,6 @@ export async function preparePage(context, entry) {
       document.head.appendChild(style);
     });
   });
-  return page;
 }
 
 /** Применить маски (скрытие динамических зон) перед снимком. */
@@ -200,6 +210,221 @@ async function resetDemoCart(token, offer) {
   return quantity;
 }
 
+/** Подготовленный сценарий доставок (id для прямых переходов). */
+const prepared = {
+  orderId: '',
+  orderNumber: '',
+  deliveryId: '',
+  deliveryNumber: '',
+};
+
+/** POST-запрос к API с токеном Ивана. */
+async function apiPost(token, path, body, orgId) {
+  const res = await fetch(`${BASE_URL}/api${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...(orgId ? { 'X-Organization-Id': orgId } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`${path}: ${res.status} ${text.slice(0, 200)}`);
+  }
+  return JSON.parse(text);
+}
+
+/** Прямой доступ к демо-БД (Prisma): детерминированные даты/счётчики. */
+async function openPrisma() {
+  const { PrismaClient } = await import('@prisma/client');
+  const url =
+    process.env.DATABASE_URL_POOLED ?? process.env.NEON_DATABASE_URL_POOLED;
+  if (url) {
+    return new PrismaClient({ datasources: { db: { url } } });
+  }
+  // Локально: читать apps/api/.env (CI задаёт NEON_*).
+  const { readFileSync } = await import('node:fs');
+  const env = readFileSync('apps/api/.env', 'utf-8');
+  const pooled = env
+    .split('\n')
+    .find((l) => l.startsWith('DATABASE_URL_POOLED='));
+  if (!pooled) throw new Error('нет DATABASE_URL_POOLED');
+  return new PrismaClient({
+    datasources: { db: { url: pooled.slice('DATABASE_URL_POOLED='.length) } },
+  });
+}
+
+/** Фиксированные payload'ы сценария (детерминизм пикселей). */
+const SCENARIO_ADDRESS = {
+  pickupAddress: 'База Опт-Юг, ул. Шоссейная, 4',
+  pickupContact: 'Пётр Селиванов, +7 900 555-01-01',
+  dropoffAddress: 'Ростов-на-Дону, ул. Большая Садовая, 101',
+  dropoffContact: 'Мария Петрова, +7 900 555-02-02',
+  weightKg: 60,
+  volumeL: 400,
+  cargoNotes: 'Ящики, не кантовать',
+};
+const FIXED_DATES = [
+  new Date('2026-11-15T08:30:00Z'),
+  new Date('2026-11-15T09:00:00Z'),
+  new Date('2026-11-15T09:30:00Z'),
+];
+
+/**
+ * Детерминированный сценарий доставок Ивана (Промт 10, Часть D).
+ *
+ * Пересоздаёт с нуля: 3 подтверждённых заказа (фиксированные даты,
+ * номера BZ-2026-000003…000005, stock восстанавливается) и 3
+ * доставки: PENDING (лента), IN_TRANSIT (мои + карточка заказа),
+ * COMPLETED (история с заработком). Уведомления помечаются
+ * прочитанными (badge профиля = 0). Прогон CI идемпотентен.
+ */
+async function prepareDemoDeliveries() {
+  // apiLogin может упереться в троттлер (5/мин): один ретрай.
+  let token;
+  try {
+    token = await apiLogin();
+  } catch (e) {
+    await new Promise((r) => setTimeout(r, 15_000));
+    token = await apiLogin();
+    void e;
+  }
+  const prisma = await openPrisma();
+  try {
+    // 1. Очистить доставки и заказы Ивана, счётчики с нуля.
+    await prisma.deliveryRequest.deleteMany();
+    await prisma.deliveryCounter.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.orderCounter.update({
+      where: { year: new Date().getFullYear() },
+      data: { seq: 2 },
+    });
+
+    // 2. Организации Ивана (продавец и перевозчик).
+    const ivan = await prisma.user.findUnique({
+      where: { phone: DEMO_PHONE_RAW },
+      select: { id: true },
+    });
+    if (!ivan) throw new Error('демо-пользователь не найден');
+    const wholesale = await prisma.organization.findFirst({
+      where: { name: 'Опт-Юг' },
+      select: { id: true },
+    });
+    const logistics = await prisma.organization.findFirst({
+      where: { name: 'Транс-Логистик' },
+      select: { id: true },
+    });
+    if (!wholesale || !logistics)
+      throw new Error('организации сида не найдены');
+
+    // 3. Фиксированный stock первого предложения каталога.
+    const offer = await firstOffer(token);
+    await prisma.productOffer.update({
+      where: { id: offer.id },
+      data: { stock: Math.max(50, offer.minQuantity ?? 1) },
+    });
+    const quantity = Math.max(5, offer.minQuantity ?? 1);
+
+    // 4. Три заказа: создать → подтвердить → доставка → статус.
+    const deliveries = [];
+    for (let i = 0; i < 3; i += 1) {
+      const orders = await apiPost(token, '/orders', {
+        items: [{ offerId: offer.id, quantity }],
+        deliveryMethod: 'pickup',
+      });
+      const order = orders[0];
+      await apiPost(
+        token,
+        `/seller/orders/${order.id}/confirm`,
+        undefined,
+        wholesale.id,
+      );
+      const delivery = await apiPost(token, '/deliveries', {
+        orderId: order.id,
+        ...SCENARIO_ADDRESS,
+      });
+      deliveries.push({ order, delivery });
+
+      // Фиксированные даты (текст на карточках заказа стабилен).
+      const at = FIXED_DATES[i];
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { createdAt: at, updatedAt: at },
+      });
+      await prisma.deliveryRequest.update({
+        where: { id: delivery.id },
+        data: { createdAt: at, updatedAt: at },
+      });
+    }
+
+    // 5. Статусы доставок: PENDING, IN_TRANSIT, COMPLETED.
+    const [pending, active, done] = deliveries;
+    const carrierHeaders = logistics.id;
+    await apiPost(
+      token,
+      `/carrier/deliveries/${active.delivery.id}/accept`,
+      { price: 150000 },
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${active.delivery.id}/picked-up`,
+      undefined,
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${active.delivery.id}/in-transit`,
+      undefined,
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${done.delivery.id}/accept`,
+      { price: 120000 },
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${done.delivery.id}/picked-up`,
+      undefined,
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${done.delivery.id}/in-transit`,
+      undefined,
+      carrierHeaders,
+    );
+    await apiPost(
+      token,
+      `/carrier/deliveries/${done.delivery.id}/delivered`,
+      undefined,
+      carrierHeaders,
+    );
+    await apiPost(token, `/deliveries/${done.delivery.id}/complete`);
+
+    // 6. Уведомления сценария — прочитаны (badge профиля = 0).
+    await prisma.notification.updateMany({
+      where: { readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    prepared.orderId = active.order.id;
+    prepared.orderNumber = active.order.number;
+    prepared.deliveryId = active.delivery.id;
+    prepared.deliveryNumber = active.delivery.number;
+    console.log(
+      `подготовка: доставки ${pending.delivery.number} (PENDING), ` +
+        `${active.delivery.number} (IN_TRANSIT), ${done.delivery.number} (COMPLETED)`,
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 /**
  * Снять набор записей манифеста. Возвращает Map<name, Buffer PNG>.
  * Группировка: guest-контекст и user-контекст (один логин на всех).
@@ -239,19 +464,40 @@ export async function captureSet(entries) {
       } catch (e) {
         console.warn(`подготовка корзины не удалась: ${e.message}`);
       }
+      // Детерминированный сценарий доставок (Промт 10, Часть D):
+      // заказы с фиксированными датами и номера DL с нуля.
+      // Подготовка обязательна для записей с openPrepared*: тихий
+      // провал даёт золотые 404 — падаем громко.
+      const needsPrepared = userEntries.some(
+        (e) => e.openPreparedOrder || e.openPreparedDelivery,
+      );
+      try {
+        await prepareDemoDeliveries();
+      } catch (e) {
+        if (needsPrepared) {
+          throw new Error(`подготовка доставок не удалась: ${e.message}`);
+        }
+        console.warn(`подготовка доставок не удалась: ${e.message}`);
+      }
+      if (needsPrepared && prepared.deliveryId === '') {
+        throw new Error('подготовка доставок не заполнила prepared-ids');
+      }
 
       const userContext = await browser.newContext({
         deviceScaleFactor: 2,
         isMobile: true,
         hasTouch: true,
       });
-      const loginPage = await userContext.newPage();
-      await loginAsDemo(loginPage);
-      await loginPage.close();
+      // Промт 10, Часть D: refresh-токен на web живёт в sessionStorage
+      // (ADR 0011) — он привязан к вкладке. Все экраны пользователя
+      // снимаются в ОДНОЙ вкладке: логин и съёмка без закрытия.
+      const page = await userContext.newPage();
+      await disableAnimations(page);
+      await loginAsDemo(page);
 
       let activeRole = 'wholesale_seller';
       for (const entry of userEntries) {
-        const page = await preparePage(userContext, entry);
+        await setupPage(page, entry);
         const targetRole = entry.role ?? 'customer';
         if (targetRole !== activeRole) {
           await page
@@ -261,6 +507,31 @@ export async function captureSet(entries) {
           activeRole = targetRole;
         }
         await settle(page, entry);
+        if (entry.openPreparedOrder) {
+          // Прямой переход к подготовленному заказу с доставкой.
+          await page.goto(`${BASE_URL}/customer/orders/${prepared.orderId}`, {
+            waitUntil: 'networkidle',
+          });
+          await page
+            .waitForSelector('[data-testid="order-timeline"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
+        }
+        if (entry.openPreparedDelivery) {
+          // Прямой переход к подготовленной доставке (вид перевозчика).
+          await page.goto(
+            `${BASE_URL}/carrier/deliveries/${prepared.deliveryId}`,
+            { waitUntil: 'networkidle' },
+          );
+          await page
+            .waitForSelector('[data-testid="delivery-timeline"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
+        }
         if (entry.openFirstProduct) {
           const card = page.locator('[data-testid="catalog-product"]').first();
           await card.click();
@@ -309,8 +580,8 @@ export async function captureSet(entries) {
         }
         await applyMasks(page);
         shots.set(entry.name, await page.screenshot({ fullPage: false }));
-        await page.close();
       }
+      await page.close();
       await userContext.close();
     }
   } finally {
