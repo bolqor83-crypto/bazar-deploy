@@ -163,6 +163,34 @@ memberships`; // MOCK ONLY. Миграция онбординга на API — �
 - Заглушки изображений — пастельные тона `tokens/placeholder.ts`
   (одинаковые в обеих темах), до настоящих фото (Промт 9).
 
+## Склад (Промт 11, ADR 0012)
+
+- **Event-sourced**: `StockMovement` (append-only журнал, источник
+  правды) + `StockBalance` (денормализованный агрегат:
+  physical/reserved/available на пару оффер-склад).
+- **`ProductOffer.stock` не существует.** Доступный остаток —
+  `SUM(availableQty)` по складам организации (каталог, корзина,
+  кабинет). Колонка удалена миграцией `add_stock`.
+- Резервирование в заказах — через `RESERVED` при создании
+  (FIFO по складам, нехватка — откат всей группы),
+  `SALE_OUT` + `UNRESERVED` при подтверждении, `UNRESERVED`
+  при отмене PENDING, `RETURN_IN` при отмене CONFIRMED.
+- Перемещение между складами — атомарная транзакция
+  (`TRANSFER_OUT` + `TRANSFER_IN` парой).
+- Списания (продажа/списание/перемещение/резерв) не уводят
+  доступный остаток в минус; `ADJUSTMENT` может (инвентаризация).
+- Default-склад «Основной склад» создаётся при onboarding и лениво
+  при первом движении без явного склада.
+- Причина движения обязательна (≥ 3 символов) — человекочитаемый
+  аудит.
+- API: `/api/stock/locations` (CRUD), `/api/stock/balances`,
+  `/api/stock/summary`, `/api/stock/movements`, `/api/stock/transfer`
+  — под JWT + membership (X-Organization-Id).
+- Каталог: `bestOffer.stock` computed from StockBalance; оффер с
+  нулевым доступным остатком не показывается.
+- Заказы: при создании — RESERVED, при подтверждении — SALE_OUT +
+  UNRESERVED, при отмене — UNRESERVED/RETURN_IN (см. ADR 0012).
+
 ## Безопасность
 
 - Пароли — Argon2id на сервере; никогда не в открытом виде, хеш не
