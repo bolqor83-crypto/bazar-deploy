@@ -276,7 +276,8 @@ const FIXED_DATES = [
  * Детерминированный сценарий доставок Ивана (Промт 10, Часть D).
  *
  * Пересоздаёт с нуля: 3 подтверждённых заказа (фиксированные даты,
- * номера BZ-2026-000003…000005, stock восстанавливается) и 3
+ * номера BZ-2026-000003…000005, остаток восстанавливается через
+ * баланс, Промт 11) и 3
  * доставки: PENDING (лента), IN_TRANSIT (мои + карточка заказа),
  * COMPLETED (история с заработком). Уведомления помечаются
  * прочитанными (badge профиля = 0). Прогон CI идемпотентен.
@@ -294,8 +295,11 @@ async function prepareDemoDeliveries() {
   const prisma = await openPrisma();
   try {
     // 1. Очистить доставки и заказы Ивана, счётчики с нуля.
+    //    Промт 11: движения заказов (refType='order') удаляются
+    //    вместе с ними — журнал не копит сироты между прогонами CI.
     await prisma.deliveryRequest.deleteMany();
     await prisma.deliveryCounter.deleteMany();
+    await prisma.stockMovement.deleteMany({ where: { refType: 'order' } });
     await prisma.order.deleteMany();
     await prisma.orderCounter.update({
       where: { year: new Date().getFullYear() },
@@ -319,12 +323,82 @@ async function prepareDemoDeliveries() {
     if (!wholesale || !logistics)
       throw new Error('организации сида не найдены');
 
-    // 3. Фиксированный stock первого предложения каталога.
+    // 3. Фиксированный доступный остаток первого предложения
+    //    (Промт 11: баланс + компенсирующее ADJUSTMENT-движение,
+    //    ADR 0012 — колонки ProductOffer.stock больше нет).
     const offer = await firstOffer(token);
-    await prisma.productOffer.update({
-      where: { id: offer.id },
-      data: { stock: Math.max(50, offer.minQuantity ?? 1) },
+    const target = Math.max(50, offer.minQuantity ?? 1);
+    const balances = await prisma.stockBalance.findMany({
+      where: { offerId: offer.id },
+      orderBy: { location: { isDefault: 'desc' } },
     });
+    if (balances.length === 0) {
+      const location = await prisma.stockLocation.findFirstOrThrow({
+        where: { organizationId: offer.organization.id },
+      });
+      await prisma.stockMovement.create({
+        data: {
+          offerId: offer.id,
+          locationId: location.id,
+          type: 'INITIAL',
+          quantityDelta: target,
+          reason: 'Детерминированный остаток для golden-скриншотов',
+          refType: 'initial',
+          refId: offer.id,
+        },
+      });
+      await prisma.stockBalance.create({
+        data: {
+          offerId: offer.id,
+          locationId: location.id,
+          physicalQty: target,
+          reservedQty: 0,
+          availableQty: target,
+        },
+      });
+    } else {
+      const first = balances[0];
+      const current = balances.reduce((sum, b) => sum + b.availableQty, 0);
+      if (current !== target) {
+        await prisma.stockMovement.create({
+          data: {
+            offerId: offer.id,
+            locationId: first.locationId,
+            type: 'ADJUSTMENT',
+            quantityDelta: target - current,
+            reason: 'Детерминированный остаток для golden-скриншотов',
+            refType: 'manual',
+            refId: offer.id,
+          },
+        });
+      }
+      // Весь остаток — на первом складе, резервы сняты (заказы
+      // удалены шагом 1), прочие склады обнулены.
+      await prisma.stockBalance.update({
+        where: {
+          offerId_locationId: {
+            offerId: offer.id,
+            locationId: first.locationId,
+          },
+        },
+        data: {
+          physicalQty: target,
+          reservedQty: 0,
+          availableQty: target,
+        },
+      });
+      for (const other of balances.slice(1)) {
+        await prisma.stockBalance.update({
+          where: {
+            offerId_locationId: {
+              offerId: offer.id,
+              locationId: other.locationId,
+            },
+          },
+          data: { physicalQty: 0, reservedQty: 0, availableQty: 0 },
+        });
+      }
+    }
     const quantity = Math.max(5, offer.minQuantity ?? 1);
 
     // 4. Три заказа: создать → подтвердить → доставка → статус.

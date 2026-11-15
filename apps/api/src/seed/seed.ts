@@ -127,6 +127,15 @@ async function seedIvan(): Promise<void> {
             },
           },
         });
+        // Промт 11: каждой организации — default-склад.
+        await tx.stockLocation.create({
+          data: {
+            organizationId: organization.id,
+            name: 'Основной склад',
+            type: 'WAREHOUSE',
+            isDefault: true,
+          },
+        });
         for (const loc of org.locations) {
           await tx.businessLocation.create({
             data: {
@@ -159,8 +168,10 @@ async function seedCatalog(): Promise<void> {
   }
 
   // Продавцы ищем по имени — их создал seedIvan (или они уже были).
-  const sellers = await prisma.organization.findMany();
-  const orgByName = new Map(sellers.map((org) => [org.name, org.id]));
+  const sellers = await prisma.organization.findMany({
+    include: { stockLocations: { where: { isDefault: true } } },
+  });
+  const orgByName = new Map(sellers.map((org) => [org.name, org]));
 
   await prisma.$transaction(
     async (tx) => {
@@ -188,23 +199,59 @@ async function seedCatalog(): Promise<void> {
           },
         });
         for (const offer of product.offers) {
-          const organizationId = orgByName.get(offer.organization);
-          if (!organizationId) {
+          const org = orgByName.get(offer.organization);
+          if (!org) {
             throw new Error(
               `Seed: организация «${offer.organization}» не найдена`,
             );
           }
-          await tx.productOffer.create({
+          // Промт 11: остаток оффера — INITIAL-движение + баланс на
+          // default-складе организации (лениво, если склада нет).
+          let locationId = org.stockLocations[0]?.id;
+          if (!locationId) {
+            locationId = (
+              await tx.stockLocation.create({
+                data: {
+                  organizationId: org.id,
+                  name: 'Основной склад',
+                  type: 'WAREHOUSE',
+                  isDefault: true,
+                },
+              })
+            ).id;
+          }
+          const createdOffer = await tx.productOffer.create({
             data: {
               productId: created.id,
-              organizationId,
+              organizationId: org.id,
               priceKopecks: offer.priceKopecks,
-              stock: offer.stock,
               minQuantity: offer.minQuantity,
               badge: offer.badge,
               isPerishable: offer.isPerishable,
             },
           });
+          if (offer.stock > 0) {
+            await tx.stockMovement.create({
+              data: {
+                offerId: createdOffer.id,
+                locationId,
+                type: 'INITIAL',
+                quantityDelta: offer.stock,
+                reason: 'Начальный остаток (seed)',
+                refType: 'initial',
+                refId: createdOffer.id,
+              },
+            });
+            await tx.stockBalance.create({
+              data: {
+                offerId: createdOffer.id,
+                locationId,
+                physicalQty: offer.stock,
+                reservedQty: 0,
+                availableQty: offer.stock,
+              },
+            });
+          }
         }
       }
     },

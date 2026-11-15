@@ -3,9 +3,10 @@
  *
  * Инварианты:
  * - quantity >= offer.minQuantity (партия продавца);
- * - quantity <= offer.stock (склад);
+ * - quantity <= доступного остатка оффера (Промт 11: сумма
+ *   availableQty по складам — ADR 0012);
  * - корзина одна на (userId, organizationId) — unique в БД;
- * - при чтении собираются warnings: offer исчез или stock меньше
+ * - при чтении собираются warnings: offer исчез или остаток меньше
  *   сохранённого количества — покупатель видит честное состояние.
  */
 import {
@@ -38,11 +39,22 @@ export interface CartView {
   warnings: { itemId: string; message: string }[];
 }
 
+/** Доступный остаток оффера: сумма по складам (Промт 11). */
+function offerStock(offer: {
+  stockBalances?: { availableQty: number }[];
+}): number {
+  return (offer.stockBalances ?? []).reduce(
+    (sum, balance) => sum + balance.availableQty,
+    0,
+  );
+}
+
 const includeOffer = {
   offer: {
     include: {
       product: { select: { id: true, name: true, unit: true } },
       organization: { select: { id: true, name: true } },
+      stockBalances: { select: { availableQty: true } },
     },
   },
 } satisfies Prisma.CartItemInclude;
@@ -51,12 +63,30 @@ type CartItemWithOffer = CartItem & {
   offer: {
     id: string;
     priceKopecks: number;
-    stock: number;
+    stockBalances: { availableQty: number }[];
     minQuantity: number;
     product: { id: string; name: string; unit: string };
     organization: { id: string; name: string };
   };
 };
+
+/** Позиция с вычисленным остатком (для ответа и проверок). */
+type CartItemRow = Omit<CartItemWithOffer, 'offer'> & {
+  offer: Omit<CartItemWithOffer['offer'], 'stockBalances'> & {
+    stock: number;
+  };
+};
+
+/** Развернуть позиции: остаток из балансов → поле stock. */
+function withStock(items: CartItemWithOffer[]): CartItemRow[] {
+  return items.map((item) => {
+    const { stockBalances, ...offer } = item.offer;
+    return {
+      ...item,
+      offer: { ...offer, stock: offerStock({ stockBalances }) },
+    };
+  });
+}
 
 @Injectable()
 export class CartService {
@@ -75,11 +105,13 @@ export class CartService {
     if (!cart) {
       return { items: [], subtotal: 0, warnings: [] };
     }
-    const items = (await this.prisma.cartItem.findMany({
-      where: { cartId: cart.id },
-      include: includeOffer,
-      orderBy: { createdAt: 'asc' },
-    })) as CartItemWithOffer[];
+    const items = withStock(
+      (await this.prisma.cartItem.findMany({
+        where: { cartId: cart.id },
+        include: includeOffer,
+        orderBy: { createdAt: 'asc' },
+      })) as CartItemWithOffer[],
+    );
 
     const warnings: { itemId: string; message: string }[] = [];
     const views: CartItemView[] = [];
@@ -119,9 +151,9 @@ export class CartService {
       where: { id: offerId },
       select: {
         id: true,
-        stock: true,
         minQuantity: true,
         organizationId: true,
+        stockBalances: { select: { availableQty: true } },
       },
     });
     if (!offer) {
@@ -130,16 +162,17 @@ export class CartService {
         message: 'Предложение не найдено',
       });
     }
-    if (offer.stock <= 0) {
+    const stock = offerStock(offer);
+    if (stock <= 0) {
       throw new BadRequestException({
         code: 'OUT_OF_STOCK',
         message: 'Товар закончился у продавца',
       });
     }
-    if (quantity > offer.stock) {
+    if (quantity > stock) {
       throw new BadRequestException({
         code: 'STOCK_EXCEEDED',
-        message: `В наличии ${offer.stock}`,
+        message: `В наличии ${stock}`,
       });
     }
     if (quantity < offer.minQuantity) {
@@ -172,29 +205,43 @@ export class CartService {
     itemId: string,
     quantity: number,
   ): Promise<CartView> {
-    const item = await this.prisma.cartItem.findUnique({
+    const item = (await this.prisma.cartItem.findUnique({
       where: { id: itemId },
       include: {
         cart: { select: { userId: true } },
-        offer: { select: { stock: true, minQuantity: true } },
+        offer: {
+          select: {
+            minQuantity: true,
+            stockBalances: { select: { availableQty: true } },
+          },
+        },
       },
-    });
+    })) as
+      | (CartItem & {
+          cart: { userId: string };
+          offer: {
+            stockBalances: { availableQty: number }[];
+            minQuantity: number;
+          };
+        })
+      | null;
     if (!item || item.cart.userId !== userId) {
       throw new NotFoundException({
         code: 'CART_ITEM_NOT_FOUND',
         message: 'Позиция корзины не найдена',
       });
     }
-    if (item.offer.stock <= 0) {
+    const stock = offerStock(item.offer);
+    if (stock <= 0) {
       throw new BadRequestException({
         code: 'OUT_OF_STOCK',
         message: 'Товар закончился у продавца',
       });
     }
-    if (quantity > item.offer.stock) {
+    if (quantity > stock) {
       throw new BadRequestException({
         code: 'STOCK_EXCEEDED',
-        message: `В наличии ${item.offer.stock}`,
+        message: `В наличии ${stock}`,
       });
     }
     if (quantity < item.offer.minQuantity) {

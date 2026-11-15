@@ -3,7 +3,11 @@
  *
  * Жизненный цикл (статусная машина, шаг вперёд только):
  *   PENDING → CONFIRMED → PREPARING → READY → COMPLETED
- * Отмена: PENDING/CONFIRMED → CANCELLED (stock возвращается).
+ * Отмена: PENDING/CONFIRMED → CANCELLED (остатки возвращаются:
+ * PENDING — резервы, CONFIRMED — проданное; Промт 11, ADR 0012).
+ *
+ * Подтверждение (confirm) конвертирует резервы заказа в продажу:
+ * на каждый RESERVED-кусок — пара SALE_OUT + UNRESERVED.
  *
  * Каждое действие — транзакция: статус + событие OrderEvent +
  * уведомление покупателю (notifyOrderEvent). Некорректный переход —
@@ -22,6 +26,11 @@ import {
   statusPhrase,
 } from '../notifications/notify.helper';
 import { toBrief } from '../delivery/delivery.service';
+import {
+  returnForOrder,
+  saleOutForOrder,
+  unreserveForOrder,
+} from '../stock/stock.helper';
 import type { OrderStatus } from '../orders/order.service';
 import type { SellerContext } from './guards/seller-membership.guard';
 
@@ -234,13 +243,18 @@ export class SellerOrderService {
 
     const updated = await this.prisma.$transaction(
       async (tx): Promise<SellerOrderRow> => {
-        // Отмена: вернуть stock по позициям.
+        // Подтверждение: резервы заказа → продажа (SALE_OUT +
+        // UNRESERVED по каждому складу, Промт 11).
+        if (action === 'confirm') {
+          await saleOutForOrder(tx, order.id, order.number, seller.userId);
+        }
+        // Отмена: PENDING — возврат резерва, CONFIRMED — возврат
+        // проданного товара (Промт 11, ADR 0012).
         if (action === 'cancel') {
-          for (const item of order.items) {
-            await tx.productOffer.update({
-              where: { id: item.offerId },
-              data: { stock: { increment: item.quantity } },
-            });
+          if (order.status === 'CONFIRMED') {
+            await returnForOrder(tx, order.id, order.number, seller.userId);
+          } else {
+            await unreserveForOrder(tx, order.id, order.number, seller.userId);
           }
         }
         const row = await tx.order.update({

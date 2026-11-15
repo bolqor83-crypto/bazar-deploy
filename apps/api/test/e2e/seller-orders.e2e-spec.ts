@@ -11,7 +11,9 @@ import request from 'supertest';
 import {
   clearDatabase,
   createTestApp,
+  offerAvailable,
   registerUser,
+  seedOfferStock,
   type TestApp,
 } from './test-app';
 
@@ -81,7 +83,6 @@ describe('Seller orders & notifications (e2e)', () => {
         productId: product.id,
         organizationId: orgId,
         priceKopecks: 18900,
-        stock: 50,
         minQuantity: 5,
       },
     });
@@ -99,11 +100,21 @@ describe('Seller orders & notifications (e2e)', () => {
         productId: product2.id,
         organizationId: orgId,
         priceKopecks: 10400,
-        stock: 30,
         minQuantity: 1,
       },
     });
     offer2Id = offer2.id;
+    // Промт 11: остатки — INITIAL-движения + балансы.
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerId,
+      organizationId: orgId,
+      qty: 50,
+    });
+    await seedOfferStock(testApp.prisma, {
+      offerId: offer2Id,
+      organizationId: orgId,
+      qty: 30,
+    });
   });
 
   afterAll(async () => {
@@ -202,7 +213,11 @@ describe('Seller orders & notifications (e2e)', () => {
     expect(response.body.code).toBe('INVALID_TRANSITION');
   });
 
-  it('confirm: статус CONFIRMED, событие, уведомление покупателю', async () => {
+  it('confirm: статус CONFIRMED, событие, уведомление покупателю, SALE_OUT + UNRESERVED', async () => {
+    // До подтверждения: резерв висит (available 40, reserved 10,
+    // physical 50).
+    expect(await offerAvailable(testApp.prisma, offerId)).toBe(40);
+
     const response = await request(testApp.server)
       .post(`/api/seller/orders/${orderId}/confirm`)
       .set(sellerHeaders());
@@ -211,6 +226,23 @@ describe('Seller orders & notifications (e2e)', () => {
     expect(response.body.events.map((e: { type: string }) => e.type)).toEqual(
       expect.arrayContaining(['CREATED', 'CONFIRMED']),
     );
+
+    // Промт 11: SALE_OUT списал физический остаток (50 → 40),
+    // UNRESERVED снял резерв (10 → 0), доступность не изменилась.
+    const balance = await testApp.prisma.stockBalance.findFirstOrThrow({
+      where: { offerId: offerId },
+    });
+    expect(balance.physicalQty).toBe(40);
+    expect(balance.reservedQty).toBe(0);
+    expect(balance.availableQty).toBe(40);
+    const saleOutCount = await testApp.prisma.stockMovement.count({
+      where: { offerId: offerId, type: 'SALE_OUT' },
+    });
+    expect(saleOutCount).toBe(1);
+    const unreservedCount = await testApp.prisma.stockMovement.count({
+      where: { offerId: offerId, type: 'UNRESERVED' },
+    });
+    expect(unreservedCount).toBe(1);
 
     const notifications = await request(testApp.server)
       .get('/api/notifications')
@@ -285,12 +317,9 @@ describe('Seller orders & notifications (e2e)', () => {
     expect(none.body.total).toBe(0);
   });
 
-  it('отмена продавцом: stock назад + уведомление покупателю', async () => {
-    const stockBefore = await testApp.prisma.productOffer.findUnique({
-      where: { id: offer2Id },
-      select: { stock: true },
-    });
-    expect(stockBefore?.stock).toBe(20); // 30 - 10 зарезервировано
+  it('отмена продавцом: возврат резерва (UNRESERVED) + уведомление покупателю', async () => {
+    // 30 - 10 зарезервировано заказом.
+    expect(await offerAvailable(testApp.prisma, offer2Id)).toBe(20);
 
     // Найдём PENDING-заказ (второй, огурцы).
     const list = await request(testApp.server)
@@ -304,11 +333,13 @@ describe('Seller orders & notifications (e2e)', () => {
     expect(cancel.status).toBe(200);
     expect(cancel.body.status).toBe('CANCELLED');
 
-    const stock = await testApp.prisma.productOffer.findUnique({
-      where: { id: offer2Id },
-      select: { stock: true },
+    // Промт 11: резерв снят — доступность восстановлена.
+    expect(await offerAvailable(testApp.prisma, offer2Id)).toBe(30);
+    const balance = await testApp.prisma.stockBalance.findFirstOrThrow({
+      where: { offerId: offer2Id },
     });
-    expect(stock?.stock).toBe(30);
+    expect(balance.reservedQty).toBe(0);
+    expect(balance.physicalQty).toBe(30);
 
     const notifications = await request(testApp.server)
       .get('/api/notifications')

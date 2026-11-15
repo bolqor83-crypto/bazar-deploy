@@ -3,18 +3,56 @@
  *
  * In-memory хранилища Map; $transaction эмулирует откат через
  * structuredClone-снапшот (реальный откат проверяется e2e на Neon).
+ *
+ * Промт 11: склад — event-sourced (ADR 0012). Фейк хранит склады,
+ * балансы и движения; SELECT ... FOR UPDATE эмулируется через
+ * $queryRaw (поиск баланса по offerId/locationId из параметров).
  */
+import type { Prisma } from '@prisma/client';
+
 export interface FakeOffer {
   id: string;
   productId: string;
   organizationId: string;
   priceKopecks: number;
-  stock: number;
   minQuantity: number;
   badge: string | null;
   isPerishable: boolean;
   product: { id: string; name: string; unit: string };
   organization: { id: string; name: string };
+}
+
+export interface FakeStockLocation {
+  id: string;
+  organizationId: string;
+  name: string;
+  type: string;
+  address: string | null;
+  isDefault: boolean;
+  createdAt: Date;
+}
+
+export interface FakeStockBalance {
+  id: string;
+  offerId: string;
+  locationId: string;
+  physicalQty: number;
+  reservedQty: number;
+  availableQty: number;
+  updatedAt: Date;
+}
+
+export interface FakeStockMovement {
+  id: string;
+  offerId: string;
+  locationId: string;
+  type: string;
+  quantityDelta: number;
+  reason: string;
+  actorId: string | null;
+  refType: string | null;
+  refId: string | null;
+  createdAt: Date;
 }
 
 export interface FakeCartItem {
@@ -111,46 +149,472 @@ export class FakeCartPrisma {
   /** Уведомления — массив: порядок создания важен для проверок. */
   readonly notifications: FakeNotification[] = [];
 
+  // Склад (Промт 11): склады, балансы, движения.
+  readonly stockLocations = new Map<string, FakeStockLocation>();
+  readonly stockBalances = new Map<string, FakeStockBalance>();
+  readonly stockMovements = new Map<string, FakeStockMovement>();
+
   private counter = 0;
   nextId(prefix: string): string {
     this.counter += 1;
     return `${prefix}-${String(this.counter).padStart(4, '0')}`;
   }
 
+  /**
+   * Начальный остаток оффера для фикстур: default-склад организации
+   * (создаётся при отсутствии) + INITIAL-движение + баланс.
+   */
+  seedStock(offerId: string, organizationId: string, qty: number): void {
+    let location = [...this.stockLocations.values()].find(
+      (l) => l.organizationId === organizationId,
+    );
+    if (!location) {
+      location = {
+        id: this.nextId('loc'),
+        organizationId,
+        name: 'Основной склад',
+        type: 'WAREHOUSE',
+        address: null,
+        isDefault: true,
+        createdAt: new Date(),
+      };
+      this.stockLocations.set(location.id, location);
+    }
+    if (qty > 0) {
+      const movementId = this.nextId('movement');
+      this.stockMovements.set(movementId, {
+        id: movementId,
+        offerId,
+        locationId: location.id,
+        type: 'INITIAL',
+        quantityDelta: qty,
+        reason: 'Начальный остаток (фикстура)',
+        actorId: null,
+        refType: 'initial',
+        refId: offerId,
+        createdAt: new Date(),
+      });
+      const id = this.nextId('balance');
+      this.stockBalances.set(id, {
+        id,
+        offerId,
+        locationId: location.id,
+        physicalQty: qty,
+        reservedQty: 0,
+        availableQty: qty,
+        updatedAt: new Date(),
+      });
+    }
+  }
+
+  /** Доступный остаток оффера (сумма балансов) — для проверок тестов. */
+  availableOf(offerId: string): number {
+    return [...this.stockBalances.values()]
+      .filter((b) => b.offerId === offerId)
+      .reduce((sum, b) => sum + b.availableQty, 0);
+  }
+
   readonly productOffer = {
-    findUnique: async ({ where }: { where: { id: string } }) =>
-      this.offers.get(where.id) ?? null,
+    findUnique: async ({
+      where,
+      select,
+    }: {
+      where: { id: string };
+      select?: Record<string, unknown>;
+    }) => {
+      const offer = this.offers.get(where.id);
+      if (!offer) return null;
+      if (select && 'stockBalances' in select) {
+        return {
+          ...offer,
+          stockBalances: [...this.stockBalances.values()]
+            .filter((b) => b.offerId === where.id)
+            .map((b) => ({ availableQty: b.availableQty })),
+        };
+      }
+      return offer;
+    },
     findMany: async ({ where }: { where: { id: { in: string[] } } }) =>
       where.id.in
         .map((id) => this.offers.get(id))
         .filter((o): o is FakeOffer => !!o),
-    updateMany: async ({
+    update: async ({
       where,
       data,
     }: {
-      where: { id: string; stock?: { gte: number } };
-      data: { stock: { decrement: number } };
+      where: { id: string };
+      data: Record<string, unknown>;
     }) => {
       const offer = this.offers.get(where.id);
-      if (!offer) return { count: 0 };
-      if (where.stock?.gte !== undefined && offer.stock < where.stock.gte) {
-        return { count: 0 };
+      if (!offer) throw new Error('offer not found');
+      Object.assign(offer, data);
+      return offer;
+    },
+  };
+
+  readonly stockLocation = {
+    findUnique: async ({ where }: { where: { id: string } }) =>
+      this.stockLocations.get(where.id) ?? null,
+    findFirst: async ({
+      where,
+      orderBy,
+      select,
+    }: {
+      where?: { organizationId?: string };
+      orderBy?: unknown;
+      select?: unknown;
+    } = {}) => {
+      void orderBy;
+      void select;
+      let rows = [...this.stockLocations.values()];
+      if (where?.organizationId) {
+        rows = rows.filter((l) => l.organizationId === where.organizationId);
       }
-      offer.stock -= data.stock.decrement;
-      return { count: 1 };
+      return rows[0] ?? null;
+    },
+    findMany: async ({
+      where,
+    }: { where?: { organizationId?: string } } = {}) => {
+      let rows = [...this.stockLocations.values()];
+      if (where?.organizationId) {
+        rows = rows.filter((l) => l.organizationId === where.organizationId);
+      }
+      return rows;
+    },
+    create: async ({
+      data,
+    }: {
+      data: Omit<FakeStockLocation, 'id' | 'createdAt'>;
+    }) => {
+      const record: FakeStockLocation = {
+        ...data,
+        address: data.address ?? null,
+        id: this.nextId('loc'),
+        createdAt: new Date(),
+      };
+      this.stockLocations.set(record.id, record);
+      return record;
     },
     update: async ({
       where,
       data,
     }: {
       where: { id: string };
-      data: { stock: { increment: number } };
+      data: Partial<FakeStockLocation>;
     }) => {
-      const offer = this.offers.get(where.id);
-      if (!offer) throw new Error('offer not found');
-      offer.stock += data.stock.increment;
-      return offer;
+      const record = this.stockLocations.get(where.id);
+      if (!record) throw new Error('stock location not found');
+      Object.assign(record, data);
+      this.stockLocations.set(where.id, record);
+      return record;
     },
+    updateMany: async ({
+      where,
+      data,
+    }: {
+      where: Record<string, unknown>;
+      data: Partial<FakeStockLocation>;
+    }) => {
+      let count = 0;
+      for (const [id, location] of this.stockLocations) {
+        const record = location as unknown as Record<string, unknown>;
+        const matches = Object.entries(where).every(([key, value]) => {
+          // { not: value } — исключающее условие (смена default).
+          if (
+            value &&
+            typeof value === 'object' &&
+            'not' in (value as object)
+          ) {
+            return record[key] !== (value as { not: unknown }).not;
+          }
+          return record[key] === value;
+        });
+        if (matches) {
+          this.stockLocations.set(id, { ...location, ...data });
+          count += 1;
+        }
+      }
+      return { count };
+    },
+    delete: async ({ where }: { where: { id: string } }) => {
+      this.stockLocations.delete(where.id);
+      return null;
+    },
+  };
+
+  readonly stockBalance = {
+    findUnique: async ({
+      where,
+    }: {
+      where: { offerId_locationId: { offerId: string; locationId: string } };
+    }) => {
+      const balance =
+        [...this.stockBalances.values()].find(
+          (b) =>
+            b.offerId === where.offerId_locationId.offerId &&
+            b.locationId === where.offerId_locationId.locationId,
+        ) ?? null;
+      if (!balance) return null;
+      // include: location.name (для view остатка).
+      return {
+        ...balance,
+        location: {
+          name: this.stockLocations.get(balance.locationId)?.name ?? '',
+        },
+      };
+    },
+    findFirst: async ({
+      where,
+    }: {
+      where?: { offerId?: string };
+    } = {}) => {
+      let rows = [...this.stockBalances.values()];
+      if (where?.offerId)
+        rows = rows.filter((b) => b.offerId === where.offerId);
+      return rows[0] ?? null;
+    },
+    findMany: async ({
+      where,
+      orderBy,
+      include,
+    }: {
+      where?: {
+        offerId?: string;
+        locationId?: string | { in: string[] };
+        availableQty?: { gt: number };
+      };
+      orderBy?: unknown;
+      include?: { location?: unknown };
+    } = {}) => {
+      void orderBy;
+      void include;
+      let rows = [...this.stockBalances.values()];
+      if (where?.offerId)
+        rows = rows.filter((b) => b.offerId === where.offerId);
+      const locationFilter = where?.locationId;
+      if (locationFilter) {
+        rows =
+          typeof locationFilter === 'string'
+            ? rows.filter((b) => b.locationId === locationFilter)
+            : rows.filter((b) => locationFilter.in.includes(b.locationId));
+      }
+      const gt = where?.availableQty?.gt;
+      if (gt !== undefined) {
+        rows = rows.filter((b) => b.availableQty > gt);
+      }
+      // include: location.name (для view остатков).
+      return rows.map((b) => ({
+        ...b,
+        location: {
+          name: this.stockLocations.get(b.locationId)?.name ?? '',
+        },
+      }));
+    },
+    upsert: async ({
+      where,
+      create,
+    }: {
+      where: { offerId_locationId: { offerId: string; locationId: string } };
+      create: Omit<FakeStockBalance, 'id' | 'updatedAt'>;
+    }) => {
+      const existing = await this.stockBalance.findUnique({ where });
+      if (existing) return existing;
+      const record: FakeStockBalance = {
+        ...create,
+        id: this.nextId('balance'),
+        updatedAt: new Date(),
+      };
+      this.stockBalances.set(record.id, record);
+      return record;
+    },
+    update: async ({
+      where,
+      data,
+    }: {
+      where: { offerId_locationId: { offerId: string; locationId: string } };
+      data: Partial<FakeStockBalance>;
+    }) => {
+      const record = await this.stockBalance.findUnique({ where });
+      if (!record) throw new Error('balance not found');
+      Object.assign(record, data, { updatedAt: new Date() });
+      this.stockBalances.set(record.id, record);
+      return record;
+    },
+    updateMany: async ({
+      where,
+      data,
+    }: {
+      where: { offerId?: string; locationId?: string };
+      data: Partial<FakeStockBalance>;
+    }) => {
+      let count = 0;
+      for (const [id, balance] of this.stockBalances) {
+        const matches =
+          (!where.offerId || balance.offerId === where.offerId) &&
+          (!where.locationId || balance.locationId === where.locationId);
+        if (matches) {
+          this.stockBalances.set(id, { ...balance, ...data });
+          count += 1;
+        }
+      }
+      return { count };
+    },
+    deleteMany: async ({
+      where,
+    }: { where?: { offerId?: string; locationId?: string } } = {}) => {
+      let count = 0;
+      for (const [id, balance] of this.stockBalances) {
+        const matches =
+          (!where?.offerId || balance.offerId === where.offerId) &&
+          (!where?.locationId || balance.locationId === where.locationId);
+        if (matches) {
+          this.stockBalances.delete(id);
+          count += 1;
+        }
+      }
+      return { count };
+    },
+    count: async ({
+      where,
+    }: {
+      where?: {
+        offerId?: string;
+        locationId?: string;
+        physicalQty?: { not: number };
+      };
+    } = {}) => {
+      let rows = [...this.stockBalances.values()];
+      if (where?.offerId)
+        rows = rows.filter((b) => b.offerId === where.offerId);
+      if (where?.locationId)
+        rows = rows.filter((b) => b.locationId === where.locationId);
+      if (where?.physicalQty?.not !== undefined) {
+        rows = rows.filter((b) => b.physicalQty !== where.physicalQty!.not);
+      }
+      return rows.length;
+    },
+    aggregate: async ({
+      where,
+      _sum,
+    }: {
+      where?: { offerId?: string };
+      _sum?: Record<string, boolean>;
+    }) => {
+      let rows = [...this.stockBalances.values()];
+      if (where?.offerId)
+        rows = rows.filter((b) => b.offerId === where.offerId);
+      const sums: Record<string, number | null> = {};
+      for (const key of Object.keys(_sum ?? {})) {
+        sums[key] = rows.reduce(
+          (sum, b) =>
+            sum + ((b as unknown as Record<string, number>)[key] ?? 0),
+          0,
+        );
+      }
+      return { _sum: sums };
+    },
+  };
+
+  readonly stockMovement = {
+    findMany: async ({
+      where,
+      orderBy,
+      include,
+      skip,
+      take,
+    }: {
+      where?: {
+        offerId?: string;
+        locationId?: string;
+        type?: string;
+        refType?: string;
+        refId?: string;
+      };
+      orderBy?: unknown;
+      include?: unknown;
+      skip?: number;
+      take?: number;
+    } = {}) => {
+      void orderBy;
+      let rows = [...this.stockMovements.values()];
+      if (where?.offerId)
+        rows = rows.filter((m) => m.offerId === where.offerId);
+      if (where?.locationId)
+        rows = rows.filter((m) => m.locationId === where.locationId);
+      if (where?.type) rows = rows.filter((m) => m.type === where.type);
+      if (where?.refType)
+        rows = rows.filter((m) => m.refType === where.refType);
+      if (where?.refId) rows = rows.filter((m) => m.refId === where.refId);
+      // Дефолт сервиса — свежие сверху.
+      rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      rows = rows.slice(skip ?? 0, (skip ?? 0) + (take ?? rows.length));
+      // include: offer.product.name + location.name (для view).
+      return rows.map((m) => ({
+        ...m,
+        offer: {
+          product: { name: this.offers.get(m.offerId)?.product.name ?? '' },
+        },
+        location: {
+          name: this.stockLocations.get(m.locationId)?.name ?? '',
+        },
+      }));
+    },
+    create: async ({
+      data,
+    }: {
+      data: Omit<FakeStockMovement, 'id' | 'createdAt'>;
+    }) => {
+      const record: FakeStockMovement = {
+        ...data,
+        id: this.nextId('movement'),
+        createdAt: new Date(),
+      };
+      this.stockMovements.set(record.id, record);
+      return record;
+    },
+    count: async ({
+      where,
+    }: {
+      where?: {
+        offerId?: string;
+        locationId?: string;
+        type?: string;
+      };
+    } = {}) => {
+      let rows = [...this.stockMovements.values()];
+      if (where?.offerId)
+        rows = rows.filter((m) => m.offerId === where.offerId);
+      if (where?.locationId)
+        rows = rows.filter((m) => m.locationId === where.locationId);
+      if (where?.type) rows = rows.filter((m) => m.type === where.type);
+      return rows.length;
+    },
+    deleteMany: async ({ where }: { where?: { offerId?: string } } = {}) => {
+      let count = 0;
+      for (const [id, movement] of this.stockMovements) {
+        if (!where?.offerId || movement.offerId === where.offerId) {
+          this.stockMovements.delete(id);
+          count += 1;
+        }
+      }
+      return { count };
+    },
+  };
+
+  /**
+   * Эмуляция SELECT ... FOR UPDATE: Prisma.sql с параметрами
+   * [offerId, locationId] → строка баланса, если существует.
+   */
+  $queryRaw = async (query: Prisma.Sql): Promise<{ id: string }[]> => {
+    const values = (query as unknown as { values?: unknown[] }).values ?? [];
+    const [offerId, locationId] = values as [string, string];
+    if (typeof offerId === 'string' && typeof locationId === 'string') {
+      const balance = [...this.stockBalances.values()].find(
+        (b) => b.offerId === offerId && b.locationId === locationId,
+      );
+      return balance ? [{ id: balance.id }] : [];
+    }
+    return [];
   };
 
   readonly cart = {
@@ -206,22 +670,38 @@ export class FakeCartPrisma {
       const cart = [...this.carts.values()].find((c) => c.id === item.cartId);
       return {
         ...item,
-        offer: item.offer,
+        offer: {
+          ...item.offer,
+          stockBalances: [...this.stockBalances.values()]
+            .filter((b) => b.offerId === item.offerId)
+            .map((b) => ({ availableQty: b.availableQty })),
+        },
         cart: { userId: cart?.userId },
       };
     },
     findMany: async ({
       where,
       orderBy,
+      include,
     }: {
       where: { cartId: string };
       orderBy?: unknown;
+      include?: { offer?: { include?: unknown } };
     }) => {
       void orderBy;
+      void include;
       const items = [...this.cartItems.values()]
         .filter((i) => i.cartId === where.cartId)
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      return items;
+      return items.map((item) => ({
+        ...item,
+        offer: {
+          ...item.offer,
+          stockBalances: [...this.stockBalances.values()]
+            .filter((b) => b.offerId === item.offerId)
+            .map((b) => ({ availableQty: b.availableQty })),
+        },
+      }));
     },
     upsert: async ({
       where,
@@ -270,10 +750,17 @@ export class FakeCartPrisma {
       this.cartItems.delete(where.id);
       return null;
     },
-    deleteMany: async ({ where }: { where: { cartId: string } }) => {
+    deleteMany: async ({
+      where,
+    }: {
+      where: { cartId?: string; offerId?: string };
+    }) => {
       let count = 0;
       for (const [id, item] of this.cartItems) {
-        if (item.cartId === where.cartId) {
+        const matches =
+          (!where.cartId || item.cartId === where.cartId) &&
+          (!where.offerId || item.offerId === where.offerId);
+        if (matches) {
           this.cartItems.delete(id);
           count += 1;
         }
@@ -554,12 +1041,17 @@ export class FakeCartPrisma {
     },
   };
 
-  /** Эмуляция транзакции: снапшот → откат при исключении. */
+  /** Эмуляция транзакции: массив — последовательно, функция —
+   * снапшот → откат при исключении. */
   $transaction = async (
-    // Фейк одновременно играет роль и клиента, и транзакции.
-    fn: (tx: FakeCartPrisma) => Promise<unknown>,
+    operationsOrFn:
+      Promise<unknown>[] | ((tx: FakeCartPrisma) => Promise<unknown>),
     _options?: unknown,
   ): Promise<unknown> => {
+    if (Array.isArray(operationsOrFn)) {
+      return Promise.all(operationsOrFn);
+    }
+    const fn = operationsOrFn;
     const snapshot = structuredClone({
       offers: [...this.offers],
       carts: [...this.carts],
@@ -568,6 +1060,9 @@ export class FakeCartPrisma {
       orderCounters: [...this.orderCounters],
       memberships: [...this.memberships],
       notifications: this.notifications,
+      stockLocations: [...this.stockLocations],
+      stockBalances: [...this.stockBalances],
+      stockMovements: [...this.stockMovements],
     });
     try {
       return await fn(this);
@@ -591,6 +1086,9 @@ export class FakeCartPrisma {
       restore(this.memberships, snapshot.memberships);
       this.notifications.length = 0;
       this.notifications.push(...snapshot.notifications);
+      restore(this.stockLocations, snapshot.stockLocations);
+      restore(this.stockBalances, snapshot.stockBalances);
+      restore(this.stockMovements, snapshot.stockMovements);
       throw error;
     }
   };

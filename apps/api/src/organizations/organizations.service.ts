@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AppLogger } from '../common/app-logger';
 import { ApiError } from '../common/filters/api-error';
 import { toLocationResponse, toOrganizationResponse } from '../common/mappers';
+import { ensureDefaultLocation } from '../stock/stock.helper';
 import type {
   CreateLocationDto,
   CreateOrganizationDto,
@@ -32,15 +33,21 @@ export class OrganizationsService {
     dto: CreateOrganizationDto,
   ): Promise<ReturnType<typeof toOrganizationResponse> & { role: string }> {
     const ownerRole = ownerRoleForType(dto.type);
-    const organization = await this.prisma.organization.create({
-      data: {
-        name: dto.name.trim(),
-        type: dto.type,
-        memberships: {
-          create: { userId, role: ownerRole },
+    const organization = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.organization.create({
+        data: {
+          name: dto.name.trim(),
+          type: dto.type,
+          memberships: {
+            create: { userId, role: ownerRole },
+          },
         },
-      },
-      include: { memberships: true, locations: true },
+        include: { memberships: true, locations: true },
+      });
+      // Промт 11: default-склад создаётся вместе с организацией —
+      // остатки и движения всегда привязаны к месту хранения.
+      await ensureDefaultLocation(tx, created.id);
+      return created;
     });
     this.logger.event('organization.created', {
       userId,

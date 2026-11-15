@@ -1,7 +1,8 @@
 /**
  * Unit-тесты SellerOrderService (Промт 10, Часть C): статусная
  * машина confirm→preparing→ready→complete, отмена с возвратом
- * stock, некорректные переходы, список с фильтрами, уведомления
+ * остатков (Промт 11: UNRESERVED/RETURN_IN по движениям заказа),
+ * некорректные переходы, список с фильтрами, уведомления
  * покупателю. Полные сценарии (guard, JWT) — e2e.
  */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -25,13 +26,35 @@ describe('SellerOrderService (unit)', () => {
       productId: 'product-1',
       organizationId: 'org-a',
       priceKopecks: 18900,
-      stock: 50,
       minQuantity: 5,
       badge: null,
       isPerishable: false,
       product: { id: 'product-1', name: 'Помидоры', unit: '1 кг' },
       organization: { id: 'org-a', name: 'Опт-Юг' },
     });
+    // Промт 11: остаток 50, из них 10 — резерв заказа order-1
+    // (движение RESERVED, как создаёт OrderService).
+    prisma.seedStock('offer-a', 'org-a', 50);
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-a',
+    );
+    if (balance) {
+      balance.reservedQty = 10;
+      balance.availableQty = 40;
+      const movementId = 'movement-reserved-1';
+      prisma.stockMovements.set(movementId, {
+        id: movementId,
+        offerId: 'offer-a',
+        locationId: balance.locationId,
+        type: 'RESERVED',
+        quantityDelta: -10,
+        reason: 'Резерв заказа BZ-2026-000001',
+        actorId: BUYER,
+        refType: 'order',
+        refId: 'order-1',
+        createdAt: new Date('2026-11-13T08:00:01Z'),
+      });
+    }
 
     prisma.orders.set('order-1', {
       id: 'order-1',
@@ -148,7 +171,7 @@ describe('SellerOrderService (unit)', () => {
   // Переходы
   // -----------------------------------------------------------------
 
-  it('confirm: PENDING→CONFIRMED + событие + уведомление покупателю', async () => {
+  it('confirm: PENDING→CONFIRMED + событие + уведомление + SALE_OUT', async () => {
     const order = await service.act(SELLER, 'order-1', 'confirm');
     expect(order.status).toBe('CONFIRMED');
     expect(order.events.map((e) => e.type)).toContain('CONFIRMED');
@@ -157,6 +180,19 @@ describe('SellerOrderService (unit)', () => {
     expect(prisma.notifications[0].type).toBe('ORDER_STATUS');
     expect(prisma.notifications[0].title).toContain('BZ-2026-000001');
     expect(prisma.notifications[0].title).toContain('подтверждён');
+
+    // Промт 11: SALE_OUT списал физический остаток, резерв снят.
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-a',
+    );
+    expect(balance?.physicalQty).toBe(40);
+    expect(balance?.reservedQty).toBe(0);
+    expect(balance?.availableQty).toBe(40);
+    const types = [...prisma.stockMovements.values()]
+      .filter((m) => m.refId === 'order-1')
+      .map((m) => m.type);
+    expect(types).toContain('SALE_OUT');
+    expect(types).toContain('UNRESERVED');
   });
 
   it('полный цикл: confirm→preparing→ready→complete', async () => {
@@ -173,7 +209,8 @@ describe('SellerOrderService (unit)', () => {
       'ORDER_STATUS',
       'ORDER_STATUS',
     ]);
-    expect(prisma.offers.get('offer-a')?.stock).toBe(50);
+    // Промт 11: доступность после продажи — 40 (резерв конвертирован).
+    expect(prisma.availableOf('offer-a')).toBe(40);
   });
 
   it('пропуск шага запрещён: PENDING→preparing — INVALID_TRANSITION', async () => {
@@ -197,19 +234,31 @@ describe('SellerOrderService (unit)', () => {
     );
   });
 
-  it('отмена из PENDING: stock назад + уведомление ORDER_CANCELLED', async () => {
+  it('отмена из PENDING: возврат резерва + уведомление ORDER_CANCELLED', async () => {
     const order = await service.act(SELLER, 'order-1', 'cancel');
     expect(order.status).toBe('CANCELLED');
-    expect(prisma.offers.get('offer-a')?.stock).toBe(60);
+    // Промт 11: резерв снят (UNRESERVED) — доступность восстановлена.
+    expect(prisma.availableOf('offer-a')).toBe(50);
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-a',
+    );
+    expect(balance?.reservedQty).toBe(0);
+    expect(balance?.physicalQty).toBe(50);
     expect(prisma.notifications).toHaveLength(1);
     expect(prisma.notifications[0].type).toBe('ORDER_CANCELLED');
     expect(prisma.notifications[0].title).toContain('отменён продавцом');
   });
 
-  it('отмена из CONFIRMED разрешена, из PREPARING — нет', async () => {
+  it('отмена из CONFIRMED разрешена (RETURN_IN), из PREPARING — нет', async () => {
     await service.act(SELLER, 'order-1', 'confirm');
     const cancelled = await service.act(SELLER, 'order-1', 'cancel');
     expect(cancelled.status).toBe('CANCELLED');
+    // Промт 11: проданный товар возвращён на склад (RETURN_IN).
+    expect(prisma.availableOf('offer-a')).toBe(50);
+    const balance = [...prisma.stockBalances.values()].find(
+      (b) => b.offerId === 'offer-a',
+    );
+    expect(balance?.physicalQty).toBe(50);
 
     prisma.orders.get('order-1')!.status = 'PREPARING';
     await expect(service.act(SELLER, 'order-1', 'cancel')).rejects.toThrow(

@@ -7,6 +7,7 @@ import {
   clearDatabase,
   createTestApp,
   registerUser,
+  seedOfferStock,
   type TestApp,
 } from './test-app';
 
@@ -51,13 +52,18 @@ describe('Корзина (e2e)', () => {
         productId: product.id,
         organizationId: org.id,
         priceKopecks: 18900,
-        stock: 50,
         minQuantity: 5,
       },
     });
+    // Промт 11: остаток — INITIAL-движение + баланс.
+    await seedOfferStock(testApp.prisma, {
+      offerId: offer.id,
+      organizationId: org.id,
+      qty: 50,
+    });
     offerId = offer.id;
     offerMinQuantity = offer.minQuantity;
-    offerStock = offer.stock;
+    offerStock = 50;
   });
 
   // Заголовок собирается в момент теста: token появляется в beforeEach.
@@ -172,9 +178,25 @@ describe('Корзина (e2e)', () => {
       .post('/api/cart/items')
       .set(auth())
       .send({ offerId, quantity: 10 });
-    await testApp.prisma.productOffer.update({
-      where: { id: offerId },
-      data: { stock: 3 },
+    // Промт 11: уменьшение остатка — списание (WRITE_OFF) с баланса.
+    const balance = await testApp.prisma.stockBalance.findFirstOrThrow({
+      where: { offerId },
+    });
+    await testApp.prisma.stockMovement.create({
+      data: {
+        offerId,
+        locationId: balance.locationId,
+        type: 'WRITE_OFF',
+        quantityDelta: -47,
+        reason: 'Списание для теста',
+        refType: 'manual',
+      },
+    });
+    await testApp.prisma.stockBalance.update({
+      where: {
+        offerId_locationId: { offerId, locationId: balance.locationId },
+      },
+      data: { physicalQty: 3, availableQty: 3 },
     });
     const res = await request(testApp.server).get('/api/cart').set(auth());
     expect(res.status).toBe(200);

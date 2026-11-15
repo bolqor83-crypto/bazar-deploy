@@ -25,14 +25,23 @@ interface ProductWithRelations {
   offers: {
     id: string;
     priceKopecks: number;
-    stock: number;
     minQuantity: number;
     badge: string | null;
     isPerishable: boolean;
     archivedAt: Date | null;
     organizationId: string;
     organization: { id: string; name: string };
+    /** Остатки по складам организации (Промт 11, ADR 0012). */
+    stockBalances: { availableQty: number }[];
   }[];
+}
+
+/** Доступный остаток оффера: сумма по складам (Промт 11). */
+function offerStock(offer: ProductWithRelations['offers'][number]): number {
+  return offer.stockBalances.reduce(
+    (sum, balance) => sum + balance.availableQty,
+    0,
+  );
 }
 
 export interface OfferView {
@@ -93,13 +102,14 @@ export interface ListProductsFilter {
 }
 
 /** Дешёвое предложение товара (минимальная цена, сырая запись). */
-/** Видимые предложения: не в архиве и со складом (Промт 10:
- * stock=0 и archivedAt скрывают оффер из каталога). */
+/** Видимые предложения: не в архиве и с доступным остатком
+ * (Промт 11: остаток — SUM(availableQty) по складам, нулевой
+ * скрывает оффер из каталога). */
 function visibleOffers(
   product: ProductWithRelations,
 ): ProductWithRelations['offers'][number][] {
   return product.offers.filter(
-    (offer) => offer.archivedAt === null && offer.stock > 0,
+    (offer) => offer.archivedAt === null && offerStock(offer) > 0,
   );
 }
 
@@ -110,9 +120,7 @@ function bestOfferOf(
   if (visible.length === 0) {
     return null;
   }
-  const sorted = [...visible].sort(
-    (a, b) => a.priceKopecks - b.priceKopecks,
-  );
+  const sorted = [...visible].sort((a, b) => a.priceKopecks - b.priceKopecks);
   return sorted[0];
 }
 
@@ -165,7 +173,15 @@ export class CatalogService {
         archivedAt: null,
         ...(filter.category ? { category: { slug: filter.category } } : {}),
       },
-      include: { category: true, offers: { include: { organization: true } } },
+      include: {
+        category: true,
+        offers: {
+          include: {
+            organization: true,
+            stockBalances: { select: { availableQty: true } },
+          },
+        },
+      },
     })) as ProductWithRelations[];
 
     const needle = filter.q?.trim().toLowerCase() ?? '';
@@ -240,7 +256,15 @@ export class CatalogService {
   async detail(id: string): Promise<ProductDetailView> {
     const product = (await this.prisma.product.findUnique({
       where: { id },
-      include: { category: true, offers: { include: { organization: true } } },
+      include: {
+        category: true,
+        offers: {
+          include: {
+            organization: true,
+            stockBalances: { select: { availableQty: true } },
+          },
+        },
+      },
     })) as ProductWithRelations | null;
 
     if (!product || product.archivedAt) {
@@ -267,7 +291,14 @@ export class CatalogService {
   async offers(id: string): Promise<{ items: OfferView[] }> {
     const product = (await this.prisma.product.findUnique({
       where: { id },
-      include: { offers: { include: { organization: true } } },
+      include: {
+        offers: {
+          include: {
+            organization: true,
+            stockBalances: { select: { availableQty: true } },
+          },
+        },
+      },
     })) as ProductWithRelations | null;
 
     if (!product) {
@@ -287,7 +318,7 @@ export class CatalogService {
     return {
       id: offer.id,
       priceKopecks: offer.priceKopecks,
-      stock: offer.stock,
+      stock: offerStock(offer),
       minQuantity: offer.minQuantity,
       badge: offer.badge,
       isPerishable: offer.isPerishable,
