@@ -222,3 +222,6 @@ export type { OfferRowProps } from './components/OfferRow';
 
 export { DeliveryTimeline } from './components/DeliveryTimeline';
 export type { DeliveryTimelineProps } from './components/DeliveryTimeline';
+
+export { DeliveryRequestCard } from './components/DeliveryRequestCard';
+export type { DeliveryRequestCardProps } from './components/DeliveryRequestCard';

@@ -78,6 +78,7 @@ const order: Order = {
   id: 'order-1',
   number: 'BZ-2026-000001',
   status: 'PENDING',
+  delivery: null,
   subtotal: 189_000,
   deliveryCost: 0,
   total: 189_000,

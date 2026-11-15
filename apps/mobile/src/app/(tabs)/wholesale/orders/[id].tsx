@@ -30,6 +30,7 @@ import {
   useSellerOrder,
   useSellerOrderAction,
 } from '../../../../hooks/useSellerOrders';
+import { OrderDeliveryBlock } from '../../../../components/screens/OrderDeliveryBlock';
 
 /** Маппинг статусов API в словарь OrderStatus (Промт 6). */
 const STATUS_MAP: Record<
@@ -280,6 +281,14 @@ export default function SellerOrderDetailScreen() {
               {order.address ? order.address : 'Самовывоз со склада'}
             </Text>
           </Card>
+
+          {/* Промт 10, Часть D: заявка на доставку по заказу. */}
+          <OrderDeliveryBlock
+            orderId={order.id}
+            orderStatus={order.status}
+            delivery={order.delivery}
+            basePath="wholesale"
+          />
 
           {order.comment ? (
             <Card>

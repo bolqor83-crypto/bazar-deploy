@@ -29,6 +29,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   NEW_ORDER: 'Новый заказ',
   ORDER_STATUS: 'Статус заказа',
   ORDER_CANCELLED: 'Отмена',
+  NEW_DELIVERY: 'Заявка на доставку',
+  DELIVERY_STATUS: 'Статус доставки',
+  DELIVERY_CANCELLED: 'Отмена доставки',
 };
 
 /** Формат времени: «13 ноя, 08:30». */

@@ -185,10 +185,11 @@ const wholesaleNav: RoleNavConfig = {
 };
 
 const carrierNav: RoleNavConfig = {
+  // Промт 10, Часть D: рабочие экраны перевозчика — лента заявок,
+  // мои доставки (активные/история), история рейсов с заработком.
   tabs: [
     { key: 'feed', label: 'Лента', icon: Newspaper },
-    { key: 'my-requests', label: 'Заявки', icon: Inbox },
-    { key: 'in-transit', label: 'В пути', icon: Truck },
+    { key: 'my-deliveries', label: 'Мои доставки', icon: Truck },
     { key: 'history', label: 'История', icon: History },
     { key: 'profile', label: 'Профиль', icon: User },
   ],

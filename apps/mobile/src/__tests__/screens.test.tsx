@@ -35,8 +35,7 @@ import WholesaleProfileScreen from '../app/(tabs)/wholesale/profile';
 import WholesaleSettingsScreen from '../app/(tabs)/wholesale/settings';
 
 import CarrierFeedScreen from '../app/(tabs)/carrier/feed';
-import MyRequestsScreen from '../app/(tabs)/carrier/my-requests';
-import InTransitScreen from '../app/(tabs)/carrier/in-transit';
+import MyDeliveriesScreen from '../app/(tabs)/carrier/my-deliveries';
 import HistoryScreen from '../app/(tabs)/carrier/history';
 import CarrierProfileScreen from '../app/(tabs)/carrier/profile';
 
@@ -47,6 +46,23 @@ jest.mock('../services/api/notificationApi', () => ({
   fetchUnreadCount: jest.fn().mockResolvedValue(0),
   markNotificationRead: jest.fn(),
   markAllNotificationsRead: jest.fn(),
+}));
+
+// Промт 10, Часть D: экраны перевозчика тянут доставки — пусто.
+jest.mock('../services/api/deliveryApi', () => ({
+  createDelivery: jest.fn(),
+  fetchDelivery: jest.fn(),
+  completeDelivery: jest.fn(),
+  cancelDelivery: jest.fn(),
+  fetchCarrierDeliveries: jest.fn().mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 30,
+    hasMore: false,
+  }),
+  fetchCarrierDelivery: jest.fn(),
+  postCarrierDeliveryAction: jest.fn(),
 }));
 
 type ScreenModule = ComponentType;
@@ -207,20 +223,13 @@ const SCREENS: readonly Row[] = [
     'carrier/feed',
     CarrierFeedScreen,
     'Лента',
-    'Заявки на перевозку появятся здесь',
+    'Свободных заявок пока нет',
     CARRIER,
   ],
   [
-    'carrier/my-requests',
-    MyRequestsScreen,
-    'Заявки',
-    'Принятых заявок пока нет',
-    CARRIER,
-  ],
-  [
-    'carrier/in-transit',
-    InTransitScreen,
-    'В пути',
+    'carrier/my-deliveries',
+    MyDeliveriesScreen,
+    'Мои доставки',
     'Активных рейсов нет',
     CARRIER,
   ],
@@ -256,7 +265,9 @@ describe('Экраны-заглушки', () => {
       const screen = await renderWithQuery(<Screen />);
       // Заголовок есть и в шапке, и в подписи вкладки таб-бара
       expect(screen.getAllByText(title).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText(emptyTitle)).toBeTruthy();
+      // Экраны данных (Промт 10, Часть D) уходят из Skeleton
+      // асинхронно — ждём текст, а не требуем сразу.
+      expect(await screen.findByText(emptyTitle)).toBeTruthy();
     },
   );
 

@@ -55,6 +55,7 @@ export interface Delivery {
   volumeL: number | null;
   cargoNotes: string | null;
   price: number | null;
+  cancelReason: string | null;
   createdAt: string;
   updatedAt: string;
   events: DeliveryEvent[];

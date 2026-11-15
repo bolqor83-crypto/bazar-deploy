@@ -122,6 +122,7 @@ function makeOrder(overrides: Partial<SellerOrder> = {}): SellerOrder {
     events: [
       { id: 'e1', type: 'CREATED', createdAt: '2026-11-13T08:00:00.000Z' },
     ],
+    delivery: null,
     ...overrides,
   };
 }

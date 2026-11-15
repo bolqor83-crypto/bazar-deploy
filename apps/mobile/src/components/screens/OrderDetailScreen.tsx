@@ -25,6 +25,7 @@ import {
   useTheme,
 } from '@bazar/ui';
 import { useCancelOrder, useOrder } from '../../hooks/useOrders';
+import { OrderDeliveryBlock } from './OrderDeliveryBlock';
 
 /** Маппинг статусов API в словарь OrderStatus (Промт 6). */
 const STATUS_MAP: Record<
@@ -252,6 +253,14 @@ export default function OrderDetailScreen({
             {order.address ? order.address : 'Самовывоз с точки продавца'}
           </Text>
         </Card>
+
+        {/* Промт 10, Часть D: заявка на доставку по заказу. */}
+        <OrderDeliveryBlock
+          orderId={order.id}
+          orderStatus={order.status}
+          delivery={order.delivery}
+          basePath="customer"
+        />
 
         {order.comment ? (
           <Card>

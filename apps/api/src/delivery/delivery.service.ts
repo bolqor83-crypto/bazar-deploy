@@ -154,6 +154,7 @@ function toView(delivery: DeliveryRow): DeliveryView {
     volumeL: delivery.volumeL,
     cargoNotes: delivery.cargoNotes,
     price: delivery.price,
+    cancelReason: delivery.cancelReason,
     createdAt: delivery.createdAt,
     updatedAt: delivery.updatedAt,
     events: delivery.events,
