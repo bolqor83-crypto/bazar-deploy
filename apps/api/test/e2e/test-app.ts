@@ -37,8 +37,12 @@ export async function createTestApp(): Promise<TestApp> {
 
 /** Очистка всех таблиц (каскады уносят корзины, сессии, точки). */
 export async function clearDatabase(prisma: PrismaService): Promise<void> {
-  // Заказы первыми: buyer/seller без onDelete Cascade (заказ живёт
-  // дольше участника в предметной области).
+  // Доставки первыми: orderId → Order с ON DELETE RESTRICT (события
+  // каскадом вместе с заявкой), затем заказы: buyer/seller без
+  // onDelete Cascade (заказ живёт дольше участника в предметной
+  // области).
+  await prisma.deliveryRequest.deleteMany();
+  await prisma.deliveryCounter.deleteMany();
   await prisma.order.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.user.deleteMany();

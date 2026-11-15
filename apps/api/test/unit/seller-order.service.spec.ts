@@ -71,6 +71,7 @@ describe('SellerOrderService (unit)', () => {
           createdAt: new Date('2026-11-13T08:00:00Z'),
         },
       ],
+      deliveries: [],
     });
   });
 

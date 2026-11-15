@@ -21,6 +21,7 @@ import {
   rubles,
   statusPhrase,
 } from '../notifications/notify.helper';
+import { toBrief } from '../delivery/delivery.service';
 import type { OrderStatus } from '../orders/order.service';
 import type { SellerContext } from './guards/seller-membership.guard';
 
@@ -55,6 +56,23 @@ const includeSellerView = {
     orderBy: { createdAt: 'asc' as const },
     select: { id: true, type: true, createdAt: true },
   },
+  deliveries: {
+    where: {
+      status: {
+        in: [
+          'PENDING',
+          'ACCEPTED',
+          'PICKED_UP',
+          'IN_TRANSIT',
+          'DELIVERED',
+          'COMPLETED',
+        ],
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+    include: { carrierOrganization: { select: { name: true } } },
+  },
 } satisfies Prisma.OrderInclude;
 
 type SellerOrderRow = Prisma.OrderGetPayload<{
@@ -85,6 +103,8 @@ export interface SellerOrderView {
     total: number;
   }[];
   events: { id: string; type: string; createdAt: Date }[];
+  /** Активная доставка заказа (Промт 10, Часть D). */
+  delivery: ReturnType<typeof toBrief> | null;
 }
 
 /** Приведение записи к виду продавца. */
@@ -112,6 +132,7 @@ function toSellerView(order: SellerOrderRow): SellerOrderView {
       total: item.total,
     })),
     events: order.events,
+    delivery: order.deliveries?.[0] ? toBrief(order.deliveries[0]) : null,
   };
 }
 

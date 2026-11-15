@@ -69,6 +69,16 @@ export interface FakeOrder {
     payload: string | null;
     createdAt: Date;
   }[];
+  /** Доставки заказа (Промт 10, Часть D) — пусто в тестах заказов. */
+  deliveries: {
+    id: string;
+    number: string;
+    status: string;
+    carrierOrganizationId: string | null;
+    dropoffAddress: string;
+    price: number | null;
+    carrierOrganization: { name: string } | null;
+  }[];
 }
 
 /** Уведомление (Промт 10, Часть C). */
@@ -333,6 +343,7 @@ export class FakeCartPrisma {
             createdAt: new Date(),
           },
         ],
+        deliveries: [],
       };
       record.items.forEach((i) => (i.orderId = record.id));
       record.events.forEach((e) => (e.orderId = record.id));

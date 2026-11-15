@@ -33,6 +33,7 @@ import { SmsModule } from './sms/sms.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SellerModule } from './seller/seller.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DeliveryModule } from './delivery/delivery.module';
 import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 
@@ -89,6 +90,7 @@ const ValidationPipeConfig = new ValidationPipe({
     SellerModule,
     OrderModule,
     NotificationsModule,
+    DeliveryModule,
     HealthModule,
   ],
   providers: [

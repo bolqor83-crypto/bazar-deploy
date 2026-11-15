@@ -5,6 +5,7 @@
  * событиями жизненного цикла. Статусы — строки (в БД без enum,
  * значения валидируются DTO). Цены — копейки.
  */
+import type { DeliveryBrief } from './delivery';
 
 /** Статусы заказа. */
 export const ORDER_STATUSES = [
@@ -62,6 +63,8 @@ export interface Order {
   seller: { id: string; name: string };
   items: OrderItem[];
   events: OrderEvent[];
+  /** Активная доставка заказа (Промт 10, Часть D). */
+  delivery: DeliveryBrief | null;
 }
 
 /** Страница списка заказов. */

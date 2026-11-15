@@ -19,6 +19,7 @@ import {
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { notifyOrderEvent, rubles } from '../notifications/notify.helper';
+import { toBrief, type DeliveryBrief } from '../delivery/delivery.service';
 import type { DeliveryMethod } from './dto/order.dto';
 
 /** Статусы заказа (строки, значения валидируются DTO). */
@@ -58,6 +59,8 @@ export interface OrderView {
     total: number;
   }[];
   events: { id: string; type: string; createdAt: Date }[];
+  /** Активная доставка заказа (Промт 10, Часть D). */
+  delivery: DeliveryBrief | null;
 }
 
 /** Вход создания заказа. */
@@ -77,6 +80,23 @@ const includeView = {
   events: {
     orderBy: { createdAt: 'asc' as const },
     select: { id: true, type: true, createdAt: true },
+  },
+  deliveries: {
+    where: {
+      status: {
+        in: [
+          'PENDING',
+          'ACCEPTED',
+          'PICKED_UP',
+          'IN_TRANSIT',
+          'DELIVERED',
+          'COMPLETED',
+        ],
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+    include: { carrierOrganization: { select: { name: true } } },
   },
 } satisfies Prisma.OrderInclude;
 
@@ -108,6 +128,7 @@ function toView(order: OrderWithRelations): OrderView {
       total: item.total,
     })),
     events: order.events,
+    delivery: order.deliveries?.[0] ? toBrief(order.deliveries[0]) : null,
   };
 }
 

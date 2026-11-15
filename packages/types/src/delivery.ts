@@ -66,6 +66,7 @@ export interface DeliveryList {
   total: number;
   page: number;
   pageSize: number;
+  hasMore: boolean;
 }
 
 /** Ввод создания заявки на доставку. */
@@ -79,3 +80,26 @@ export interface CreateDeliveryInput {
   volumeL?: number;
   cargoNotes?: string;
 }
+
+/** Краткий вид доставки для карточки заказа (Промт 10, D). */
+export interface DeliveryBrief {
+  id: string;
+  number: string;
+  status: DeliveryStatus;
+  carrierName: string | null;
+  dropoffAddress: string;
+  price: number | null;
+}
+
+/** Действия перевозчика по доставке (Часть D). */
+export const CARRIER_DELIVERY_ACTIONS = [
+  'accept',
+  'picked-up',
+  'in-transit',
+  'delivered',
+] as const;
+export type CarrierDeliveryAction = (typeof CARRIER_DELIVERY_ACTIONS)[number];
+
+/** Сегмент ленты перевозчика. */
+export const CARRIER_DELIVERY_SCOPES = ['feed', 'mine'] as const;
+export type CarrierDeliveryScope = (typeof CARRIER_DELIVERY_SCOPES)[number];

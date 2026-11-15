@@ -30,6 +30,8 @@ model User {
   orders       Order[]      @relation("OrderBuyer")
   orderEvents  OrderEvent[] @relation("OrderActor")
   notifications Notification[] @relation("UserNotifications")
+  deliveryRequests DeliveryRequest[] @relation("DeliveryRequester")
+  deliveryEvents   DeliveryEvent[]   @relation("DeliveryActor")
 }
 
 /// Сессия refresh-токена. В БД лежит только SHA-256-хеш токена.
@@ -64,6 +66,7 @@ model Organization {
   offers         ProductOffer[]
   products       Product[]          @relation("ProductOwner")
   ordersAsSeller Order[]            @relation("OrderSeller")
+  deliveries     DeliveryRequest[]  @relation("DeliveryCarrier")
 }
 
 /// Категория каталога (Промт 8). slug — адрес фильтра, icon — имя
@@ -215,6 +218,7 @@ model Order {
   updatedAt      DateTime     @updatedAt
   items          OrderItem[]
   events         OrderEvent[]
+  deliveries     DeliveryRequest[] @relation("OrderDeliveries")
 
   @@index([buyerId])
   @@index([sellerId])
@@ -275,6 +279,68 @@ model Notification {
 /// Служебный счётчик номеров заказов: год → последовательность.
 /// Инкремент внутри транзакции создания заказа (атомарность номера).
 model OrderCounter {
+  year Int @id
+  seq  Int @default(0)
+}
+
+/// Заявка на доставку заказа (Промт 10, Часть D).
+///
+/// Создаётся покупателем или продавцом по подтверждённому заказу
+/// (статусная машина: PENDING → ACCEPTED → PICKED_UP → IN_TRANSIT →
+/// DELIVERED → COMPLETED; отмена — из PENDING инициатором заявки
+/// или из ACCEPTED перевозчиком). Номер DL-YYYY-NNNNNN (счётчик
+/// DeliveryCounter). Одна активная заявка на заказ. price — ставка
+/// перевозчика в копейках, фиксируется при принятии.
+/// carrierOrganizationId — организация перевозчика, принявшая
+/// заявку (командная модель: любой её член ведёт рейс).
+model DeliveryRequest {
+  id                    String   @id @default(cuid())
+  number                String   @unique
+  orderId               String
+  order                 Order    @relation("OrderDeliveries", fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  /// Кто создал заявку: покупатель или член организации-продавца.
+  requesterId           String
+  requester             User     @relation("DeliveryRequester", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  /// Организация-перевозчик, принявшая заявку.
+  carrierOrganizationId String?
+  carrierOrganization   Organization? @relation("DeliveryCarrier", fields: [carrierOrganizationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  status                String   @default("PENDING")
+  pickupAddress         String
+  pickupContact         String
+  dropoffAddress        String
+  dropoffContact        String
+  weightKg              Float?
+  volumeL               Float?
+  cargoNotes            String?
+  /// Ставка перевозчика в копейках (при принятии).
+  price                 Int?
+  cancelReason          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  events                DeliveryEvent[]
+
+  @@index([orderId])
+  @@index([carrierOrganizationId])
+  @@index([status])
+}
+
+/// Событие жизненного цикла доставки (аудит переходов).
+model DeliveryEvent {
+  id         String          @id @default(cuid())
+  deliveryId String
+  delivery   DeliveryRequest @relation(fields: [deliveryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  type       String
+  actorId    String?
+  actor      User?           @relation("DeliveryActor", fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  payload    String?
+  createdAt  DateTime        @default(now())
+
+  @@index([deliveryId])
+}
+
+/// Служебный счётчик номеров доставок: год → последовательность.
+/// Инкремент внутри транзакции создания заявки (атомарность номера).
+model DeliveryCounter {
   year Int @id
   seq  Int @default(0)
 }
