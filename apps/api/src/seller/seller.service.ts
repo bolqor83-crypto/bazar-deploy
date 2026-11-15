@@ -4,17 +4,25 @@
  * Products: CRUD + soft-delete (archivedAt). Товар принадлежит
  * организации продавца; каталог показывает неархивированные.
  *
- * Offers: CRUD + архив. Инварианты:
+ * Offers: CRUD + архив. Инварианты (Промт 11, ADR 0012):
  * - price > 0, stock >= 0, minQuantity >= 1 (DTO);
  * - смена цены → запись OfferPriceHistory;
- * - смена склада → запись StockChange (previous/new/reason/actor);
- * - DELETE offer: нет заказов — физически, есть — архив;
- * - stock=0 → предложение скрыто из каталога (фильтр в catalog).
+ * - остатки — event-sourced: создание оффера со stock → INITIAL
+ *   на default-складе; смена stock → ADJUSTMENT (дельта со
+ *   знаком, reason из DTO); архив → WRITE_OFF доступного;
+ * - DELETE offer: нет заказов — физически (движения и балансы
+ *   удаляются), есть — архив;
+ * - нулевой доступный остаток скрывает предложение из каталога.
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../common/filters/api-error';
+import {
+  applyMovement,
+  ensureDefaultLocation,
+  totalsOf,
+} from '../stock/stock.helper';
 import type { SellerContext } from './guards/seller-membership.guard';
 import type {
   ProductDto,
@@ -48,7 +56,10 @@ const offerInclude = {
     orderBy: { createdAt: 'desc' as const },
     take: 20,
   },
-  stockChanges: {
+  stockBalances: {
+    select: { availableQty: true, physicalQty: true, reservedQty: true },
+  },
+  stockMovements: {
     orderBy: { createdAt: 'desc' as const },
     take: 20,
   },
@@ -85,12 +96,40 @@ function productView(product: ProductWithRelations) {
 }
 
 function offerView(offer: OfferWithRelations) {
+  // Доступный остаток — сумма по складам (Промт 11, ADR 0012);
+  // контракт SellerOffer.stock сохранён для мобильного кабинета.
+  const stock = offer.stockBalances.reduce(
+    (sum, balance) => sum + balance.availableQty,
+    0,
+  );
+  // Журнал изменений склада (контракт Промта 10) — вычисляется из
+  // движений: кумулятивная сумма дельт = previous → new.
+  const ordered = [...offer.stockMovements].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
+  const stockChanges: {
+    previousStock: number;
+    newStock: number;
+    reason: string;
+    createdAt: Date;
+  }[] = [];
+  let cumulative = 0;
+  for (const movement of ordered) {
+    const previousStock = cumulative;
+    cumulative += movement.quantityDelta;
+    stockChanges.push({
+      previousStock,
+      newStock: cumulative,
+      reason: movement.reason,
+      createdAt: movement.createdAt,
+    });
+  }
   return {
     id: offer.id,
     productId: offer.productId,
     product: offer.product,
     price: offer.priceKopecks,
-    stock: offer.stock,
+    stock,
     minQuantity: offer.minQuantity,
     badge: offer.badge,
     isPerishable: offer.isPerishable,
@@ -99,12 +138,7 @@ function offerView(offer: OfferWithRelations) {
       price: h.priceKopecks,
       createdAt: h.createdAt,
     })),
-    stockChanges: offer.stockChanges.map((c) => ({
-      previousStock: c.previousStock,
-      newStock: c.newStock,
-      reason: c.reason,
-      createdAt: c.createdAt,
-    })),
+    stockChanges: stockChanges.reverse().slice(0, 20),
     createdAt: offer.createdAt,
     updatedAt: offer.updatedAt,
   };
@@ -309,13 +343,12 @@ export class SellerService {
           productId: dto.productId,
           organizationId: seller.organizationId,
           priceKopecks: dto.price,
-          stock: dto.stock,
           minQuantity: dto.minQuantity ?? 1,
           badge: dto.badge ?? null,
           isPerishable: dto.isPerishable ?? false,
         },
       });
-      // Начальная цена и поставка — первые записи истории.
+      // Начальная цена — первая запись истории.
       await tx.offerPriceHistory.create({
         data: {
           offerId: created.id,
@@ -323,15 +356,24 @@ export class SellerService {
           actorId: seller.userId,
         },
       });
-      await tx.stockChange.create({
-        data: {
+      // Начальный остаток — INITIAL-движение на default-складе
+      // (Промт 11: склад создаётся лениво при первом движении).
+      if (dto.stock > 0) {
+        const locationId = await ensureDefaultLocation(
+          tx,
+          seller.organizationId,
+        );
+        await applyMovement(tx, {
           offerId: created.id,
-          previousStock: 0,
-          newStock: dto.stock,
-          reason: 'creation',
+          locationId,
+          type: 'INITIAL',
+          quantity: dto.stock,
+          reason: 'Начальный остаток при создании предложения',
           actorId: seller.userId,
-        },
-      });
+          refType: 'initial',
+          refId: created.id,
+        });
+      }
       if (dto.images?.length) {
         const images = parseImages(product.images);
         const merged = [...new Set([...images, ...dto.images])].slice(0, 6);
@@ -360,6 +402,7 @@ export class SellerService {
     ) {
       throw new NotFoundException('Предложение не найдено');
     }
+    const currentStock = await totalsOf(this.prisma, id);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.productOffer.update({
@@ -367,9 +410,6 @@ export class SellerService {
         data: {
           ...(dto.price !== undefined && dto.price !== existing.priceKopecks
             ? { priceKopecks: dto.price }
-            : {}),
-          ...(dto.stock !== undefined && dto.stock !== existing.stock
-            ? { stock: dto.stock }
             : {}),
           ...(dto.minQuantity !== undefined
             ? { minQuantity: dto.minQuantity }
@@ -391,15 +431,25 @@ export class SellerService {
           },
         });
       }
-      if (dto.stock !== undefined && dto.stock !== existing.stock) {
-        await tx.stockChange.create({
-          data: {
-            offerId: id,
-            previousStock: existing.stock,
-            newStock: dto.stock,
-            reason: dto.stockReason?.trim() || 'manual',
-            actorId: seller.userId,
-          },
+      // Смена остатка — корректировка (дельта со знаком) на
+      // default-складе (Промт 11: инвентаризация может показать
+      // недостачу — минус допустим).
+      if (dto.stock !== undefined && dto.stock !== currentStock.availableQty) {
+        const delta = dto.stock - currentStock.availableQty;
+        const locationId = await ensureDefaultLocation(
+          tx,
+          seller.organizationId,
+        );
+        await applyMovement(tx, {
+          offerId: id,
+          locationId,
+          type: 'ADJUSTMENT',
+          quantity: delta,
+          reason:
+            dto.stockReason?.trim() || 'Корректировка остатка предложения',
+          actorId: seller.userId,
+          refType: 'manual',
+          refId: id,
         });
       }
       if (dto.images?.length) {
@@ -423,7 +473,10 @@ export class SellerService {
   async deleteOffer(seller: SellerContext, id: string) {
     const existing = await this.prisma.productOffer.findUnique({
       where: { id },
-      include: { _count: { select: { orderItems: true } } },
+      include: {
+        _count: { select: { orderItems: true } },
+        stockBalances: true,
+      },
     });
     if (
       !existing ||
@@ -432,24 +485,39 @@ export class SellerService {
       throw new NotFoundException('Предложение не найдено');
     }
     if (existing._count.orderItems > 0) {
-      await this.prisma.productOffer.update({
-        where: { id },
-        data: { archivedAt: new Date(), stock: 0 },
-      });
-      await this.prisma.stockChange.create({
-        data: {
-          offerId: id,
-          previousStock: existing.stock,
-          newStock: 0,
-          reason: 'archived',
-          actorId: seller.userId,
-        },
+      // Архив: доступный остаток списывается (WRITE_OFF по каждому
+      // складу), резервы живут до отмены заказов (Промт 11).
+      await this.prisma.$transaction(async (tx) => {
+        await tx.productOffer.update({
+          where: { id },
+          data: { archivedAt: new Date() },
+        });
+        for (const balance of existing.stockBalances) {
+          if (balance.availableQty > 0) {
+            await applyMovement(tx, {
+              offerId: id,
+              locationId: balance.locationId,
+              type: 'WRITE_OFF',
+              quantity: balance.availableQty,
+              reason: 'Архив предложения',
+              actorId: seller.userId,
+              refType: 'manual',
+              refId: id,
+            });
+          }
+        }
       });
       return { archived: true };
     }
-    // Корзины ссылаются на оффер — чистим позиции перед удалением.
-    await this.prisma.cartItem.deleteMany({ where: { offerId: id } });
-    await this.prisma.productOffer.delete({ where: { id } });
+    // Корзины ссылаются на оффер — чистим позиции перед удалением;
+    // движения и балансы оффера удаляются вместе с ним (журнал
+    // оффера без заказов самостоятельной ценности не имеет).
+    await this.prisma.$transaction(async (tx) => {
+      await tx.cartItem.deleteMany({ where: { offerId: id } });
+      await tx.stockMovement.deleteMany({ where: { offerId: id } });
+      await tx.stockBalance.deleteMany({ where: { offerId: id } });
+      await tx.productOffer.delete({ where: { id } });
+    });
     return { archived: false };
   }
 }

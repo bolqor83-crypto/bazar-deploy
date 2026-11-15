@@ -1,13 +1,16 @@
 /**
  * E2E заказов (Промт 9, Часть E): создание с группировкой по
- * продавцу, нумерация, stock-резерв с откатом, список, деталь,
- * отмена с восстановлением stock, изоляция.
+ * продавцу, нумерация, резерв остатков с откатом (Промт 11 —
+ * event-sourced: RESERVED/UNRESERVED), список, деталь, отмена с
+ * возвратом остатков, изоляция.
  */
 import request from 'supertest';
 import {
   clearDatabase,
   createTestApp,
+  offerAvailable,
   registerUser,
+  seedOfferStock,
   type TestApp,
 } from './test-app';
 
@@ -69,7 +72,6 @@ describe('Заказы (e2e)', () => {
           productId: tomatoes.id,
           organizationId: orgA,
           priceKopecks: 18900,
-          stock: 50,
           minQuantity: 5,
         },
       })
@@ -80,21 +82,28 @@ describe('Заказы (e2e)', () => {
           productId: cucumbers.id,
           organizationId: orgB,
           priceKopecks: 10400,
-          stock: 30,
           minQuantity: 1,
         },
       })
     ).id;
+    // Остатки — event-sourced (Промт 11): INITIAL-движение + баланс.
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerA,
+      organizationId: orgA,
+      qty: 50,
+    });
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerB,
+      organizationId: orgB,
+      qty: 30,
+    });
   });
 
   // Заголовок собирается в момент теста: token появляется в beforeEach.
   const auth = () => ({ Authorization: `Bearer ${token}` });
 
-  it('полный флоу: создать → список → деталь → отмена → stock восстановлен', async () => {
-    const stockBefore = await testApp.prisma.productOffer.findUniqueOrThrow({
-      where: { id: offerA },
-      select: { stock: true },
-    });
+  it('полный флоу: создать → список → деталь → отмена → остаток восстановлен', async () => {
+    const stockBefore = await offerAvailable(testApp.prisma, offerA);
 
     const created = await request(testApp.server)
       .post('/api/orders')
@@ -116,12 +125,14 @@ describe('Заказы (e2e)', () => {
     expect(order.items[0].quantity).toBe(10);
     expect(order.events[0].type).toBe('CREATED');
 
-    // stock зарезервирован.
-    const reserved = await testApp.prisma.productOffer.findUniqueOrThrow({
-      where: { id: offerA },
-      select: { stock: true },
-    });
-    expect(reserved.stock).toBe(stockBefore.stock - 10);
+    // Остаток зарезервирован (RESERVED: reservedQty += 10).
+    const reserved = await offerAvailable(testApp.prisma, offerA);
+    expect(reserved).toBe(stockBefore - 10);
+    const reservedBalance = await testApp.prisma.stockBalance.findFirstOrThrow(
+      { where: { offerId: offerA } },
+    );
+    expect(reservedBalance.reservedQty).toBe(10);
+    expect(reservedBalance.physicalQty).toBe(50);
 
     // Список.
     const list = await request(testApp.server).get('/api/orders').set(auth());
@@ -144,12 +155,14 @@ describe('Заказы (e2e)', () => {
     expect(cancelled.body.status).toBe('CANCELLED');
     expect(cancelled.body.events.at(-1).type).toBe('CANCELLED');
 
-    // stock восстановлен.
-    const restored = await testApp.prisma.productOffer.findUniqueOrThrow({
-      where: { id: offerA },
-      select: { stock: true },
-    });
-    expect(restored.stock).toBe(stockBefore.stock);
+    // Остаток восстановлен (UNRESERVED).
+    const restored = await offerAvailable(testApp.prisma, offerA);
+    expect(restored).toBe(stockBefore);
+    const unreservedBalance =
+      await testApp.prisma.stockBalance.findFirstOrThrow({
+        where: { offerId: offerA },
+      });
+    expect(unreservedBalance.reservedQty).toBe(0);
   });
 
   it('группировка: два продавца → два заказа', async () => {
@@ -194,8 +207,8 @@ describe('Заказы (e2e)', () => {
     expect(Number(n2)).toBe(Number(n1) + 1);
   });
 
-  it('stock-резерв откатывает всю группу при нехватке', async () => {
-    // offerB: stock 30, просим 40 у A (ok) и 40 у B (fail) — весь заказ не создаётся.
+  it('резерв откатывает всю группу при нехватке', async () => {
+    // offerB: остаток 30, просим 10 у A (ok) и 40 у B (fail) — весь заказ не создаётся.
     const res = await request(testApp.server)
       .post('/api/orders')
       .set(auth())
@@ -209,17 +222,14 @@ describe('Заказы (e2e)', () => {
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('OUT_OF_STOCK');
 
-    // Оба склада не тронуты (транзакция откатилась).
-    const a = await testApp.prisma.productOffer.findUniqueOrThrow({
-      where: { id: offerA },
-      select: { stock: true },
+    // Оба остатка не тронуты (транзакция откатилась).
+    expect(await offerAvailable(testApp.prisma, offerA)).toBe(50);
+    expect(await offerAvailable(testApp.prisma, offerB)).toBe(30);
+    // Движений не появилось.
+    const movements = await testApp.prisma.stockMovement.count({
+      where: { type: 'RESERVED' },
     });
-    const b = await testApp.prisma.productOffer.findUniqueOrThrow({
-      where: { id: offerB },
-      select: { stock: true },
-    });
-    expect(a.stock).toBe(50);
-    expect(b.stock).toBe(30);
+    expect(movements).toBe(0);
 
     const list = await request(testApp.server).get('/api/orders').set(auth());
     expect(list.body.total).toBe(0);

@@ -4,12 +4,17 @@
  * Ключевые гарантии:
  * - нумерация BZ-YYYY-NNNNNN: атомарный инкремент счётчика
  *   OrderCounter внутри транзакции + retry при редкой гонке unique;
- * - stock-резерв транзакционно: updateMany с WHERE stock >= qty —
- *   не хватило, откат всей группы с OUT_OF_STOCK;
+ * - резерв остатков — event-sourced (Промт 11, ADR 0012): при
+ *   создании заказа — движения RESERVED (reservedQty += q по
+ *   складам FIFO), не хватило — откат всей группы с OUT_OF_STOCK;
+ * - подтверждение продавцом — SALE_OUT + UNRESERVED
+ *   (физический расход, снятие резерва);
+ * - отмена PENDING — UNRESERVED (возврат резерва), отмена
+ *   CONFIRMED — RETURN_IN (возврат проданного товара);
  * - группировка по продавцу: позиции разных организаций
  *   раскладываются в отдельные заказы (ответ — массив);
- * - отмена (buyer/seller, только PENDING/CONFIRMED) восстанавливает
- *   stock и пишет событие CANCELLED.
+ * - группировка по продавцу: позиции разных организаций
+ *   раскладываются в отдельные заказы (ответ — массив).
  */
 import {
   BadRequestException,
@@ -20,6 +25,11 @@ import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { notifyOrderEvent, rubles } from '../notifications/notify.helper';
 import { toBrief, type DeliveryBrief } from '../delivery/delivery.service';
+import {
+  reserveForOrder,
+  returnForOrder,
+  unreserveForOrder,
+} from '../stock/stock.helper';
 import type { DeliveryMethod } from './dto/order.dto';
 
 /** Статусы заказа (строки, значения валидируются DTO). */
@@ -132,34 +142,6 @@ function toView(order: OrderWithRelations): OrderView {
   };
 }
 
-/** Условный reserve stock: атомарная декремент с проверкой. */
-async function reserveStock(
-  tx: Prisma.TransactionClient,
-  offerId: string,
-  quantity: number,
-): Promise<void> {
-  const updated = await tx.productOffer.updateMany({
-    where: { id: offerId, stock: { gte: quantity } },
-    data: { stock: { decrement: quantity } },
-  });
-  if (updated.count === 0) {
-    const offer = await tx.productOffer.findUnique({
-      where: { id: offerId },
-      select: { stock: true },
-    });
-    if (!offer) {
-      throw new NotFoundException({
-        code: 'OFFER_NOT_FOUND',
-        message: 'Предложение не найдено',
-      });
-    }
-    throw new BadRequestException({
-      code: 'OUT_OF_STOCK',
-      message: `Недостаточно на складе (в наличии ${offer.stock})`,
-    });
-  }
-}
-
 /** Номер BZ-YYYY-NNNNNN: атомарный upsert-инкремент счётчика. */
 async function nextOrderNumber(tx: Prisma.TransactionClient): Promise<string> {
   const year = new Date().getFullYear();
@@ -225,15 +207,12 @@ export class OrderService {
     }
 
     // Резерв и создание — ЕДИНАЯ транзакция на все группы продавцов:
-    // не хватило stock хоть у одного — откат всего (ни одного заказа).
+    // не хватило остатка хоть у одного — откат всего (ни одного
+    // заказа). Заказы создаются первыми, резервы — по факту id
+    // (движения ссылаются на заказ через refType/refId).
     const created = await this.prisma.$transaction(
       async (tx): Promise<OrderView[]> => {
         const orders: OrderView[] = [];
-        for (const [, groupItems] of groups) {
-          for (const gi of groupItems) {
-            await reserveStock(tx, gi.offerId, gi.quantity);
-          }
-        }
         for (const [sellerId, groupItems] of groups) {
           const number = await nextOrderNumber(tx);
           const subtotal = groupItems.reduce((sum, gi) => {
@@ -280,6 +259,19 @@ export class OrderService {
             },
             include: includeView,
           });
+          // Резерв по складам продавца: RESERVED-движения со ссылкой
+          // на заказ (Промт 11, ADR 0012). Не хватило — исключение
+          // → откат всей транзакции.
+          for (const gi of groupItems) {
+            await reserveForOrder(
+              tx,
+              gi.offerId,
+              gi.quantity,
+              order.id,
+              number,
+              input.buyerId,
+            );
+          }
           // Уведомить продавцов организации о новом заказе
           // (Промт 10, Часть C) — атомарно с созданием.
           const members = await tx.membership.findMany({
@@ -381,7 +373,10 @@ export class OrderService {
     return toView(order);
   }
 
-  /** Отмена заказа: buyer/seller, только PENDING/CONFIRMED, stock назад.
+  /** Отмена заказа: buyer/seller, только PENDING/CONFIRMED.
+   *
+   * Остатки (Промт 11, ADR 0012): PENDING — возврат резерва
+   * (UNRESERVED), CONFIRMED — возврат проданного товара (RETURN_IN).
    *
    * Уведомления (Промт 10, Часть C): отмена покупателем — продавцам
    * организации, отмена продавцом — покупателю. */
@@ -416,12 +411,12 @@ export class OrderService {
 
     const cancelled = await this.prisma.$transaction(
       async (tx) => {
-        // Восстановление stock по позициям.
-        for (const item of order.items) {
-          await tx.productOffer.update({
-            where: { id: item.offerId },
-            data: { stock: { increment: item.quantity } },
-          });
+        // Возврат остатков по движениям заказа: PENDING — резервы
+        // (UNRESERVED), CONFIRMED — проданное (RETURN_IN).
+        if (order.status === 'CONFIRMED') {
+          await returnForOrder(tx, order.id, order.number, userId);
+        } else {
+          await unreserveForOrder(tx, order.id, order.number, userId);
         }
         const row = await tx.order.update({
           where: { id: orderId },

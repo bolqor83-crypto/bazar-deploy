@@ -15,6 +15,8 @@
  * см. ADR 0011 (Промт 10).
  * Доставки (Delivery, DeliveryEvent) — в delivery.ts, см. ADR 0011.
  * Уведомления (Notification) — в notification.ts, см. ADR 0011.
+ * Склад (StockLocation, StockMovement, StockBalance) — в stock.ts,
+ * см. ADR 0012 (Промт 11).
  */
 export * from './context';
 export * from './auth';
@@ -25,3 +27,4 @@ export * from './order';
 export * from './seller';
 export * from './delivery';
 export * from './notification';
+export * from './stock';

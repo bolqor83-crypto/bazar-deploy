@@ -32,6 +32,7 @@ model User {
   notifications Notification[] @relation("UserNotifications")
   deliveryRequests DeliveryRequest[] @relation("DeliveryRequester")
   deliveryEvents   DeliveryEvent[]   @relation("DeliveryActor")
+  stockMovements   StockMovement[]   @relation("StockMovementActor")
 }
 
 /// Сессия refresh-токена. В БД лежит только SHA-256-хеш токена.
@@ -63,6 +64,7 @@ model Organization {
   updatedAt      DateTime           @updatedAt
   memberships    Membership[]
   locations      BusinessLocation[]
+  stockLocations StockLocation[]
   offers         ProductOffer[]
   products       Product[]          @relation("ProductOwner")
   ordersAsSeller Order[]            @relation("OrderSeller")
@@ -109,16 +111,18 @@ model Product {
 }
 
 /// Предложение организации на товар: цена в копейках (без дробей),
-/// склад, минимальная партия, бейдж («hit» — хит) и скоропорт.
+/// минимальная партия, бейдж («hit» — хит) и скоропорт.
 /// badge — строка или null; набор значений расширяется без миграций.
-/// Промт 10: archivedAt — архив предложения (stock=0 скрывает из
-/// каталога, архив — из кабинета продавца активных).
+/// Промт 10: archivedAt — архив предложения (нулевой доступный
+/// остаток скрывает из каталога, архив — из кабинета продавца).
+/// Промт 11: остатки — event-sourced (StockMovement + StockBalance,
+/// ADR 0012); колонка stock удалена, доступно = SUM(availableQty)
+/// по складам организации.
 model ProductOffer {
   id             String              @id @default(cuid())
   productId      String
   organizationId String
   priceKopecks   Int
-  stock          Int
   minQuantity    Int                 @default(1)
   badge          String?
   isPerishable   Boolean             @default(false)
@@ -130,7 +134,8 @@ model ProductOffer {
   cartItems      CartItem[]
   orderItems     OrderItem[]
   priceHistory   OfferPriceHistory[]
-  stockChanges   StockChange[]
+  stockBalances  StockBalance[]
+  stockMovements StockMovement[]
 
   @@index([productId])
   @@index([organizationId])
@@ -149,18 +154,88 @@ model OfferPriceHistory {
   @@index([offerId])
 }
 
-/// Журнал изменения склада (Промт 10): previousStock → newStock
-/// с причиной (поставка / продажа / корректировка / отмена заказа).
-model StockChange {
-  id            String       @id @default(cuid())
+/// Склад организации (Промт 11): физическое место хранения —
+/// «Основной склад», «Точка на Садовой». isDefault — куда попадают
+/// INITIAL/ADJUSTMENT-движения без явного склада; создаётся
+/// автоматически при onboarding и лениво при первом движении.
+model StockLocation {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  type           StockLocationType
+  address        String?
+  isDefault      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  balances       StockBalance[]
+  movements      StockMovement[]
+
+  @@index([organizationId])
+}
+
+enum StockLocationType {
+  WAREHOUSE
+  STORE
+  OTHER
+}
+
+/// Событие движения товара (Промт 11, append-only журнал).
+///
+/// quantityDelta — знак эффекта на доступный остаток: RESERVED
+/// уменьшает доступность (резерв), UNRESERVED возвращает, SALE_OUT
+/// списывает физический остаток, TRANSFER_OUT/TRANSFER_IN — пара
+/// перемещения. Пересчёт баланса — по типу движения (ADR 0012).
+/// refType/refId — ссылка на источник: order/<orderId>, manual,
+/// initial, legacy. actor — кто выполнил движение.
+model StockMovement {
+  id            String            @id @default(cuid())
   offerId       String
-  offer         ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  previousStock Int
-  newStock      Int
+  offer         ProductOffer      @relation(fields: [offerId], references: [id])
+  locationId    String
+  location      StockLocation     @relation(fields: [locationId], references: [id])
+  type          StockMovementType
+  quantityDelta Int
   reason        String
   actorId       String?
-  createdAt     DateTime     @default(now())
+  actor         User?             @relation("StockMovementActor", fields: [actorId], references: [id])
+  refType       String?
+  refId         String?
+  createdAt     DateTime          @default(now())
 
+  @@index([offerId, locationId, createdAt])
+  @@index([refType, refId])
+}
+
+enum StockMovementType {
+  INITIAL
+  RECEIPT
+  SALE_OUT
+  RETURN_IN
+  WRITE_OFF
+  ADJUSTMENT
+  TRANSFER_OUT
+  TRANSFER_IN
+  RESERVED
+  UNRESERVED
+}
+
+/// Денормализованный остаток оффера на складе (Промт 11):
+/// physicalQty — физический остаток, reservedQty — резерв активных
+/// заказов, availableQty = physicalQty − reservedQty (кэш для
+/// каталога/корзины; пересчитывается при каждом движении).
+/// Источник правды — журнал StockMovement, баланс — агрегат.
+model StockBalance {
+  id          String        @id @default(cuid())
+  offerId     String
+  offer       ProductOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  locationId  String
+  location    StockLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  physicalQty Int           @default(0)
+  reservedQty Int           @default(0)
+  availableQty Int          @default(0)
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([offerId, locationId])
   @@index([offerId])
 }
 

@@ -16,6 +16,8 @@ export const NOTIFICATION_TYPES = [
   'NEW_DELIVERY',
   'DELIVERY_STATUS',
   'DELIVERY_CANCELLED',
+  'STOCK_WRITE_OFF',
+  'STOCK_EMPTY',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
