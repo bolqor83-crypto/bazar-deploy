@@ -136,6 +136,12 @@ export type {
   StockLevel,
 } from './components/StockIndicator';
 
+export { StockRow, stockLevelOf } from './components/StockRow';
+export type { StockRowProps } from './components/StockRow';
+
+export { MovementRow } from './components/MovementRow';
+export type { MovementRowProps, MovementType } from './components/MovementRow';
+
 export {
   OrderStatus,
   ORDER_STATUSES,
