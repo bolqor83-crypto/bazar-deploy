@@ -134,7 +134,7 @@ export default function StockMovementsScreen() {
             label="Всего"
             value={balance.physicalQty}
             unit={unit}
-            strong
+            size="lg"
           />
           <BalanceCell label="Резерв" value={balance.reservedQty} unit={unit} />
           <BalanceCell
@@ -282,26 +282,26 @@ export default function StockMovementsScreen() {
   );
 }
 
-/** Ячейка остатка в карточке. */
+/** Ячейка остатка в карточке (size lg — акцент «Всего»). */
 function BalanceCell({
   label,
   value,
   unit,
-  strong = false,
+  size = 'md',
 }: {
   label: string;
   value: number;
   unit: string;
-  strong?: boolean;
+  size?: 'md' | 'lg';
 }) {
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, gap: 2 }}>
+    <View style={{ flex: size === 'lg' ? 1.3 : 1, gap: 2 }}>
       <Text variant="caption" color="textSecondary">
         {label}
       </Text>
       <Text
-        variant={strong ? 'h3' : 'bodyStrong'}
+        variant={size === 'lg' ? 'h2' : 'bodyStrong'}
         mono
         style={{ color: colors.text }}
       >

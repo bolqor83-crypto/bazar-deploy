@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":8,\"color\":8,\"grid\":7,\"components\":7,\"icons\":8,\"states\":9,\"density\":6,\"a11y\":8,\"impression\":8,\"total\":76,\"notes\":\"Карточка товара перегружена дублированием: «75» и «Доступно: 75» повторяются, а крупное значение «75 1 кг» без визуальной связи с единицей выглядит как ошибка выравнивания. Сводка «Мало осталось 0» не даёт контраста состояний — нулевые значения сливаются с ненулевыми.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794800786,
+  "id": "202611161146205d5fa4970751490d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611161146205d5fa4970751490d",
+  "usage": {
+    "completion_tokens": 140,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3782,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3922
+  }
+}

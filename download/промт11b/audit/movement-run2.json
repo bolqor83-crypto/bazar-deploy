@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":7,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":6,\"total\":60,\"notes\":\"Кнопка «Сохранить» выглядит disabled, но действие ключевое — непонятно состояние формы; пустое числовое поле справа от степпера дублирует счётчик без подписи/плейсхолдера. Нижняя половина экрана пуста — форма не сбалансирована, нет контекста (журнал движений, подсказки).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798123,
+  "id": "202611161101587db760533aad4a7f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611161101587db760533aad4a7f",
+  "usage": {
+    "completion_tokens": 136,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2243
+  }
+}

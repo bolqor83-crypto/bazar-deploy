@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":66,\"notes\":\"Ключевой gap: пользователь ввёл количество 30 при остатке 0, но поле количества остаётся чёрным/активным — число должно подсвечиваться ошибкой, а причина не обязана блокировать. Палитра излишне тёплая (кремовый фон + терракотовый header-акцент) — уводит от Stripe/Linear-нейтральности; плюс обе кнопки «Переместить» дизейблд при валидной причине — логика активации запутана.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794800854,
+  "id": "2026111611472872b48e8bb0364b03",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611472872b48e8bb0364b03",
+  "usage": {
+    "completion_tokens": 171,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3782,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3953
+  }
+}

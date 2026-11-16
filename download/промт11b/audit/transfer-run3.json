@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":7,\"grid\":6,\"components\":7,\"icons\":6,\"states\":5,\"density\":5,\"a11y\":7,\"impression\":6,\"total\":63,\"notes\":\"Нет позиции/товара на экране перемещения — непонятно, что и откуда перемещаем; поле ввода количества пустое и не выровнено со степпером. Много пустоты внизу при неинформативной форме, кнопка не фиксирована к низу.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798149,
+  "id": "2026111611022506a2ae7390774dec",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611022506a2ae7390774dec",
+  "usage": {
+    "completion_tokens": 117,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2224
+  }
+}

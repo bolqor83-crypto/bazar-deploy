@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":8,\"density\":6,\"a11y\":8,\"impression\":8,\"total\":78,\"notes\":\"Большая пустота между формой и футером — форма не центрирована по вертикали, экран выглядит недозаполненным; подсказки/чипы причин есть только в состоянии списания, а в приходе нет быстрых пресетов причин.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794800840,
+  "id": "2026111611471699c87d24816b4754",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611471699c87d24816b4754",
+  "usage": {
+    "completion_tokens": 109,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3782,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3891
+  }
+}

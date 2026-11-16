@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":7,\"states\":5,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":69,\"notes\":\"Строки журнала ~160px визуально разрежены и второстепенный текст (дата/точка) почти не отличим от подзаголовка — нужна компактность и более слабый мета-стиль. Нет поиска/фильтра и пустых состояний, статистика «Всего/Резерв/Доступно» не выделена иерархически против крупных кнопок действий.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798100,
+  "id": "2026111611013212f5c7474e9f4318",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611013212f5c7474e9f4318",
+  "usage": {
+    "completion_tokens": 143,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2250
+  }
+}

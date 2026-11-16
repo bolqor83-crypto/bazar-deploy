@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":6,\"grid\":6,\"components\":5,\"icons\":6,\"states\":5,\"density\":7,\"a11y\":7,\"impression\":6,\"total\":55,\"notes\":\"Зелёная FAB без иконки и подписи выглядит как незавершённый элемент; жёлто-оранжевая рамка поля поиска не в палитре и читается как ошибка валидации. Карточка товара: иконка-плейсхолдер без смысла, метаданные разрежены, дублирование '140 кг' и 'Доступно: 140'.\"}",
+        "reasoning_content": "Оценю. Проблемы: пустая FAB без иконки, оранжевая рамка поиска (выглядит как ошибка), карточка с левой иконкой странно отцентрована, \"Позиций в списке: 1\" — слабое empty-state.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798083,
+  "id": "202611161101174adaf4f7d8aa4a26",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611161101174adaf4f7d8aa4a26",
+  "usage": {
+    "completion_tokens": 211,
+    "completion_tokens_details": {
+      "reasoning_tokens": 65
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2318
+  }
+}

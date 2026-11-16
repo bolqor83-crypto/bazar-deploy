@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":8,\"density\":5,\"a11y\":8,\"impression\":7,\"total\":71,\"notes\":\"Экран-пустышка: нули и огромная пустота без контекстных подсказок по складу; четыре кнопки-действия разрываются на два ряда визуально неравноценно (активный «Приход» доминирует, но непонятно, отключены ли остальные).\"}",
+        "reasoning_content": "Both identical. Empty state, all zeros. Reasonable quality; big empty void, density low (but empty state). Numbers not obviously tabular. Buttons large, ok.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794800809,
+  "id": "20261116114641d40710badac44f1d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261116114641d40710badac44f1d",
+  "usage": {
+    "completion_tokens": 155,
+    "completion_tokens_details": {
+      "reasoning_tokens": 35
+    },
+    "prompt_tokens": 3782,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3937
+  }
+}

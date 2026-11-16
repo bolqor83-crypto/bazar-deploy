@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":7,\"states\":5,\"density\":5,\"a11y\":6,\"impression\":6,\"total\":60,\"notes\":\"Половина экрана пуста — форма не центрирована и не сбалансирована по вертикали; кнопка «Сохранить» выглядит как disabled без объяснения причины, а поле количества без единицы измерения и с непонятным дублирующим пустым инпутом справа.\"}",
+        "reasoning_content": "Оценка: целая форма, крупная типографика, много пустоты, кнопка отключена серо-зелёная, обрезанный заголовок, пустое поле ввода без единицы.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798130,
+  "id": "20261116110204e670297a08eb4d6f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261116110204e670297a08eb4d6f",
+  "usage": {
+    "completion_tokens": 167,
+    "completion_tokens_details": {
+      "reasoning_tokens": 46
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2274
+  }
+}

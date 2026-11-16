@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":7,\"states\":6,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":69,\"notes\":\"Ошибка «Недоступно…» показана чисто красным текстом без подсветки поля количества и без ограничения ввода; крупный блок «Доступно: 0 кг» не блокирует ввод количества заранее (нет disabled/маски) — состояние выглядит запоздалым. Плюс низкая плотность: крупные пустые зоны и дублирующая подпись под кнопкой делают экран рыхлым для B2B-инструмента.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794800860,
+  "id": "20261116114735605843c122584460",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261116114735605843c122584460",
+  "usage": {
+    "completion_tokens": 152,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3782,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3934
+  }
+}

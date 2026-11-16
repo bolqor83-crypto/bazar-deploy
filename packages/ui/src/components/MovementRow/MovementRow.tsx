@@ -111,25 +111,25 @@ export function MovementRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        minHeight: 64,
-        paddingVertical: spacing.sm,
+        gap: spacing.sm,
+        minHeight: 60,
+        paddingVertical: spacing.xs,
       }}
     >
       <View
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
           backgroundColor: colors.surface,
           alignItems: 'center',
           justifyContent: 'center',
         }}
         accessibilityLabel={label}
       >
-        <Icon size={20} color={colors.primary} />
+        <Icon size={18} color={colors.primary} />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: 1 }}>
         <View
           style={{
             flexDirection: 'row',
@@ -153,7 +153,7 @@ export function MovementRow({
           variant="caption"
           color="textMuted"
           mono
-          numberOfLines={1}
+          numberOfLines={2}
           testID="datetime"
         >
           {`${formatDateTime(createdAt)} · ${locationName}`}

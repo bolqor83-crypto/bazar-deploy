@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":6,\"grid\":6,\"components\":6,\"icons\":6,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":6,\"total\":58,\"notes\":\"Нет валидации и состояний: количество 0 и пустое поле ввода рядом с активной кнопкой «Переместить», «0 кг» получателя без подсказки/ошибки. Кнопка «Переместить» не на всю ширину и висит без связи с полем количества; степпер + отдельный ввод дублируют друг друга без визуальной логики.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798138,
+  "id": "202611161102110e657641e68d4fdb",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611161102110e657641e68d4fdb",
+  "usage": {
+    "completion_tokens": 140,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2247
+  }
+}

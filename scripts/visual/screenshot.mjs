@@ -629,6 +629,29 @@ async function prepareStockGolden(token, sellerOrgId) {
   );
 
   prepared.stockOfferId = offer.id;
+
+  // Фиксированные времена движений (детерминизм + живой вид
+  // журнала): раннее утро рабочего дня, разные минуты.
+  const prisma = await openPrisma();
+  try {
+    const day = new Date();
+    day.setUTCHours(5, 0, 0, 0);
+    const times = [5 * 60, 5 * 60 + 25, 6 * 60 + 10, 6 * 60 + 40, 6 * 60 + 41];
+    const movements = await prisma.stockMovement.findMany({
+      where: { offerId: offer.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    for (let i = 0; i < movements.length && i < times.length; i += 1) {
+      const at = new Date(day);
+      at.setUTCMinutes(times[i]);
+      await prisma.stockMovement.update({
+        where: { id: movements[i].id },
+        data: { createdAt: at },
+      });
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
   console.log(
     `подготовка: склад ${product.title} — основной 120, точка ${point.name} 20 ` +
       `(offer …${offer.id.slice(-6)})`,

@@ -86,7 +86,7 @@ function firstImage(rawImages: string): string | null {
 
 export default function StockOverviewScreen() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
 
   const [locationId, setLocationId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -182,7 +182,8 @@ export default function StockOverviewScreen() {
         keyExtractor={(row) => row.offer.id}
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
-          paddingBottom: spacing.xl,
+          // FAB (56) + поля: последняя строка прокручивается выше кнопки.
+          paddingBottom: 96,
           gap: spacing.sm,
         }}
         renderItem={({ item }) => (
@@ -300,18 +301,22 @@ export default function StockOverviewScreen() {
               position: 'absolute',
               right: spacing.lg,
               bottom: spacing.lg,
-              width: 56,
-              height: 56,
-              borderRadius: 28,
+              width: 52,
+              height: 52,
+              borderRadius: 26,
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
               opacity: pressed ? 0.85 : 1,
+              // Тёмная тема — граница вместо тени (правило проекта).
+              ...(isDark
+                ? { borderWidth: 1, borderColor: colors.borderStrong }
+                : { elevation: 4 }),
             },
           ]}
           testID="stock-fab"
         >
-          <Plus size={26} color={colors.primaryText} />
+          <Plus size={26} color={colors.onPrimary} />
         </Pressable>
       ) : null}
 

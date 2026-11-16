@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":74,\"notes\":\"Красные суммы (-20, -10) нарушают запрет на красные акценты — нужен терракотовый или нейтральный цвет для списаний. Список обрезается без признака прокрутки/счётчика, а действия-кнопки занимают много места без явной связи с контекстом.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798105,
+  "id": "20261116110141e7a307e80c37411d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261116110141e7a307e80c37411d",
+  "usage": {
+    "completion_tokens": 128,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2235
+  }
+}

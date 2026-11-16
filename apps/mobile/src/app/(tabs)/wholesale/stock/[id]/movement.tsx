@@ -17,7 +17,6 @@ import {
   FilterChip,
   Input,
   LocationSelector,
-  QuantitySelector,
   Skeleton,
   Text,
   useTheme,
@@ -25,6 +24,7 @@ import {
 } from '@bazar/ui';
 import { AuthError } from '@bazar/types';
 import { RoleScreen } from '../../../../../components/shell/RoleScreen';
+import { QuantityField } from '../../../../../components/stock/QuantityField';
 import { useSellerOffer } from '../../../../../hooks/useSeller';
 import {
   useCreateStockMovement,
@@ -198,7 +198,7 @@ export default function StockMovementFormScreen() {
     <RoleScreen
       role="wholesale_seller"
       section="stock"
-      title={`${KIND_TITLES[kind]} · ${offer.product.name}`}
+      title={KIND_TITLES[kind]}
     >
       <View style={{ flex: 1, width: '100%' }}>
         <ScrollView
@@ -209,6 +209,14 @@ export default function StockMovementFormScreen() {
           }}
         >
           <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ gap: 2, paddingBottom: spacing.xs }}>
+              <Text variant="caption" color="textSecondary">
+                Позиция
+              </Text>
+              <Text variant="bodyStrong" numberOfLines={2}>
+                {offer.product.name}
+              </Text>
+            </View>
             <LocationSelector
               locations={locations.map((l) => ({
                 id: l.id,
@@ -259,45 +267,56 @@ export default function StockMovementFormScreen() {
           </Card>
 
           {kind === 'ADJUSTMENT' ? (
-            <Input
-              label={`Новый остаток (доступно), ${unit || 'ед.'}`}
-              value={quantityText}
-              onChangeText={setQuantityText}
-              keyboardType="numeric"
-              error={quantityError}
-              hint={`Текущий: ${currentAvailable}${unit ? ` ${unit}` : ''}. Система посчитает дельту — минус допустим (недостача)`}
-              testID="movement-quantity"
-            />
+            <View style={{ gap: spacing.xs }}>
+              <Input
+                label={`Новый остаток (доступно), ${unit || 'ед.'}`}
+                value={quantityText}
+                onChangeText={setQuantityText}
+                keyboardType="numeric"
+                error={quantityError}
+                hint={`Текущий: ${currentAvailable}${unit ? ` ${unit}` : ''}. Система посчитает дельту — минус допустим (недостача)`}
+                testID="movement-quantity"
+              />
+              {quantity !== null &&
+              adjustmentDelta !== null &&
+              adjustmentDelta !== 0 ? (
+                <Text variant="bodySmall" mono>
+                  {`После сохранения доступно: ${quantity}${unit ? ` ${unit}` : ''}`}
+                </Text>
+              ) : null}
+            </View>
           ) : (
-            <View style={{ gap: spacing.sm }}>
+            <View style={{ gap: spacing.xs }}>
               <Text variant="bodySmall" color="textSecondary">
                 {`Количество, ${unit || 'ед.'}`}
               </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: spacing.md,
-                }}
-              >
-                <QuantitySelector
-                  value={quantity !== null && quantity >= 0 ? quantity : 0}
-                  onChange={(value) => setQuantityText(String(value))}
-                  min={0}
-                  max={
-                    kind === 'WRITE_OFF' ? Math.max(currentAvailable, 0) : 999
-                  }
-                />
-                <View style={{ flex: 1 }}>
-                  <Input
-                    value={quantityText}
-                    onChangeText={setQuantityText}
-                    keyboardType="numeric"
-                    error={quantityError}
-                    testID="movement-quantity"
-                  />
-                </View>
-              </View>
+              <QuantityField
+                value={quantityText}
+                onChangeText={setQuantityText}
+                unit={unit}
+                max={
+                  kind === 'WRITE_OFF' ? Math.max(currentAvailable, 0) : null
+                }
+                testID="movement-quantity"
+              />
+              {quantityError ? (
+                <Text variant="caption" style={{ color: colors.danger }}>
+                  {quantityError}
+                </Text>
+              ) : (
+                <Text variant="caption" color="textMuted">
+                  {kind === 'WRITE_OFF'
+                    ? `Максимум: ${currentAvailable}${unit ? ` ${unit}` : ''} — доступный остаток`
+                    : 'Приход увеличит доступный остаток на эту величину'}
+                </Text>
+              )}
+              {quantity !== null && delta !== null && delta !== 0 ? (
+                <Text variant="bodySmall" mono>
+                  {kind === 'WRITE_OFF'
+                    ? `После списания доступно: ${Math.max(currentAvailable - quantity, 0)}${unit ? ` ${unit}` : ''}`
+                    : `После прихода доступно: ${currentAvailable + quantity}${unit ? ` ${unit}` : ''}`}
+                </Text>
+              ) : null}
             </View>
           )}
 
@@ -342,19 +361,42 @@ export default function StockMovementFormScreen() {
                   : 'сверка с фактом, инвентаризация…'
               }
               error={reasonError}
-              hint="Запись в журнал движений"
+              hint="Причина сохранится в журнал движений — её увидит команда"
               testID="movement-reason"
             />
           )}
+        </ScrollView>
 
+        {/* Кнопка закреплена внизу формы — всегда в thumb zone. */}
+        <View
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingTop: spacing.sm,
+            paddingBottom: spacing.md,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            backgroundColor: colors.background,
+            gap: spacing.xs,
+          }}
+        >
           <Button
             onPress={onSave}
             disabled={!valid || mutation.isPending}
+            fullWidth
             testID="movement-save"
           >
             {mutation.isPending ? 'Сохраняем…' : 'Сохранить'}
           </Button>
-        </ScrollView>
+          {!valid ? (
+            <Text
+              variant="caption"
+              color="textMuted"
+              style={{ textAlign: 'center' }}
+            >
+              Укажите количество и причину — кнопка активируется
+            </Text>
+          ) : null}
+        </View>
       </View>
     </RoleScreen>
   );

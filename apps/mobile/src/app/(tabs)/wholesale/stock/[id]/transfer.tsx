@@ -14,7 +14,6 @@ import {
   ErrorState,
   Input,
   LocationSelector,
-  QuantitySelector,
   Skeleton,
   Text,
   useTheme,
@@ -22,6 +21,7 @@ import {
 } from '@bazar/ui';
 import { AuthError } from '@bazar/types';
 import { RoleScreen } from '../../../../../components/shell/RoleScreen';
+import { QuantityField } from '../../../../../components/stock/QuantityField';
 import { useSellerOffer } from '../../../../../hooks/useSeller';
 import {
   useStockBalances,
@@ -191,11 +191,7 @@ export default function StockTransferFormScreen() {
   };
 
   return (
-    <RoleScreen
-      role="wholesale_seller"
-      section="stock"
-      title={`Перемещение · ${offer.product.name}`}
-    >
+    <RoleScreen role="wholesale_seller" section="stock" title="Перемещение">
       <View style={{ flex: 1, width: '100%' }}>
         <ScrollView
           contentContainerStyle={{
@@ -205,6 +201,14 @@ export default function StockTransferFormScreen() {
           }}
         >
           <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ gap: 2, paddingBottom: spacing.xs }}>
+              <Text variant="caption" color="textSecondary">
+                Позиция
+              </Text>
+              <Text variant="bodyStrong" numberOfLines={2}>
+                {offer.product.name}
+              </Text>
+            </View>
             <LocationSelector
               locations={locations.map((l) => ({
                 id: l.id,
@@ -253,33 +257,31 @@ export default function StockTransferFormScreen() {
             ) : null}
           </Card>
 
-          <View style={{ gap: spacing.sm }}>
+          <View style={{ gap: spacing.xs }}>
             <Text variant="bodySmall" color="textSecondary">
               {`Количество, ${unit || 'ед.'}`}
             </Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: spacing.md,
-              }}
-            >
-              <QuantitySelector
-                value={quantity ?? 0}
-                onChange={(value) => setQuantityText(String(value))}
-                min={0}
-                max={Math.max(availableFrom, 0)}
-              />
-              <View style={{ flex: 1 }}>
-                <Input
-                  value={quantityText}
-                  onChangeText={setQuantityText}
-                  keyboardType="numeric"
-                  error={quantityError}
-                  testID="transfer-quantity"
-                />
-              </View>
-            </View>
+            <QuantityField
+              value={quantityText}
+              onChangeText={setQuantityText}
+              unit={unit}
+              max={Math.max(availableFrom, 0)}
+              testID="transfer-quantity"
+            />
+            {quantityError ? (
+              <Text variant="caption" style={{ color: colors.danger }}>
+                {quantityError}
+              </Text>
+            ) : (
+              <Text variant="caption" color="textMuted">
+                {`Максимум: ${availableFrom}${unit ? ` ${unit}` : ''} — остаток склада-источника`}
+              </Text>
+            )}
+            {quantity !== null && quantity > 0 && quantity <= availableFrom ? (
+              <Text variant="bodySmall" mono>
+                {`После перемещения: ${availableFrom - quantity} → ${availableTo + quantity}${unit ? ` ${unit}` : ''}`}
+              </Text>
+            ) : null}
           </View>
 
           <Input
@@ -292,15 +294,38 @@ export default function StockTransferFormScreen() {
             hint="Запись в журнал движений обоих складов"
             testID="transfer-reason"
           />
+        </ScrollView>
 
+        {/* Кнопка закреплена внизу формы — всегда в thumb zone. */}
+        <View
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingTop: spacing.sm,
+            paddingBottom: spacing.md,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            backgroundColor: colors.background,
+            gap: spacing.xs,
+          }}
+        >
           <Button
             onPress={onSave}
             disabled={!valid || mutation.isPending}
+            fullWidth
             testID="transfer-save"
           >
             {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
           </Button>
-        </ScrollView>
+          {!valid ? (
+            <Text
+              variant="caption"
+              color="textMuted"
+              style={{ textAlign: 'center' }}
+            >
+              Укажите количество и причину — кнопка активируется
+            </Text>
+          ) : null}
+        </View>
       </View>
     </RoleScreen>
   );

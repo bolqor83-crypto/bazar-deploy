@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":6,\"states\":5,\"density\":4,\"a11y\":7,\"impression\":6,\"total\":59,\"notes\":\"Пустое неактивное поле рядом со степпером не имеет смысла и ломает форму; нижняя половина экрана пуста — форма не закреплена, кнопка «Сохранить» висит в воздухе, нет объяснения поля «Запись в журнал движений».\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798117,
+  "id": "2026111611015273375ff614884f85",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611015273375ff614884f85",
+  "usage": {
+    "completion_tokens": 115,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2222
+  }
+}

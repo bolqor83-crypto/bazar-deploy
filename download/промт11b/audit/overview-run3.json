@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":7,\"grid\":6,\"components\":6,\"icons\":6,\"states\":4,\"density\":6,\"a11y\":7,\"impression\":6,\"total\":55,\"notes\":\"Оранжевая рамка фокуса поиска выбивается из спокойной зелёной палитры и выглядит как ошибка/валидация; FAB внизу — пустой зелёный круг без иконки и подписи, непонятно действие. Карточка товара дублирует данные (140 кг / Доступно: 140), а нижняя половина экрана пуста без осмысленного empty-состояния.\"}",
+        "reasoning_content": "Score. Issues: FAB без иконки/подписи, оранжевая рамка поиска (state focus странная), карточка дублирует данные, пустая зона.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798091,
+  "id": "2026111611012495cb67df275f48dc",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111611012495cb67df275f48dc",
+  "usage": {
+    "completion_tokens": 186,
+    "completion_tokens_details": {
+      "reasoning_tokens": 40
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2293
+  }
+}

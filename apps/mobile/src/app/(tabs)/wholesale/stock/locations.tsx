@@ -55,7 +55,7 @@ const EMPTY_DRAFT: LocationDraft = {
 };
 
 export default function StockLocationsScreen() {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const toast = useToast();
 
   const locationsQuery = useStockLocations();
@@ -266,18 +266,22 @@ export default function StockLocationsScreen() {
               position: 'absolute',
               right: spacing.lg,
               bottom: spacing.lg,
-              width: 56,
-              height: 56,
-              borderRadius: 28,
+              width: 52,
+              height: 52,
+              borderRadius: 26,
               backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
               opacity: pressed ? 0.85 : 1,
+              // Тёмная тема — граница вместо тени (правило проекта).
+              ...(isDark
+                ? { borderWidth: 1, borderColor: colors.borderStrong }
+                : { elevation: 4 }),
             },
           ]}
           testID="locations-fab"
         >
-          <Plus size={26} color={colors.primaryText} />
+          <Plus size={26} color={colors.onPrimary} />
         </Pressable>
       ) : null}
 
@@ -358,7 +362,7 @@ export default function StockLocationsScreen() {
                     width: 8,
                     height: 8,
                     borderRadius: 4,
-                    backgroundColor: colors.primaryText,
+                    backgroundColor: colors.onPrimary,
                   }}
                 />
               ) : null}

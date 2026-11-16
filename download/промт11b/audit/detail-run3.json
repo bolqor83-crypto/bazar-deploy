@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":6,\"grid\":7,\"components\":7,\"icons\":7,\"states\":5,\"density\":8,\"a11y\":8,\"impression\":7,\"total\":69,\"notes\":\"Кнопки-действия занимают слишком много экрана четырьмя крупными тайлами — для рабочего инструмента нужен компактный ряд или иконки; красные/терракотовые минусовые значения без легенды и метки типов создают смысловой шум, пустых состояний и фильтров журнала не видно.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794798111,
+  "id": "202611161101474f68883a0cc947d5",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611161101474f68883a0cc947d5",
+  "usage": {
+    "completion_tokens": 129,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2107,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2236
+  }
+}

@@ -119,12 +119,12 @@ export function Button({
     height: sizeToken.height,
     paddingHorizontal: sizeToken.paddingHorizontal,
     borderRadius: radii.sm,
-    backgroundColor: bg,
+    backgroundColor: disabled ? colors.surface : bg,
+    ...(disabled ? { borderWidth: 1, borderColor: colors.border } : null),
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: sizeToken.gap,
-    opacity: disabled ? 0.5 : 1,
     alignSelf: fullWidth ? 'stretch' : 'flex-start',
   };
 
@@ -146,7 +146,7 @@ export function Button({
       ) : (
         <Text
           variant={size === 'sm' ? 'bodySmall' : 'bodyStrong'}
-          style={{ color: fg }}
+          style={{ color: disabled ? colors.textDisabled : fg }}
         >
           {children}
         </Text>
