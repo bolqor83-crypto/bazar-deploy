@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":7,\"components\":6,\"icons\":6,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":59,\"notes\":\"Нет кнопки добавления в корзину на карточке — ключевого действия для B2B-закупки; обрезка названий/описаний и пиктограммы-заглушки корзины вместо фото делают каталог незавершённым, цена без tabular-nums и без единицы/упаковки (опт-контекст).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794855938,
+  "id": "20261117030534324f390be84e4f3a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117030534324f390be84e4f3a",
+  "usage": {
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3937
+  }
+}

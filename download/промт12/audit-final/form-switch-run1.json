@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":5,\"density\":5,\"a11y\":8,\"impression\":6,\"total\":59,\"notes\":\"Дизайн-тури-контент («Обычная карточка», «Фон surface») смешан с реальной формой — разрушает доверие и плотность; toggle «Авоприём» и переключатели визуально разорваны с подписями без группировки в карточки/секции.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856488,
+  "id": "20261117031445044729a093434ba9",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117031445044729a093434ba9",
+  "usage": {
+    "completion_tokens": 120,
+    "completion_tokens_details": {
+      "reasoning_tokens": 119
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2217
+  }
+}

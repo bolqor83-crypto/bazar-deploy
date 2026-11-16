@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":8,\"grid\":8,\"components\":7,\"icons\":7,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":6,\"total\":58,\"notes\":\"Пункты «Склад» и «Склады» рядом — дублирование и потеря иерархии; меню без счётчиков/метаданных (кол-во заказов, бейджи) выглядит пустовато для рабочего инструмента, состояние поиска не показано\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856061,
+  "id": "202611170307388722b6987f4d48d7",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170307388722b6987f4d48d7",
+  "usage": {
+    "completion_tokens": 115,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3922
+  }
+}

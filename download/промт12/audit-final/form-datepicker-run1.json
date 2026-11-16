@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":5,\"density\":6,\"a11y\":7,\"impression\":7,\"total\":63,\"notes\":\"Выбор даты 15-16 выглядит как range без объяснения цели (нет подписи 'диапазон дат'), шапка за dimmed-фоном теряет контекст. Тумблер 'Автоприём' в выключенном состоянии нечитаем — серый на сером, непонятно включён ли он; нет подтверждающей кнопки-подсказки как применить диапазон.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856496,
+  "id": "2026111703145296e556d1ba1b4cc6",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111703145296e556d1ba1b4cc6",
+  "usage": {
+    "completion_tokens": 141,
+    "completion_tokens_details": {
+      "reasoning_tokens": 140
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2238
+  }
+}

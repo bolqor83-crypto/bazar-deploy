@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":5,\"color\":7,\"grid\":6,\"components\":6,\"icons\":6,\"states\":4,\"density\":5,\"a11y\":6,\"impression\":6,\"total\":51,\"notes\":\"Нет действия добавления в заказ (кнопка/+/количество) — карточка пассивна, а для B2B-каталога в перчатках это ключевое действие; треть карточек обрезана без указания продолжения, цена/описание обрезаны эллипсисом, цифры без tabular-nums и без единицы измерения у цены в строке — быстро сравнить сложно. Плюс 'Скоропорт' как единственный статус выглядит случайным бейджем: нет состояний 'нет в наличии', пустого состояния поиска, счётчика результатов.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794855941,
+  "id": "20261117030538b39f584bc5c64404",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117030538b39f584bc5c64404",
+  "usage": {
+    "completion_tokens": 184,
+    "completion_tokens_details": {
+      "reasoning_tokens": 183
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3991
+  }
+}

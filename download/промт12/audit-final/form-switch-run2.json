@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":6,\"components\":8,\"icons\":7,\"states\":6,\"density\":5,\"a11y\":8,\"impression\":6,\"total\":62,\"notes\":\"Плотность низкая: огромные вертикальные разрывы между группами — на одном экране не помещается сценарий, придётся скроллить в перчатках на холоде; дата с нулевым контекстом (нет ни подсказки, ни быстрого выбора «завтра»), а секция «Карточки» выглядит как служебный UI-кит, попавший в рабочий экран\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856490,
+  "id": "202611170314480a3b501c60b7410c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170314480a3b501c60b7410c",
+  "usage": {
+    "completion_tokens": 146,
+    "completion_tokens_details": {
+      "reasoning_tokens": 145
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2243
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":7,\"components\":6,\"icons\":6,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":58,\"notes\":\"Плейсхолдерные изображения с корзиной и несогласованная структура карточек (бананы с бейджем/описанием, орех без) выглядит как черновик, а не зрелый B2B-продукт; вертикальная плотность карточки размыта — цена не сразу выделяется, нет quick-add кнопки для операционной скорости.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794855945,
+  "id": "20261117030541fece6388e5154a79",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117030541fece6388e5154a79",
+  "usage": {
+    "completion_tokens": 139,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3946
+  }
+}

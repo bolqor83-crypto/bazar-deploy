@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":8,\"states\":4,\"density\":5,\"a11y\":8,\"impression\":6,\"total\":66,\"notes\":\"Дубли «Склад» и «Склады» в одном разделе подрывают доверие, заголовок шапки обрезан («Все инструме...») — признак неотполированной навигации. Слишком разреженный список с обрезанным разделом «Финансы» — плотность ниже рабочей для B2B-инструмента.\"}",
+        "reasoning_content": "Issues: duplicated items Склад/Склады, truncated title, low density, no states.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856057,
+  "id": "202611170307337d8c86090e7e4337",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170307337d8c86090e7e4337",
+  "usage": {
+    "completion_tokens": 156,
+    "completion_tokens_details": {
+      "reasoning_tokens": 20
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3963
+  }
+}

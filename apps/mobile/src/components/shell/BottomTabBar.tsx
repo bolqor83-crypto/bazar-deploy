@@ -42,11 +42,16 @@ export function BottomTabBar({
         const Icon = item.icon;
 
         const itemStyle: StyleProp<ViewStyle> = {
-          flex: 1,
+          // Вкладки растут от контента: длинная подпись
+          // «Предложения» не обрезается на 360–390 (VLM-ревью).
+          flexGrow: 1,
+          flexBasis: 'auto',
+          minWidth: 56,
           minHeight: BAR_HEIGHT,
           alignItems: 'center',
           justifyContent: 'center',
           gap: 2,
+          paddingHorizontal: 4,
         };
 
         return (

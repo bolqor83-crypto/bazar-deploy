@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":7,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":59,\"notes\":\"Контентная часть карты почти пуста: под датой висит неинформативный бежевый квадрат-заглушка вместо состава заказа/количества позиций, а цифры (номер, суммы) без tabular-nums. Нет рабочих состояний: у статуса «Подтверждён» нет вторичного действия (быстрый просмотр/следующий шаг), фильтр «Завершён…» обрезан без намёка на скролл, нижняя половина экрана пустует — для B2B-инструмента 4 утра плотность недостаточна.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794855950,
+  "id": "20261117030545d743d4499f7c47b3",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117030545d743d4499f7c47b3",
+  "usage": {
+    "completion_tokens": 188,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2285
+  }
+}

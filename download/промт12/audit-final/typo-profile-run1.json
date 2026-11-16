@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":6,\"density\":5,\"a11y\":8,\"impression\":7,\"total\":70,\"notes\":\"Экран слишком разреженный для рабочего инструмента: огромные пустоты сверху и снизу, карточка профиля тянется вниз — при работе на рынке важна плотность и видимость без скролла. Пустое значение «Точка — Не выбрана» не выглядит кликабельным/исправляемым — нет affordance быстрого выбора точки прямо отсюда.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794855960,
+  "id": "202611170305575dbc5b4b79ba4637",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170305575dbc5b4b79ba4637",
+  "usage": {
+    "completion_tokens": 138,
+    "completion_tokens_details": {
+      "reasoning_tokens": 137
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2235
+  }
+}

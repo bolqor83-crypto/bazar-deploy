@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":7,\"grid\":6,\"components\":7,\"icons\":6,\"states\":4,\"density\":4,\"a11y\":8,\"impression\":5,\"total\":60,\"notes\":\"Скрин выглядит как технический стенд/шоукейс дизайн-системы («Фон surface, граница border», «Обычная/Приподнятая карточка») — не рабочий экран B2B-инструмента, что рушит впечатление и плотность. В выключенном тумблере «Автоприём заказов» нет заполнения и состояния-подсказки, toggle визуально пуст и неоднозначен при слабом свете.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856478,
+  "id": "202611170314351cdf04e0ff74470e",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170314351cdf04e0ff74470e",
+  "usage": {
+    "completion_tokens": 158,
+    "completion_tokens_details": {
+      "reasoning_tokens": 157
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2255
+  }
+}

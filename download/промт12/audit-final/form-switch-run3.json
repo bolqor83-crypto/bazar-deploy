@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":7,\"icons\":6,\"states\":5,\"density\":5,\"a11y\":7,\"impression\":6,\"total\":55,\"notes\":\"Отключённый переключатель «Авоприём заказов» выглядит как включённый-неактивный — непонятно состояние; большие пустые интервалы между группами снижают рабочую плотность, а заголовки разделов («Формы», «Карточки») обрезаны и не связаны с контентом визуально.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856492,
+  "id": "20261117031450b5eb386b8e78459c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117031450b5eb386b8e78459c",
+  "usage": {
+    "completion_tokens": 128,
+    "completion_tokens_details": {
+      "reasoning_tokens": 127
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2225
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":4,\"components\":7,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":7,\"impression\":6,\"total\":60,\"notes\":\"Главная проблема: числа календаря выстроены в 8 колонок против 7 заголовков дней недели — сетка сломана, даты не выравнены с Пн–Вс. Вторично: нижний шит почти касается края экрана без нижнего отступа, кнопка «Применить» прижата к краю.\"}",
+        "reasoning_content": "Calendar sheet looks decent, green palette fits. Issues: calendar has 8 columns of days but headers 7 — misalignment (day numbers misaligned with weekday headers). Selection 15-16 range. Background dim overlay fine.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856500,
+  "id": "2026111703145645eaf526c0bb4789",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111703145645eaf526c0bb4789",
+  "usage": {
+    "completion_tokens": 177,
+    "completion_tokens_details": {
+      "reasoning_tokens": 46
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2274
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":6,\"states\":6,\"density\":7,\"a11y\":6,\"impression\":7,\"total\":65,\"notes\":\"Ошибка «Проверьте ИНН» — чистый красный с тонкой рамкой 1px: на ярком солнце и в перчатках слабо заметна, нужен терракотовый акцент толще и иконка ошибки; шаги-аватары сверху выглядят как декоративный переключатель без подписей, непонятна текущая секция.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856069,
+  "id": "2026111703074594373aca712f4e40",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111703074594373aca712f4e40",
+  "usage": {
+    "completion_tokens": 136,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3943
+  }
+}

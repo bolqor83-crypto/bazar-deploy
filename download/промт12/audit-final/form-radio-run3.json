@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":5,\"density\":4,\"a11y\":7,\"impression\":5,\"total\":58,\"notes\":\"Огромные вертикальные разрывы между группами формы снижают рабочую плотность для операционного сценария; нет видимых состояний disabled/ошибки и заголовок «Формы» обрезан сверху — экран выглядит как шаблон/стайлгайд, а не рабочий инструмент.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856485,
+  "id": "20261117031442f1e34b9f44994a76",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117031442f1e34b9f44994a76",
+  "usage": {
+    "completion_tokens": 126,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2223
+  }
+}

@@ -78,8 +78,11 @@ const PROMPT = `Ты строгий аудитор визуального диз
 Ответь СТРОГО одной строкой JSON без markdown:
 {"hierarchy":N,"typography":N,"color":N,"grid":N,"components":N,"icons":N,"states":N,"density":N,"a11y":N,"impression":N,"total":N,"notes":"1-2 главные проблемы на русском"}`;
 
-/** Один вызов z-ai vision → JSON-оценка. */
-function auditOnce(name, run, images) {
+/** Пауза (мс). */
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Один вызов z-ai vision → JSON-оценка (с ретраями на 429). */
+async function auditOnce(name, run, images) {
   const outFile = path.join(OUT_DIR, `${name}-run${run}.json`);
   if (fs.existsSync(outFile)) {
     try {
@@ -92,9 +95,21 @@ function auditOnce(name, run, images) {
   const args = ['vision', '-p', PROMPT];
   for (const img of images) args.push('-i', img);
   args.push('-o', outFile);
-  execFileSync('z-ai', args, { stdio: 'pipe', timeout: 120_000 });
-  return JSON.parse(fs.readFileSync(outFile, 'utf-8')).choices[0].message
-    .content;
+  let lastError = null;
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      execFileSync('z-ai', args, { stdio: 'pipe', timeout: 120_000 });
+      return JSON.parse(fs.readFileSync(outFile, 'utf-8')).choices[0].message
+        .content;
+    } catch (error) {
+      lastError = error;
+      const is429 = String(error.message ?? '').includes('429');
+      if (!is429) throw error;
+      console.log(`  429, ждём ${attempt * 20}с…`);
+      await sleep(attempt * 20_000);
+    }
+  }
+  throw lastError;
 }
 
 /** Медиана массива. */
@@ -105,7 +120,8 @@ function median(values) {
 
 /** Разбор строки JSON из ответа модели. */
 function parseVerdict(raw) {
-  const match = raw.match(/\{[\s\S]*\}/);
+  const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+  const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
   try {
     return JSON.parse(match[0]);
@@ -126,7 +142,7 @@ for (const [name, images] of Object.entries(items)) {
   const totals = [];
   const notes = [];
   for (let run = 1; run <= 3; run += 1) {
-    const raw = auditOnce(name, run, images);
+    const raw = await auditOnce(name, run, images);
     const verdict = parseVerdict(raw);
     if (!verdict || typeof verdict.total !== 'number') {
       console.log(`${name} прогон ${run}: НЕ РАЗОБРАН`);

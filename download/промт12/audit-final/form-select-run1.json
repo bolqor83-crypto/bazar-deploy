@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":6,\"grid\":7,\"components\":7,\"icons\":5,\"states\":5,\"density\":6,\"a11y\":7,\"impression\":6,\"total\":55,\"notes\":\"Заголовок «Поле ввода» — служебный/технический текст в UI, а ошибка ИНН «Проверьте ИНН» без конкретики и без красного после заполнения неясна; селект-чипы сверху (иконки пользователей) дублируются и их роль непонятна, что ломает профессиональное впечатление.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856445,
+  "id": "20261117031402942a8eede2704ced",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117031402942a8eede2704ced",
+  "usage": {
+    "completion_tokens": 140,
+    "completion_tokens_details": {
+      "reasoning_tokens": 139
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3947
+  }
+}

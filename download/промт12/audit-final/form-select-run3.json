@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":6,\"grid\":8,\"components\":7,\"icons\":5,\"states\":6,\"density\":7,\"a11y\":7,\"impression\":6,\"total\":64,\"notes\":\"Ошибка ИНН красной рамкой без иконки/кнопки исправления и слабый контраст рамки ошибки; заголовок-заглушка «Поле ввода» и аватар- stepper сверху выглядят как тестовые артефакты, подрывают впечатление продукта\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794856072,
+  "id": "202611170307491f99b021cf2f4e30",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170307491f99b021cf2f4e30",
+  "usage": {
+    "completion_tokens": 117,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3924
+  }
+}
