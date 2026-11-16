@@ -156,7 +156,7 @@ export default function OtpScreen() {
           </Button>
 
           {secondsLeft > 0 ? (
-            <Text variant="bodySmall" color="textSecondary" align="center">
+            <Text variant="caption" color="textSecondary" align="center">
               {`Отправить повторно через ${secondsLeft} с`}
             </Text>
           ) : (
@@ -178,7 +178,7 @@ export default function OtpScreen() {
       )}
 
       {error ? (
-        <Text variant="bodySmall" color="danger" align="center">
+        <Text variant="caption" color="danger" align="center">
           {error}
         </Text>
       ) : null}

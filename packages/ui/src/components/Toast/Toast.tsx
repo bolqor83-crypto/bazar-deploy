@@ -121,7 +121,7 @@ function ToastContent({ onDismiss }: { onDismiss: () => void }) {
       }}
     >
       <Icon size={22} color={iconColor} />
-      <Text variant="bodySmall" style={{ flex: 1 }}>
+      <Text variant="body" style={{ flex: 1 }}>
         {toast.message}
       </Text>
     </Pressable>

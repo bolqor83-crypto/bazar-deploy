@@ -81,7 +81,7 @@ export default function OnboardingDoneScreen() {
       </View>
 
       {error ? (
-        <Text variant="bodySmall" color="danger" align="center">
+        <Text variant="caption" color="danger" align="center">
           {error}
         </Text>
       ) : null}
@@ -102,7 +102,7 @@ export default function OnboardingDoneScreen() {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text variant="bodySmall" color="textSecondary">
+      <Text variant="caption" color="textSecondary">
         {label}
       </Text>
       <Text variant="bodySmall" style={{ textAlign: 'right' }}>

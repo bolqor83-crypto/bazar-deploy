@@ -96,7 +96,7 @@ export function OfferRow({
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text
-            variant="bodySmall"
+            variant="bodyStrong"
             numberOfLines={1}
             style={{ flexShrink: 1 }}
           >

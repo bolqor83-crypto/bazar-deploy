@@ -69,7 +69,7 @@ export default function ResetRequestScreen() {
       </Button>
 
       {error ? (
-        <Text variant="bodySmall" color="danger" align="center">
+        <Text variant="caption" color="danger" align="center">
           {error}
         </Text>
       ) : null}

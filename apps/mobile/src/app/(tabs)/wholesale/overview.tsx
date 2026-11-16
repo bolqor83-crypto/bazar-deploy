@@ -36,7 +36,7 @@ export default function OverviewScreen() {
           {overview.isLoading ? (
             <Skeleton height={28} />
           ) : overview.isError ? (
-            <Text variant="bodySmall" color="textSecondary">
+            <Text variant="body" color="textSecondary">
               Остатки недоступны — проверьте связь
             </Text>
           ) : (

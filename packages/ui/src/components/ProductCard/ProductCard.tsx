@@ -92,11 +92,7 @@ export function ProductCard({
         </View>
       ) : null}
 
-      <Text
-        variant="bodySmall"
-        style={{ fontFamily: 'Inter_600SemiBold' }}
-        numberOfLines={2}
-      >
+      <Text variant="bodyStrong" numberOfLines={2}>
         {name}
       </Text>
 

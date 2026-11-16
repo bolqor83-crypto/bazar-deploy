@@ -5,9 +5,19 @@
  * он гарантирует Inter, размеры кегля и контраст.
  */
 import type { ReactNode } from 'react';
-import { Text as RNText, type StyleProp, type TextProps as RNTextProps, type TextStyle } from 'react-native';
+import {
+  Text as RNText,
+  type StyleProp,
+  type TextProps as RNTextProps,
+  type TextStyle,
+} from 'react-native';
 import { useTheme } from '../../theme';
-import { TABULAR_NUMS, type ColorToken, type TextVariant } from '../../tokens';
+import {
+  NUMERIC_VARIANTS,
+  TABULAR_NUMS,
+  type ColorToken,
+  type TextVariant,
+} from '../../tokens';
 
 export interface TextProps extends RNTextProps {
   /** Вариант типографики. По умолчанию body (17pt). */
@@ -33,6 +43,8 @@ export function Text({
 }: TextProps) {
   const { colors, typography } = useTheme();
   const token = typography[variant];
+  // Числовые варианты — всегда табличные цифры (Промт 12, Часть B).
+  const tabular = mono || NUMERIC_VARIANTS.includes(variant);
 
   const resolved: TextStyle = {
     fontFamily: token.fontFamily,
@@ -46,7 +58,11 @@ export function Text({
 
   return (
     <RNText
-      style={[resolved, mono ? { fontVariant: [...TABULAR_NUMS] } : undefined, style]}
+      style={[
+        resolved,
+        tabular ? { fontVariant: [...TABULAR_NUMS] } : undefined,
+        style,
+      ]}
       {...rest}
     >
       {children}

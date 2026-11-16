@@ -40,7 +40,7 @@ export function ProductRow({
       accessibilityLabel={`${name}, ${quantity}${unit ? ` ${unit}` : ''}, ${formatPrice(total)}`}
     >
       <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="bodySmall" numberOfLines={2}>
+        <Text variant="bodyStrong" numberOfLines={2}>
           {name}
         </Text>
         <Text variant="caption" color="textSecondary" mono>

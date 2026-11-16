@@ -74,7 +74,7 @@ export default function OnboardingLocationScreen() {
       />
 
       {error ? (
-        <Text variant="bodySmall" color="danger">
+        <Text variant="caption" color="danger">
           {error}
         </Text>
       ) : null}

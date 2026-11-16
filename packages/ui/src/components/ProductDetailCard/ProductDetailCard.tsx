@@ -87,7 +87,7 @@ export function ProductDetailCard({
         <Text variant="h2">{name}</Text>
 
         {description ? (
-          <Text variant="bodySmall" color="textSecondary">
+          <Text variant="body" color="textSecondary">
             {description}
           </Text>
         ) : null}
@@ -100,7 +100,7 @@ export function ProductDetailCard({
           }}
         >
           <PriceDisplay value={priceKopecks} size="lg" />
-          <Text variant="bodySmall" color="textSecondary">
+          <Text variant="caption" color="textSecondary">
             за {unit}
           </Text>
         </View>
@@ -166,7 +166,7 @@ export function ProductDetailCard({
                 }}
               >
                 <Text
-                  variant="bodySmall"
+                  variant="body"
                   color={
                     offer.organizationName === sellerName
                       ? 'primaryText'
@@ -177,7 +177,7 @@ export function ProductDetailCard({
                 >
                   {offer.organizationName}
                 </Text>
-                <Text variant="bodySmall" color="textSecondary">
+                <Text variant="caption" color="textSecondary">
                   склад {offer.stock}
                 </Text>
                 <PriceDisplay value={offer.priceKopecks} />

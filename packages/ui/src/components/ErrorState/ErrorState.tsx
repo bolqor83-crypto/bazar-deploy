@@ -46,7 +46,7 @@ export function ErrorState({
         {title}
       </Text>
 
-      <Text variant="bodySmall" color="textSecondary" align="center">
+      <Text variant="body" color="textSecondary" align="center">
         {description}
       </Text>
 

@@ -58,7 +58,7 @@ export function EmptyState({
       </Text>
 
       {description ? (
-        <Text variant="bodySmall" color="textSecondary" align="center">
+        <Text variant="body" color="textSecondary" align="center">
           {description}
         </Text>
       ) : null}

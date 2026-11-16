@@ -212,7 +212,7 @@ export default function RegisterScreen() {
         >
           {termsAccepted ? <Check size={16} color={colors.onPrimary} /> : null}
         </View>
-        <Text variant="bodySmall" color="textSecondary" style={{ flex: 1 }}>
+        <Text variant="caption" color="textSecondary" style={{ flex: 1 }}>
           Принимаю условия и политику конфиденциальности
         </Text>
       </Pressable>
@@ -233,7 +233,7 @@ export default function RegisterScreen() {
       </Button>
 
       {error ? (
-        <Text variant="bodySmall" color="danger" align="center">
+        <Text variant="caption" color="danger" align="center">
           {error}
         </Text>
       ) : null}

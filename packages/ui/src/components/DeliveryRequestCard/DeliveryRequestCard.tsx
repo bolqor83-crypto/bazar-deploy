@@ -84,7 +84,7 @@ export function DeliveryRequestCard({
           <Text variant="micro" color="textMuted">
             {label}
           </Text>
-          <Text variant="bodySmall" numberOfLines={2}>
+          <Text variant="caption" color="textSecondary" numberOfLines={2}>
             {address}
           </Text>
         </View>
