@@ -11,7 +11,12 @@ import path from 'node:path';
 import { captureSet, readManifest, GOLDEN_DIR } from './visual/screenshot.mjs';
 
 async function main() {
-  const manifest = readManifest();
+  let manifest = readManifest();
+  // VISUAL_ONLY=name1,name2 — переснять только выбранные экраны.
+  if (process.env.VISUAL_ONLY) {
+    const wanted = new Set(String(process.env.VISUAL_ONLY).split(','));
+    manifest = manifest.filter((e) => wanted.has(e.name));
+  }
   fs.mkdirSync(GOLDEN_DIR, { recursive: true });
   const shots = await captureSet(manifest);
   let updated = 0;

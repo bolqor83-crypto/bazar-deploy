@@ -6,6 +6,7 @@
     "[data-testid='skeleton-shimmer']",
     "[data-testid='avatar-placeholder']",
     "[data-testid='clock']",
-    "[data-testid='datetime']"
+    "[data-testid='datetime']",
+    "[data-testid='stock-summary-value']"
   ]
 }

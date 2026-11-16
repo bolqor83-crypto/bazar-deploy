@@ -149,7 +149,13 @@ export function MovementRow({
         <Text variant="caption" color="textSecondary" numberOfLines={1}>
           {reason}
         </Text>
-        <Text variant="caption" color="textMuted" mono numberOfLines={1}>
+        <Text
+          variant="caption"
+          color="textMuted"
+          mono
+          numberOfLines={1}
+          testID="datetime"
+        >
           {`${formatDateTime(createdAt)} · ${locationName}`}
         </Text>
       </View>

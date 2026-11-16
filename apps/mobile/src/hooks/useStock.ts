@@ -74,7 +74,7 @@ export function useStockSummary(offerId: string) {
   return useQuery({
     queryKey: ['stock', 'summary', offerId],
     queryFn: () => fetchStockSummary(offerId),
-    enabled: offerId.length > 0,
+    enabled: typeof offerId === 'string' && offerId.length > 0,
   });
 }
 

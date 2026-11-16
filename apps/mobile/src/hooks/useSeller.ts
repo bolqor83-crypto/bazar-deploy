@@ -64,7 +64,7 @@ export function useSellerOffer(id: string) {
   return useQuery({
     queryKey: ['seller', 'offers', 'detail', id],
     queryFn: () => fetchSellerOffer(id),
-    enabled: id.length > 0,
+    enabled: typeof id === 'string' && id.length > 0,
   });
 }
 
@@ -72,8 +72,7 @@ export function useSellerOffer(id: string) {
 export function useCreateSellerProduct() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateSellerProductInput) =>
-      createSellerProduct(input),
+    mutationFn: (input: CreateSellerProductInput) => createSellerProduct(input),
     onSuccess: (product: SellerProduct) => {
       void client.invalidateQueries({ queryKey: ['seller', 'products'] });
       return product;
@@ -85,8 +84,13 @@ export function useCreateSellerProduct() {
 export function useUpdateSellerProduct() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateSellerProductInput }) =>
-      updateSellerProduct(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateSellerProductInput;
+    }) => updateSellerProduct(id, input),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['seller', 'products'] });
     },
@@ -121,8 +125,13 @@ export function useCreateSellerOffer() {
 export function useUpdateSellerOffer() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateSellerOfferInput }) =>
-      updateSellerOffer(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateSellerOfferInput;
+    }) => updateSellerOffer(id, input),
     onSuccess: (offer: SellerOffer) => {
       client.setQueryData(['seller', 'offers', 'detail', offer.id], offer);
       void client.invalidateQueries({ queryKey: ['seller', 'offers'] });

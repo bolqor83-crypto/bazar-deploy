@@ -295,5 +295,114 @@
     "role": "customer",
     "waitForText": "Заказы",
     "openPreparedOrder": true
+  },
+  {
+    "name": "stock-overview-light-390",
+    "file": "stock-overview-light-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "stockSearch": "Голден склад"
+  },
+  {
+    "name": "stock-overview-dark-390",
+    "file": "stock-overview-dark-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "stockSearch": "Голден склад"
+  },
+  {
+    "name": "stock-overview-light-360",
+    "file": "stock-overview-light-360.png",
+    "url": "/wholesale/stock",
+    "viewport": 360,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "stockSearch": "Голден склад"
+  },
+  {
+    "name": "stock-overview-light-430",
+    "file": "stock-overview-light-430.png",
+    "url": "/wholesale/stock",
+    "viewport": 430,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "stockSearch": "Голден склад"
+  },
+  {
+    "name": "stock-overview-dark-430",
+    "file": "stock-overview-dark-430.png",
+    "url": "/wholesale/stock",
+    "viewport": 430,
+    "theme": "dark",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "stockSearch": "Голден склад"
+  },
+  {
+    "name": "stock-detail-light-390",
+    "file": "stock-detail-light-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "openStockDetail": true
+  },
+  {
+    "name": "stock-detail-dark-390",
+    "file": "stock-detail-dark-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "openStockDetail": true
+  },
+  {
+    "name": "stock-movement-form-light-390",
+    "file": "stock-movement-form-light-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "openStockMovementForm": true
+  },
+  {
+    "name": "stock-transfer-form-light-390",
+    "file": "stock-transfer-form-light-390.png",
+    "url": "/wholesale/stock",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Все склады",
+    "openStockTransferForm": true
+  },
+  {
+    "name": "stock-locations-light-390",
+    "file": "stock-locations-light-390.png",
+    "url": "/wholesale/stock/locations",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Основной склад"
   }
 ]

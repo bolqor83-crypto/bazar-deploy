@@ -98,7 +98,12 @@ function Metric({
 }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text variant="h3" mono style={color ? { color } : undefined}>
+      <Text
+        variant="h3"
+        mono
+        style={color ? { color } : undefined}
+        testID="stock-summary-value"
+      >
         {value}
       </Text>
       <Text variant="caption" color="textSecondary">

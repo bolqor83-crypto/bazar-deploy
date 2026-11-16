@@ -54,7 +54,10 @@ function parseIntStrict(value: string): number | null {
 
 export default function StockMovementFormScreen() {
   const router = useRouter();
-  const { id, type } = useLocalSearchParams<{ id: string; type: string }>();
+  const params = useLocalSearchParams<{ id: string; type: string }>();
+  /** Прямой URL: params гидратируются не сразу. */
+  const id = typeof params.id === 'string' ? params.id : '';
+  const type = typeof params.type === 'string' ? params.type : '';
   const { colors, spacing } = useTheme();
   const toast = useToast();
 

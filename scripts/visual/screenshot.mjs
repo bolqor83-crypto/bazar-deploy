@@ -216,7 +216,22 @@ const prepared = {
   orderNumber: '',
   deliveryId: '',
   deliveryNumber: '',
+  stockOfferId: '',
 };
+
+/** GET-запрос к API с токеном Ивана. */
+async function apiGet(token, path, orgId) {
+  const res = await fetch(`${BASE_URL}/api${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(orgId ? { 'X-Organization-Id': orgId } : {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`GET ${path}: ${res.status} ${await res.text()}`);
+  }
+  return res.json();
+}
 
 /** POST-запрос к API с токеном Ивана. */
 async function apiPost(token, path, body, orgId) {
@@ -500,6 +515,127 @@ async function prepareDemoDeliveries() {
 }
 
 /**
+ * Детерминированный склад для golden (Промт 11b).
+ *
+ * Продукт «Голден склад» — постоянный; его предложение пересоздаётся
+ * с нуля каждый прогон (без заказов — физическое удаление каскадом
+ * уносит движения и балансы, включая баланс точки). Итог всегда:
+ * Основной склад 120/0/120, точка 20/0/20, журнал ровно 5 движений
+ * (INITIAL 120, RECEIPT +30, WRITE_OFF −10, TRANSFER_OUT −20,
+ * TRANSFER_IN +20) с фиксированными причинами.
+ */
+async function prepareStockGolden(token, sellerOrgId) {
+  const productName = 'Голден склад';
+  const pointName = 'Точка golden';
+
+  // Продукт: найти активный или создать.
+  const products = await apiGet(token, '/seller/products', sellerOrgId);
+  let product = products.find((p) => p.title === productName);
+  if (!product) {
+    const categories = await apiGet(token, '/catalog/categories');
+    product = await apiPost(
+      token,
+      '/seller/products',
+      {
+        title: productName,
+        categoryId: categories[0].id,
+        unit: 'кг',
+        description: 'Фиксированная позиция для golden-скриншотов склада',
+      },
+      sellerOrgId,
+    );
+  }
+
+  // Точка: найти или создать (баланс очистится удалением предложения).
+  const locations = await apiGet(token, '/stock/locations', sellerOrgId);
+  const defaultLocation = locations.find((l) => l.isDefault) ?? locations[0];
+  let point = locations.find((l) => l.name === pointName);
+  if (!point) {
+    point = await apiPost(
+      token,
+      '/stock/locations',
+      {
+        name: pointName,
+        type: 'STORE',
+        address: 'ул. Эталонная, 1',
+      },
+      sellerOrgId,
+    );
+  }
+
+  // Прежние предложения продукта — удалить (без заказов → физически).
+  const offers = await apiGet(
+    token,
+    '/seller/offers?archived=false&pageSize=100',
+    sellerOrgId,
+  );
+  for (const old of offers.items.filter((o) => o.productId === product.id)) {
+    await fetch(`${BASE_URL}/api/seller/offers/${old.id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Organization-Id': sellerOrgId,
+      },
+    });
+  }
+
+  // Свежее предложение с фиксированной историей движений.
+  const offer = await apiPost(
+    token,
+    '/seller/offers',
+    {
+      productId: product.id,
+      price: 4500,
+      stock: 120,
+      minQuantity: 5,
+    },
+    sellerOrgId,
+  );
+  await apiPost(
+    token,
+    '/stock/movements',
+    {
+      offerId: offer.id,
+      locationId: defaultLocation.id,
+      type: 'RECEIPT',
+      quantity: 30,
+      reason: 'Закупка у фермера',
+    },
+    sellerOrgId,
+  );
+  await apiPost(
+    token,
+    '/stock/movements',
+    {
+      offerId: offer.id,
+      locationId: defaultLocation.id,
+      type: 'WRITE_OFF',
+      quantity: 10,
+      reason: 'порча при перевозке',
+    },
+    sellerOrgId,
+  );
+  await apiPost(
+    token,
+    '/stock/transfer',
+    {
+      offerId: offer.id,
+      fromLocationId: defaultLocation.id,
+      toLocationId: point.id,
+      quantity: 20,
+      reason: 'Развоз по точке',
+    },
+    sellerOrgId,
+  );
+
+  prepared.stockOfferId = offer.id;
+  console.log(
+    `подготовка: склад ${product.title} — основной 120, точка ${point.name} 20 ` +
+      `(offer …${offer.id.slice(-6)})`,
+  );
+}
+
+/**
  * Снять набор записей манифеста. Возвращает Map<name, Buffer PNG>.
  * Группировка: guest-контекст и user-контекст (один логин на всех).
  */
@@ -555,6 +691,27 @@ export async function captureSet(entries) {
       }
       if (needsPrepared && prepared.deliveryId === '') {
         throw new Error('подготовка доставок не заполнила prepared-ids');
+      }
+
+      // Детерминированный склад golden (Промт 11b): фиксированная
+      // позиция с ровно известными остатками и журналом.
+      const needsStock = userEntries.some(
+        (e) =>
+          e.openStockDetail ||
+          e.openStockMovementForm ||
+          e.openStockTransferForm ||
+          e.stockSearch,
+      );
+      if (needsStock) {
+        const token = await apiLogin();
+        const me = await apiGet(token, '/auth/me');
+        const sellerOrg = me.memberships.find(
+          (m) => String(m.role).toUpperCase() === 'WHOLESALE_SELLER',
+        );
+        if (!sellerOrg) {
+          throw new Error('у демо-пользователя нет роли WHOLESALE_SELLER');
+        }
+        await prepareStockGolden(token, sellerOrg.organizationId);
       }
 
       const userContext = await browser.newContext({
@@ -620,6 +777,49 @@ export async function captureSet(entries) {
         }
         if (entry.openContextSheet) {
           await openContextSheet(page);
+        }
+        // Промт 11b: золотые экраны склада оптовика.
+        if (entry.stockSearch) {
+          // Поиск по товару сужает обзор до фиксированной позиции
+          // «Голден склад» (детерминизм списка).
+          await page
+            .fill('[data-testid="stock-search"]', entry.stockSearch)
+            .catch(() => {});
+          await page.waitForTimeout(1200);
+        }
+        if (entry.openStockDetail) {
+          await page.goto(
+            `${BASE_URL}/wholesale/stock/${prepared.stockOfferId}`,
+            { waitUntil: 'networkidle' },
+          );
+          await page
+            .waitForSelector('[data-testid^="movement-"]', { timeout: 10_000 })
+            .catch(() => {});
+          await page.waitForTimeout(800);
+        }
+        if (entry.openStockMovementForm) {
+          await page.goto(
+            `${BASE_URL}/wholesale/stock/${prepared.stockOfferId}/movement?type=RECEIPT`,
+            { waitUntil: 'networkidle' },
+          );
+          await page
+            .waitForSelector('[data-testid="movement-save"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
+        }
+        if (entry.openStockTransferForm) {
+          await page.goto(
+            `${BASE_URL}/wholesale/stock/${prepared.stockOfferId}/transfer`,
+            { waitUntil: 'networkidle' },
+          );
+          await page
+            .waitForSelector('[data-testid="transfer-save"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
         }
         if (entry.openFirstOrder) {
           // Открыть первый заказ из списка: карточки order-card-<i>.

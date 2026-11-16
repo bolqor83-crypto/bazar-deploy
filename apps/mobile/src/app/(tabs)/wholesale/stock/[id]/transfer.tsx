@@ -41,7 +41,9 @@ function parsePositiveInt(value: string): number | null {
 
 export default function StockTransferFormScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string }>();
+  /** Прямой URL: params гидратируются не сразу. */
+  const id = typeof params.id === 'string' ? params.id : '';
   const { colors, spacing } = useTheme();
   const toast = useToast();
 

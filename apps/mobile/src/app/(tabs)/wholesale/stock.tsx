@@ -364,7 +364,12 @@ function SummaryCards({
           {loading ? (
             <Skeleton height={22} width={40} />
           ) : (
-            <Text variant="h3" mono style={{ color: card.color }}>
+            <Text
+              variant="h3"
+              mono
+              style={{ color: card.color }}
+              testID="stock-summary-value"
+            >
               {card.value}
             </Text>
           )}

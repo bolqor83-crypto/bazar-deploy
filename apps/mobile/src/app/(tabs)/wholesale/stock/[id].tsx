@@ -40,7 +40,9 @@ function orderNumberOf(reason: string): string | null {
 
 export default function StockMovementsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string }>();
+  /** Прямой URL: params гидратируются не сразу — пустой id до них. */
+  const id = typeof params.id === 'string' ? params.id : '';
   const { spacing } = useTheme();
 
   const [locationId, setLocationId] = useState<string | null>(null);
