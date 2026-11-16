@@ -1,11 +1,13 @@
 /**
- * Форма движения: приход / списание / корректировка (Промт 11b).
+ * Форма движения: приход / списание / корректировка (Промт 11b;
+ * редизайн Промта 12, Часть A).
  *
- * Склад, количество (QuantitySelector + ввод), причина (≥3
- * символов; для списания — быстрые варианты «порча», «потеря»,
+ * Полноэкранная форма: сверху — чипы выбора типа (переключение без
+ * возврата), склад, количество (QuantitySelector + ввод), причина
+ * (multiline, 3 строки; для списания — быстрые «порча»/«потеря»/
  * «инвентаризация»). Корректировка вводит новый остаток — дельту
- * считает система, минус допустим (недостача). Кнопка «Сохранить»
- * активна только на валидной форме; после — toast и возврат.
+ * считает система, минус допустим (недостача). Кнопка «Сохранить» —
+ * sticky внизу, primary lg; активна только на валидной форме.
  */
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -40,6 +42,22 @@ const KIND_TITLES: Record<MovementKind, string> = {
   ADJUSTMENT: 'Корректировка остатка',
 };
 
+/** Чипы выбора типа (Промт 12: переключение без возврата). */
+const KIND_CHIPS: {
+  key: MovementKind | 'TRANSFER';
+  label: string;
+  testID: string;
+}[] = [
+  { key: 'RECEIPT', label: 'Приход', testID: 'movement-kind-receipt' },
+  { key: 'WRITE_OFF', label: 'Списание', testID: 'movement-kind-writeoff' },
+  {
+    key: 'ADJUSTMENT',
+    label: 'Корректировка',
+    testID: 'movement-kind-adjustment',
+  },
+  { key: 'TRANSFER', label: 'Перемещение', testID: 'movement-kind-transfer' },
+];
+
 const WRITE_OFF_REASONS = ['порча', 'потеря', 'инвентаризация'];
 
 /** Разбор количества: целое число или null. */
@@ -61,8 +79,9 @@ export default function StockMovementFormScreen() {
   const { colors, spacing } = useTheme();
   const toast = useToast();
 
-  const kind: MovementKind =
+  const initialKind: MovementKind =
     type === 'WRITE_OFF' || type === 'ADJUSTMENT' ? type : 'RECEIPT';
+  const [kind, setKind] = useState<MovementKind>(initialKind);
 
   const offerQuery = useSellerOffer(id);
   const balancesQuery = useStockBalances({ offerId: id });
@@ -194,6 +213,15 @@ export default function StockMovementFormScreen() {
     );
   };
 
+  /** Чип типа: перемещение — отдельная форма, остальные — локально. */
+  const onKindChip = (key: MovementKind | 'TRANSFER') => {
+    if (key === 'TRANSFER') {
+      router.replace(`/wholesale/stock/${id}/transfer`);
+      return;
+    }
+    setKind(key);
+  };
+
   return (
     <RoleScreen
       role="wholesale_seller"
@@ -208,6 +236,26 @@ export default function StockMovementFormScreen() {
             gap: spacing.md,
           }}
         >
+          {/* Выбор типа движения — 4 чипа в ряд. */}
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.sm,
+              flexWrap: 'wrap',
+            }}
+          >
+            {KIND_CHIPS.map((chip) => (
+              <FilterChip
+                key={chip.key}
+                label={chip.label}
+                size="sm"
+                active={chip.key === kind}
+                onPress={() => onKindChip(chip.key)}
+                testID={chip.testID}
+              />
+            ))}
+          </View>
+
           <Card style={{ padding: spacing.md, gap: spacing.sm }}>
             <View style={{ gap: 2, paddingBottom: spacing.xs }}>
               <Text variant="caption" color="textSecondary">
@@ -327,6 +375,7 @@ export default function StockMovementFormScreen() {
                 value={reason}
                 onChangeText={setReason}
                 multiline
+                numberOfLines={3}
                 placeholder="порча при перевозке, потеря на точке…"
                 error={reasonError}
                 testID="movement-reason"
@@ -355,6 +404,7 @@ export default function StockMovementFormScreen() {
               value={reason}
               onChangeText={setReason}
               multiline
+              numberOfLines={3}
               placeholder={
                 kind === 'RECEIPT'
                   ? 'закупка у фермера, возврат с точки…'
@@ -380,6 +430,7 @@ export default function StockMovementFormScreen() {
           }}
         >
           <Button
+            size="lg"
             onPress={onSave}
             disabled={!valid || mutation.isPending}
             fullWidth

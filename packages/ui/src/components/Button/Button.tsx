@@ -15,6 +15,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { hapticTap } from '../../tokens';
 import { Text } from '../Text';
@@ -37,6 +38,8 @@ const HIT_SLOP = { top: 4, bottom: 4, left: 4, right: 4 };
 export interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Иконка слева от текста (Lucide, Промт 12). */
+  icon?: LucideIcon;
   /** Растянуть на всю ширину контейнера (alignSelf: stretch). */
   fullWidth?: boolean;
   loading?: boolean;
@@ -91,6 +94,7 @@ function LoadingDots({ color }: { color: string }) {
 export function Button({
   variant = 'primary',
   size = 'md',
+  icon: Icon,
   fullWidth = false,
   loading = false,
   disabled = false,
@@ -144,12 +148,20 @@ export function Button({
       {loading ? (
         <LoadingDots color={fg} />
       ) : (
-        <Text
-          variant={size === 'sm' ? 'bodySmall' : 'bodyStrong'}
-          style={{ color: disabled ? colors.textDisabled : fg }}
-        >
-          {children}
-        </Text>
+        <>
+          {Icon ? (
+            <Icon
+              size={size === 'sm' ? 16 : 18}
+              color={disabled ? colors.textDisabled : fg}
+            />
+          ) : null}
+          <Text
+            variant={size === 'sm' ? 'bodySmall' : 'bodyStrong'}
+            style={{ color: disabled ? colors.textDisabled : fg }}
+          >
+            {children}
+          </Text>
+        </>
       )}
     </Pressable>
   );

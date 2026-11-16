@@ -25,12 +25,14 @@ describe('StockRow', () => {
     expect(screen.getByText(/₽\/кг/)).toBeTruthy();
   });
 
-  it('без резерва показывает только доступно', async () => {
+  it('без резерва не дублирует доступно под остатком', async () => {
     const screen = await render(
       <StockRow {...BASE} reservedQty={0} availableQty={120} />,
     );
-    expect(screen.getByText('Доступно: 120')).toBeTruthy();
+    // Доступно = физическому: дубль числа под остатком не нужен.
+    expect(screen.queryByText(/Доступно/)).toBeNull();
     expect(screen.queryByText(/Резерв/)).toBeNull();
+    expect(screen.getByText('120 кг')).toBeTruthy();
   });
 
   it('уровень «мало» когда доступно меньше двух минимальных партий', async () => {

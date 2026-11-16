@@ -1,18 +1,24 @@
 /**
- * Движения по позиции (Промт 11b).
+ * Движения по позиции (Промт 11b; редизайн Промта 12, Часть A).
  *
- * Карточка остатка (physical / reserved / available крупно),
- * переключение склада, четыре действия (приход, списание,
- * корректировка, перемещение) и журнал MovementRow с бесконечной
- * прокруткой. Движения с refType=order ведут в заказ продавца.
+ * Сводка остатка — одна панель (80) с тремя цифрами physical /
+ * reserved / available (numberL, tabular). Четыре действия — один
+ * ряд компактных кнопок 48 (иконка + подпись). Журнал — компактные
+ * строки MovementRow (56) с разделителями, не карточки. Движения с
+ * refType=order ведут в заказ продавца.
  */
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Warehouse } from 'lucide-react-native';
 import {
-  Button,
-  Card,
+  ArrowDownToLine,
+  ArrowLeftRight,
+  PackageX,
+  Scale,
+  Warehouse,
+} from 'lucide-react-native';
+import {
+  Divider,
   EmptyState,
   ErrorState,
   LocationSelector,
@@ -21,6 +27,7 @@ import {
   Text,
   useTheme,
 } from '@bazar/ui';
+import type { LucideIcon } from 'lucide-react-native';
 import type { MovementType } from '@bazar/ui';
 import { RoleScreen } from '../../../../components/shell/RoleScreen';
 import { useSellerOffer } from '../../../../hooks/useSeller';
@@ -33,6 +40,38 @@ import {
 
 type MovementKind = 'RECEIPT' | 'WRITE_OFF' | 'ADJUSTMENT' | 'TRANSFER';
 
+const ACTIONS: {
+  key: MovementKind;
+  label: string;
+  icon: LucideIcon;
+  testID: string;
+}[] = [
+  {
+    key: 'RECEIPT',
+    label: 'Приход',
+    icon: ArrowDownToLine,
+    testID: 'stock-action-receipt',
+  },
+  {
+    key: 'WRITE_OFF',
+    label: 'Списание',
+    icon: PackageX,
+    testID: 'stock-action-writeoff',
+  },
+  {
+    key: 'ADJUSTMENT',
+    label: 'Коррекция',
+    icon: Scale,
+    testID: 'stock-action-adjustment',
+  },
+  {
+    key: 'TRANSFER',
+    label: 'Перемещение',
+    icon: ArrowLeftRight,
+    testID: 'stock-action-transfer',
+  },
+];
+
 /** Номер заказа из причины движения («Резерв заказа BZ-2026-000006»). */
 function orderNumberOf(reason: string): string | null {
   return reason.match(/BZ-\d{4}-\d{6}/)?.[0] ?? null;
@@ -43,7 +82,7 @@ export default function StockMovementsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   /** Прямой URL: params гидратируются не сразу — пустой id до них. */
   const id = typeof params.id === 'string' ? params.id : '';
-  const { spacing } = useTheme();
+  const { colors, spacing } = useTheme();
 
   const [locationId, setLocationId] = useState<string | null>(null);
 
@@ -68,11 +107,11 @@ export default function StockMovementsScreen() {
     return (
       <RoleScreen role="wholesale_seller" section="stock" title="Склад">
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <Skeleton height={96} />
+          <Skeleton height={80} />
           <Skeleton height={48} />
-          <Skeleton height={64} />
-          <Skeleton height={64} />
-          <Skeleton height={64} />
+          <Skeleton height={56} />
+          <Skeleton height={56} />
+          <Skeleton height={56} />
         </View>
       </RoleScreen>
     );
@@ -114,8 +153,10 @@ export default function StockMovementsScreen() {
   };
 
   const header = (
-    <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
-      <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+    <View style={{ paddingBottom: spacing.sm }}>
+      <View
+        style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}
+      >
         <LocationSelector
           locations={locations.map((l) => ({
             id: l.id,
@@ -129,66 +170,55 @@ export default function StockMovementsScreen() {
           allCaption={`Складов с остатком: ${locationsCount}`}
           disabled={locationsQuery.isLoading}
         />
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <BalanceCell
-            label="Всего"
-            value={balance.physicalQty}
-            unit={unit}
-            size="lg"
-          />
-          <BalanceCell label="Резерв" value={balance.reservedQty} unit={unit} />
-          <BalanceCell
-            label="Доступно"
-            value={balance.availableQty}
-            unit={unit}
-          />
-        </View>
-      </Card>
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        <View style={{ flexGrow: 1, flexBasis: '47%' }}>
-          <Button
-            variant="primary"
-            onPress={() => openAction('RECEIPT')}
-            testID="stock-action-receipt"
-            fullWidth
-          >
-            Приход
-          </Button>
-        </View>
-        <View style={{ flexGrow: 1, flexBasis: '47%' }}>
-          <Button
-            variant="secondary"
-            onPress={() => openAction('WRITE_OFF')}
-            testID="stock-action-writeoff"
-            fullWidth
-          >
-            Списание
-          </Button>
-        </View>
-        <View style={{ flexGrow: 1, flexBasis: '47%' }}>
-          <Button
-            variant="secondary"
-            onPress={() => openAction('ADJUSTMENT')}
-            testID="stock-action-adjustment"
-            fullWidth
-          >
-            Корректировка
-          </Button>
-        </View>
-        <View style={{ flexGrow: 1, flexBasis: '47%' }}>
-          <Button
-            variant="secondary"
-            onPress={() => openAction('TRANSFER')}
-            testID="stock-action-transfer"
-            fullWidth
-          >
-            Перемещение
-          </Button>
-        </View>
       </View>
 
-      <Text variant="bodyStrong">{`Журнал движений (${movementsTotal})`}</Text>
+      {/* Панель остатка: три цифры (80). */}
+      <View
+        style={{
+          height: 80,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: spacing.md,
+          gap: spacing.md,
+          backgroundColor: colors.surface,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <BalanceCell label="Всего" value={balance.physicalQty} unit={unit} />
+        <BalanceCell label="Резерв" value={balance.reservedQty} unit={unit} />
+        <BalanceCell
+          label="Доступно"
+          value={balance.availableQty}
+          unit={unit}
+          emphasize
+        />
+      </View>
+
+      {/* Четыре действия в один ряд. */}
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: spacing.sm,
+          paddingHorizontal: spacing.md,
+          paddingTop: spacing.sm,
+        }}
+      >
+        {ACTIONS.map((action) => (
+          <ActionButton
+            key={action.key}
+            label={action.label}
+            icon={action.icon}
+            onPress={() => openAction(action.key)}
+            testID={action.testID}
+          />
+        ))}
+      </View>
+
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm }}>
+        <Text variant="bodyStrong">{`Журнал движений (${movementsTotal})`}</Text>
+      </View>
     </View>
   );
 
@@ -196,9 +226,9 @@ export default function StockMovementsScreen() {
   if (movementsQuery.isLoading) {
     content = (
       <View style={{ padding: spacing.lg, gap: spacing.sm }}>
-        <Skeleton height={64} />
-        <Skeleton height={64} />
-        <Skeleton height={64} />
+        <Skeleton height={56} />
+        <Skeleton height={56} />
+        <Skeleton height={56} />
       </View>
     );
   } else if (movementsQuery.isError) {
@@ -209,9 +239,7 @@ export default function StockMovementsScreen() {
         data={movements}
         keyExtractor={(m) => m.id}
         contentContainerStyle={{
-          paddingHorizontal: spacing.md,
           paddingBottom: spacing.xl,
-          gap: spacing.sm,
         }}
         onEndReached={() => {
           if (
@@ -223,40 +251,44 @@ export default function StockMovementsScreen() {
         }}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={header}
+        ItemSeparatorComponent={() => (
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <Divider />
+          </View>
+        )}
         renderItem={({ item }) => (
-          <Card>
-            <View style={{ paddingHorizontal: 12 }}>
-              <MovementRow
-                type={item.type as MovementType}
-                quantityDelta={item.quantityDelta}
-                reason={item.reason}
-                locationName={item.locationName}
-                createdAt={item.createdAt}
-                linkLabel={
-                  item.refType === 'order'
-                    ? (orderNumberOf(item.reason) ?? 'Заказ')
-                    : null
-                }
-                onPress={
-                  item.refType === 'order' && item.refId
-                    ? () => router.push(`/wholesale/orders/${item.refId}`)
-                    : undefined
-                }
-                testID={`movement-${item.id}`}
-              />
-            </View>
-          </Card>
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <MovementRow
+              type={item.type as MovementType}
+              quantityDelta={item.quantityDelta}
+              reason={item.reason}
+              locationName={item.locationName}
+              createdAt={item.createdAt}
+              linkLabel={
+                item.refType === 'order'
+                  ? (orderNumberOf(item.reason) ?? 'Заказ')
+                  : null
+              }
+              onPress={
+                item.refType === 'order' && item.refId
+                  ? () => router.push(`/wholesale/orders/${item.refId}`)
+                  : undefined
+              }
+              testID={`movement-${item.id}`}
+            />
+          </View>
         )}
         ListEmptyComponent={
           <EmptyState
             icon={Warehouse}
             title="Пока нет движений"
-            description="Добавьте приход через форму сверху — журнал заполнится автоматически."
+            compact
+            description="Добавьте приход кнопкой выше — журнал заполнится автоматически."
           />
         }
         ListFooterComponent={
           movementsQuery.isFetchingNextPage ? (
-            <Skeleton height={64} />
+            <Skeleton height={56} />
           ) : movementsQuery.hasNextPage ? (
             <Text
               variant="caption"
@@ -282,31 +314,75 @@ export default function StockMovementsScreen() {
   );
 }
 
-/** Ячейка остатка в карточке (size lg — акцент «Всего»). */
+/** Ячейка остатка в панели (emphasize — «Доступно»). */
 function BalanceCell({
   label,
   value,
   unit,
-  size = 'md',
+  emphasize = false,
 }: {
   label: string;
   value: number;
   unit: string;
-  size?: 'md' | 'lg';
+  emphasize?: boolean;
 }) {
   const { colors } = useTheme();
   return (
-    <View style={{ flex: size === 'lg' ? 1.3 : 1, gap: 2 }}>
+    <View style={{ flex: 1, gap: 2 }}>
       <Text variant="caption" color="textSecondary">
         {label}
       </Text>
       <Text
-        variant={size === 'lg' ? 'h2' : 'bodyStrong'}
-        mono
-        style={{ color: colors.text }}
+        variant="numberL"
+        numberOfLines={1}
+        style={{
+          color: emphasize ? colors.primaryText : colors.text,
+        }}
       >
         {`${value}${unit ? ` ${unit}` : ''}`}
       </Text>
     </View>
+  );
+}
+
+/** Компактная кнопка действия: иконка сверху, подпись micro снизу. */
+function ActionButton({
+  label,
+  icon: Icon,
+  onPress,
+  testID,
+}: {
+  label: string;
+  icon: LucideIcon;
+  onPress: () => void;
+  testID?: string;
+}) {
+  const { colors, radii } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      testID={testID}
+      style={({ pressed }) => [
+        {
+          flex: 1,
+          height: 48,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 3,
+          borderRadius: radii.sm,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          opacity: pressed ? 0.75 : 1,
+        },
+      ]}
+    >
+      <Icon size={18} color={colors.primary} />
+      <Text variant="micro" numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

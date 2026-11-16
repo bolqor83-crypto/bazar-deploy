@@ -10,7 +10,6 @@ import type {
   CarrierDeliveryAction,
   CarrierDeliveryScope,
   CreateDeliveryInput,
-  Delivery,
 } from '@bazar/types';
 import {
   cancelDelivery,

@@ -1,11 +1,12 @@
 /**
- * MovementRow — строка журнала движений (Промт 11b).
+ * MovementRow — компактная строка журнала движений (Промт 11b;
+ * редизайн Промта 12, Часть A).
  *
- * Слева — иконка типа и подпись («Приход», «Продажа»…), причина
- * (одна строка) и склад; справа — дельта количества табличными
- * цифрами: приходные типы — success, расходные — терракота.
- * Дата и время — caption, tabular-nums. refType=order делает
- * строку кнопкой (переход в заказ) со стрелкой-шевроном.
+ * Слева — иконка типа (32) и подпись bodyStrong («Приход»,
+ * «Продажа»…), причина (caption) и склад/дата micro; справа —
+ * дельта количества bodyStrong табличными цифрами: приходные типы —
+ * success, расходные — терракота. offerTitle — позиция для общего
+ * журнала склада. refType=order делает строку кнопкой со шевроном.
  */
 import { Pressable, View } from 'react-native';
 import {
@@ -73,6 +74,8 @@ export interface MovementRowProps {
   locationName: string;
   /** ISO-дата события. */
   createdAt: string;
+  /** Позиция (общий журнал движений склада). */
+  offerTitle?: string | null;
   /** Ссылка на связанный объект (order → переход). */
   linkLabel?: string | null;
   onPress?: () => void;
@@ -94,11 +97,12 @@ export function MovementRow({
   reason,
   locationName,
   createdAt,
+  offerTitle,
   linkLabel,
   onPress,
   testID,
 }: MovementRowProps) {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const Icon = TYPE_ICONS[type];
   const positive = quantityDelta >= 0;
   const deltaColor = positive ? colors.success : colors.danger;
@@ -111,23 +115,23 @@ export function MovementRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
-        minHeight: 60,
-        paddingVertical: spacing.xs,
+        gap: 12,
+        minHeight: 56,
+        paddingVertical: 6,
       }}
     >
       <View
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          backgroundColor: colors.surface,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: colors.surfaceMuted,
           alignItems: 'center',
           justifyContent: 'center',
         }}
         accessibilityLabel={label}
       >
-        <Icon size={18} color={colors.primary} />
+        <Icon size={16} color={colors.primary} />
       </View>
       <View style={{ flex: 1, gap: 1 }}>
         <View
@@ -137,9 +141,18 @@ export function MovementRow({
             gap: 6,
           }}
         >
-          <Text variant="bodySmall" numberOfLines={1} style={{ flexShrink: 1 }}>
+          <Text
+            variant="bodyStrong"
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+          >
             {label}
           </Text>
+          {offerTitle ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {offerTitle}
+            </Text>
+          ) : null}
           {linkLabel ? (
             <Text variant="caption" color="primaryText" numberOfLines={1}>
               {linkLabel}
@@ -150,10 +163,10 @@ export function MovementRow({
           {reason}
         </Text>
         <Text
-          variant="caption"
+          variant="micro"
           color="textMuted"
           mono
-          numberOfLines={2}
+          numberOfLines={1}
           testID="datetime"
         >
           {`${formatDateTime(createdAt)} · ${locationName}`}
@@ -185,7 +198,7 @@ export function MovementRow({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${delta}, ${reason}. Открыть связанный объект`}
-      hitSlop={4}
+      hitSlop={2}
     >
       {body}
     </Pressable>

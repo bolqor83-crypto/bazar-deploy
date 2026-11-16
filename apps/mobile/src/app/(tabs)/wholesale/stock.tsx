@@ -1,25 +1,20 @@
 /**
- * Склад — обзор остатков (Промт 11b).
+ * Склад — обзор остатков (Промт 11b; редизайн Промта 12, Часть A).
  *
- * Рабочий инструмент продавца: выбор склада (или «Все склады»),
- * три карточки сводки (позиции / единицы / мало), поиск по товару,
- * сегмент «Все · Мало · Нет в наличии» и плотные строки StockRow.
- * FAB «+» — двухшаговый шит: действие → позиция → форма.
+ * Плотность важнее воздуха: сводка — одна панель-полоса (56) с тремя
+ * метриками; список — компактные строки StockRow (64) с разделителями
+ * Divider вместо карточек; фильтры и поиск — одна строка (36).
+ * FAB убран: «Добавить приход» — primary-кнопка в панели управления,
+ * не перекрывает контент. Выбор позиции прихода — шит со списком.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Plus, Warehouse } from 'lucide-react-native';
 import {
-  ArrowDownToLine,
-  ArrowLeftRight,
-  PackageX,
-  Plus,
-  Scale,
-  Warehouse,
-} from 'lucide-react-native';
-import {
-  Card,
+  Button,
   Dialog,
+  Divider,
   EmptyState,
   ErrorState,
   FilterChip,
@@ -36,41 +31,6 @@ import { useStockLocations, useStockOverview } from '../../../hooks/useStock';
 
 type StockFilter = 'all' | 'low' | 'out';
 
-/** Действие FAB-шита. */
-const FAB_ACTIONS: {
-  key: MovementKind;
-  label: string;
-  icon: typeof Plus;
-  hint: string;
-}[] = [
-  {
-    key: 'RECEIPT',
-    label: 'Приход',
-    icon: ArrowDownToLine,
-    hint: 'Принять товар на склад',
-  },
-  {
-    key: 'WRITE_OFF',
-    label: 'Списание',
-    icon: PackageX,
-    hint: 'Порча, потеря, брак',
-  },
-  {
-    key: 'ADJUSTMENT',
-    label: 'Корректировка',
-    icon: Scale,
-    hint: 'Сверка остатка с фактом',
-  },
-  {
-    key: 'TRANSFER',
-    label: 'Перемещение',
-    icon: ArrowLeftRight,
-    hint: 'Между складами организации',
-  },
-];
-
-type MovementKind = 'RECEIPT' | 'WRITE_OFF' | 'ADJUSTMENT' | 'TRANSFER';
-
 /** Первое фото товара из JSON-строки images. */
 function firstImage(rawImages: string): string | null {
   try {
@@ -86,15 +46,14 @@ function firstImage(rawImages: string): string | null {
 
 export default function StockOverviewScreen() {
   const router = useRouter();
-  const { colors, spacing, isDark } = useTheme();
+  const { spacing } = useTheme();
 
   const [locationId, setLocationId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
-  const [fabOpen, setFabOpen] = useState(false);
-  const [fabAction, setFabAction] = useState<MovementKind | null>(null);
-  const [fabSearch, setFabSearch] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(searchInput.trim()), 400);
@@ -129,49 +88,50 @@ export default function StockOverviewScreen() {
       );
   }, [overview.rows, query, filter]);
 
-  const fabOffers = useMemo(() => {
-    const needle = fabSearch.trim().toLowerCase();
+  /** Позиции для шита прихода: все активные предложения. */
+  const pickerRows = useMemo(() => {
+    const needle = pickerSearch.trim().toLowerCase();
     return overview.rows
       .filter((row) =>
         needle ? row.offer.product.name.toLowerCase().includes(needle) : true,
       )
-      .sort((a, b) => b.availableQty - a.availableQty)
+      .sort((a, b) => b.physicalQty - a.physicalQty)
       .slice(0, 20);
-  }, [overview.rows, fabSearch]);
+  }, [overview.rows, pickerSearch]);
 
-  const openForm = (kind: MovementKind, offerId: string) => {
-    setFabOpen(false);
-    setFabAction(null);
-    setFabSearch('');
-    if (kind === 'TRANSFER') {
-      router.push(`/wholesale/stock/${offerId}/transfer`);
-    } else {
-      router.push(`/wholesale/stock/${offerId}/movement?type=${kind}`);
-    }
+  const openReceipt = (offerId: string) => {
+    setPickerOpen(false);
+    setPickerSearch('');
+    router.push(`/wholesale/stock/${offerId}/movement?type=RECEIPT`);
   };
 
   let content: React.ReactNode;
   if (overview.isLoading) {
     content = (
-      <View style={{ padding: spacing.lg, gap: spacing.sm }}>
-        <Skeleton height={72} />
-        <Skeleton height={72} />
-        <Skeleton height={72} />
-        <Skeleton height={72} />
-        <Skeleton height={72} />
+      <View
+        style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}
+      >
+        <Skeleton height={64} />
+        <Skeleton height={64} />
+        <Skeleton height={64} />
+        <Skeleton height={64} />
+        <Skeleton height={64} />
+        <Skeleton height={64} />
       </View>
     );
   } else if (overview.isError) {
     content = <ErrorState onRetry={() => overview.refetch()} />;
   } else if (overview.rows.length === 0) {
+    // Пустой склад: прижато к верху — фильтры и шапка остаются в кадре.
     content = (
       <EmptyState
         icon={Warehouse}
         title="Склад пуст"
-        description="Добавьте приход через кнопку «+» — или создайте первое предложение в разделе Товары."
+        description="Добавьте первый приход по любой позиции — или создайте предложение в разделе Товары."
+        compact
         action={{
           label: 'Добавить приход',
-          onPress: () => setFabOpen(true),
+          onPress: () => setPickerOpen(true),
         }}
       />
     );
@@ -181,33 +141,34 @@ export default function StockOverviewScreen() {
         data={rows}
         keyExtractor={(row) => row.offer.id}
         contentContainerStyle={{
-          paddingHorizontal: spacing.md,
-          // FAB (56) + поля: последняя строка прокручивается выше кнопки.
-          paddingBottom: 96,
-          gap: spacing.sm,
+          paddingBottom: spacing.xl,
         }}
+        ItemSeparatorComponent={() => (
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <Divider />
+          </View>
+        )}
         renderItem={({ item }) => (
-          <Card>
-            <View style={{ paddingHorizontal: 12 }}>
-              <StockRow
-                title={item.offer.product.name}
-                unit={item.offer.product.unit}
-                priceKopecks={item.offer.price}
-                minQuantity={item.offer.minQuantity}
-                physicalQty={item.physicalQty}
-                reservedQty={item.reservedQty}
-                availableQty={item.availableQty}
-                imageUrl={firstImage(item.offer.product.images)}
-                onPress={() => router.push(`/wholesale/stock/${item.offer.id}`)}
-                testID={`stock-row-${item.offer.id}`}
-              />
-            </View>
-          </Card>
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <StockRow
+              title={item.offer.product.name}
+              unit={item.offer.product.unit}
+              priceKopecks={item.offer.price}
+              minQuantity={item.offer.minQuantity}
+              physicalQty={item.physicalQty}
+              reservedQty={item.reservedQty}
+              availableQty={item.availableQty}
+              imageUrl={firstImage(item.offer.product.images)}
+              onPress={() => router.push(`/wholesale/stock/${item.offer.id}`)}
+              testID={`stock-row-${item.offer.id}`}
+            />
+          </View>
         )}
         ListEmptyComponent={
           <EmptyState
             icon={Warehouse}
             title="Ничего не найдено"
+            compact
             description={
               query
                 ? `По запросу «${query}» позиций нет. Проверьте написание или сбросьте фильтры.`
@@ -219,7 +180,7 @@ export default function StockOverviewScreen() {
           <Text
             variant="caption"
             color="textSecondary"
-            style={{ textAlign: 'center', paddingTop: spacing.sm }}
+            style={{ textAlign: 'center', paddingTop: spacing.md }}
           >
             {`Позиций в списке: ${rows.length}`}
           </Text>
@@ -231,297 +192,264 @@ export default function StockOverviewScreen() {
   return (
     <RoleScreen role="wholesale_seller" section="stock" title="Склад">
       <View style={{ flex: 1, width: '100%' }}>
+        {/* Панель управления: склад + приход, сводка, фильтры с поиском. */}
         <View
           style={{
             paddingHorizontal: spacing.md,
+            gap: spacing.sm,
             paddingTop: spacing.sm,
             paddingBottom: spacing.xs,
-            gap: spacing.sm,
           }}
         >
-          <LocationSelector
-            locations={locations.map((l) => ({
-              id: l.id,
-              name: l.name,
-              address: l.address ?? undefined,
-            }))}
-            value={locationId}
-            onChange={setLocationId}
-            label="Склад"
-            allLabel="Все склады"
-            allCaption="Суммарно по организации"
-            disabled={locationsQuery.isLoading}
-          />
-          <SummaryCards totals={overview.totals} loading={overview.isLoading} />
-          <SearchBar
-            value={searchInput}
-            onChangeText={setSearchInput}
-            placeholder="Найти по товару"
-            testID="stock-search"
-          />
           <View
             style={{
               flexDirection: 'row',
-              gap: spacing.sm,
-              minHeight: 48,
               alignItems: 'center',
+              gap: spacing.sm,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <LocationSelector
+                locations={locations.map((l) => ({
+                  id: l.id,
+                  name: l.name,
+                  address: l.address ?? undefined,
+                }))}
+                value={locationId}
+                onChange={setLocationId}
+                label="Склад"
+                allLabel="Все склады"
+                allCaption="Суммарно по организации"
+                disabled={locationsQuery.isLoading}
+              />
+            </View>
+            <Button
+              size="sm"
+              icon={Plus}
+              onPress={() => setPickerOpen(true)}
+              testID="stock-add-receipt"
+            >
+              Добавить приход
+            </Button>
+          </View>
+
+          <SummaryBar totals={overview.totals} loading={overview.isLoading} />
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.sm,
             }}
           >
             <FilterChip
               label="Все"
+              size="sm"
               active={filter === 'all'}
               onPress={() => setFilter('all')}
               testID="stock-segment-all"
             />
             <FilterChip
               label="Мало"
+              size="sm"
               active={filter === 'low'}
               onPress={() => setFilter('low')}
               testID="stock-segment-low"
             />
             <FilterChip
-              label="Нет в наличии"
+              label="Нет"
+              size="sm"
               active={filter === 'out'}
               onPress={() => setFilter('out')}
               testID="stock-segment-out"
             />
+            <View style={{ flex: 1 }}>
+              <SearchBar
+                value={searchInput}
+                onChangeText={setSearchInput}
+                placeholder="Поиск…"
+                compact
+                accessibilityLabel="Поиск по товару"
+                testID="stock-search"
+              />
+            </View>
           </View>
         </View>
         {content}
       </View>
 
-      {/* FAB «+» в thumb zone: два шага — действие, затем позиция. */}
-      {overview.rows.length > 0 || overview.isLoading ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Добавить движение"
-          onPress={() => setFabOpen(true)}
-          style={({ pressed }) => [
-            {
-              position: 'absolute',
-              right: spacing.lg,
-              bottom: spacing.lg,
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: pressed ? 0.85 : 1,
-              // Тёмная тема — граница вместо тени (правило проекта).
-              ...(isDark
-                ? { borderWidth: 1, borderColor: colors.borderStrong }
-                : { elevation: 4 }),
-            },
-          ]}
-          testID="stock-fab"
-        >
-          <Plus size={26} color={colors.onPrimary} />
-        </Pressable>
-      ) : null}
-
-      {/* Шаг 1: выбор действия. */}
-      {fabOpen && !fabAction ? (
-        <FabActionDialog
-          onClose={() => setFabOpen(false)}
-          onPick={(kind) => setFabAction(kind)}
-        />
-      ) : null}
-
-      {/* Шаг 2: выбор позиции. */}
-      {fabOpen && fabAction ? (
-        <FabOfferDialog
-          kind={fabAction}
-          search={fabSearch}
-          onSearch={setFabSearch}
-          offers={fabOffers}
-          onBack={() => setFabAction(null)}
-          onClose={() => setFabOpen(false)}
-          onPick={(offerId) => openForm(fabAction, offerId)}
+      {/* Выбор позиции прихода (FAB убран — вход из панели управления). */}
+      {pickerOpen ? (
+        <ReceiptPickerDialog
+          search={pickerSearch}
+          onSearch={setPickerSearch}
+          rows={pickerRows.map((row) => ({
+            offerId: row.offer.id,
+            name: row.offer.product.name,
+            availableQty: row.availableQty,
+          }))}
+          onClose={() => {
+            setPickerOpen(false);
+            setPickerSearch('');
+          }}
+          onPick={openReceipt}
         />
       ) : null}
     </RoleScreen>
   );
 }
 
-/** Карточки сводки: позиции, всего единиц, мало осталось. */
-function SummaryCards({
+/** Панель-сводка: одна полоса (56) с тремя метриками. */
+function SummaryBar({
   totals,
   loading,
 }: {
-  totals: { positions: number; units: number; low: number };
+  totals: { positions: number; low: number; out: number };
   loading: boolean;
 }) {
   const { colors, spacing } = useTheme();
-  const cards = [
+  const metrics = [
     { label: 'Позиций', value: totals.positions, color: colors.text },
-    { label: 'Всего единиц', value: totals.units, color: colors.text },
     {
-      label: 'Мало осталось',
+      label: 'Мало',
       value: totals.low,
-      color: totals.low > 0 ? colors.accent : colors.textSecondary,
+      color: totals.low > 0 ? colors.accent : colors.text,
+    },
+    {
+      label: 'Нет',
+      value: totals.out,
+      color: totals.out > 0 ? colors.danger : colors.text,
     },
   ];
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-      {cards.map((card) => (
-        <Card key={card.label} style={{ flex: 1, padding: spacing.sm }}>
-          {loading ? (
-            <Skeleton height={22} width={40} />
-          ) : (
+    <View
+      accessibilityLabel={`Сводка: позиций ${totals.positions}, мало ${totals.low}, нет ${totals.out}`}
+      style={{
+        height: 56,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        gap: spacing.sm,
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      {metrics.map((metric, index) => (
+        <View
+          key={metric.label}
+          style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}
+        >
+          {index > 0 ? (
             <Text
-              variant="h3"
-              mono
-              style={{ color: card.color }}
-              testID="stock-summary-value"
+              variant="bodySmall"
+              color="textMuted"
+              style={{ paddingRight: 4 }}
             >
-              {card.value}
+              ·
+            </Text>
+          ) : null}
+          <Text variant="caption" color="textSecondary">
+            {metric.label}
+          </Text>
+          {loading ? (
+            <Skeleton height={20} width={28} />
+          ) : (
+            <Text variant="bodyStrong" mono style={{ color: metric.color }}>
+              {metric.value}
             </Text>
           )}
-          <Text variant="caption" color="textSecondary" numberOfLines={2}>
-            {card.label}
-          </Text>
-        </Card>
+        </View>
       ))}
     </View>
   );
 }
 
-/** Шит выбора действия. */
-function FabActionDialog({
-  onClose,
-  onPick,
-}: {
-  onClose: () => void;
-  onPick: (kind: MovementKind) => void;
-}) {
-  const { colors, spacing, radii } = useTheme();
-  return (
-    <Dialog visible onClose={onClose} title="Что сделать на складе">
-      <View style={{ gap: spacing.sm }}>
-        {FAB_ACTIONS.map((action) => (
-          <Pressable
-            key={action.key}
-            accessibilityRole="button"
-            accessibilityLabel={action.label}
-            onPress={() => onPick(action.key)}
-            style={({ pressed }) => [
-              {
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: spacing.md,
-                minHeight: 64,
-                paddingHorizontal: spacing.md,
-                borderRadius: radii.sm,
-                borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-                opacity: pressed ? 0.7 : 1,
-              },
-            ]}
-            testID={`fab-action-${action.key}`}
-          >
-            <action.icon size={22} color={colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text variant="bodyStrong">{action.label}</Text>
-              <Text variant="caption" color="textSecondary">
-                {action.hint}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-      </View>
-    </Dialog>
-  );
-}
-
-/** Шит выбора позиции для действия. */
-function FabOfferDialog({
-  kind,
+/** Шит выбора позиции для прихода. */
+function ReceiptPickerDialog({
   search,
   onSearch,
-  offers,
-  onBack,
+  rows,
   onClose,
   onPick,
 }: {
-  kind: MovementKind;
   search: string;
   onSearch: (value: string) => void;
-  offers: {
-    offer: { id: string; product: { name: string; unit: string } };
+  rows: {
+    offerId: string;
+    name: string;
     availableQty: number;
   }[];
-  onBack: () => void;
   onClose: () => void;
   onPick: (offerId: string) => void;
 }) {
-  const { spacing, radii } = useTheme();
-  const title =
-    kind === 'RECEIPT'
-      ? 'Приход: выбрать позицию'
-      : kind === 'WRITE_OFF'
-        ? 'Списание: выбрать позицию'
-        : kind === 'ADJUSTMENT'
-          ? 'Корректировка: выбрать позицию'
-          : 'Перемещение: выбрать позицию';
+  const { spacing } = useTheme();
   return (
-    <Dialog visible onClose={onClose} title={title}>
+    <Dialog visible onClose={onClose} title="Приход: выбрать позицию">
       <View style={{ gap: spacing.sm }}>
         <SearchBar
           value={search}
           onChangeText={onSearch}
           placeholder="Найти по товару"
+          accessibilityLabel="Поиск позиции для прихода"
         />
-        {offers.length === 0 ? (
-          <Text variant="bodySmall" color="textSecondary">
-            Активных предложений нет. Создайте первое в разделе Товары.
+        {rows.length === 0 ? (
+          <Text variant="body" color="textSecondary">
+            Активных предложений нет. Создайте первое в разделе Товары — затем
+            принимайте товар на склад.
           </Text>
         ) : (
           <FlatList
-            data={offers}
-            keyExtractor={(row) => row.offer.id}
+            data={rows}
+            keyExtractor={(row) => row.offerId}
             style={{ maxHeight: 320 }}
             renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${item.offer.product.name}, доступно ${item.availableQty}`}
-                onPress={() => onPick(item.offer.id)}
-                style={({ pressed }) => [
-                  {
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: spacing.md,
-                    minHeight: 56,
-                    paddingHorizontal: spacing.xs,
-                    borderRadius: radii.sm,
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-                testID={`fab-offer-${item.offer.id}`}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text variant="bodySmall" numberOfLines={1}>
-                    {item.offer.product.name}
-                  </Text>
-                  <Text variant="caption" color="textSecondary">
-                    {`Доступно: ${item.availableQty} ${item.offer.product.unit}`}
-                  </Text>
-                </View>
-              </Pressable>
+              <ReceiptPickRow
+                name={item.name}
+                availableQty={item.availableQty}
+                onPress={() => onPick(item.offerId)}
+              />
             )}
           />
         )}
-        <Pressable
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Назад к действиям"
-        >
-          <Text variant="bodySmall" color="primaryText">
-            Назад к действиям
-          </Text>
-        </Pressable>
       </View>
     </Dialog>
+  );
+}
+
+/** Строка позиции в шите прихода. */
+function ReceiptPickRow({
+  name,
+  availableQty,
+  onPress,
+}: {
+  name: string;
+  availableQty: number;
+  onPress: () => void;
+}) {
+  const { spacing } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${name}, доступно ${availableQty}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          minHeight: 56,
+          paddingVertical: spacing.xs,
+          opacity: pressed ? 0.7 : 1,
+        },
+      ]}
+    >
+      <Text variant="body" numberOfLines={1} style={{ flex: 1 }}>
+        {name}
+      </Text>
+      <Text variant="caption" color="textSecondary" mono>
+        {`Доступно: ${availableQty}`}
+      </Text>
+    </Pressable>
   );
 }

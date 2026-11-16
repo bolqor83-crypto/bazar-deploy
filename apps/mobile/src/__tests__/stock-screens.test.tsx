@@ -222,9 +222,92 @@ describe('StockScreen (обзор)', () => {
     });
     const { screen } = await renderWithQuery(<StockScreen />);
     expect(await screen.findAllByText('Склад пуст')).toBeTruthy();
+    // Кнопка прихода и в панели, и в пустом состоянии.
     expect(
-      screen.getByRole('button', { name: 'Добавить приход' }),
-    ).toBeTruthy();
+      (await screen.findAllByRole('button', { name: 'Добавить приход' }))
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('FAB убран: плавающей кнопки нет, вход — из панели управления', async () => {
+    stockApi.fetchStockBalances.mockResolvedValue(
+      balancesList([
+        {
+          offerId: 'offer-1',
+          locationId: 'loc-1',
+          locationName: 'Основной склад',
+          physicalQty: 120,
+          reservedQty: 5,
+          availableQty: 115,
+          updatedAt: '2026-11-15T08:00:00Z',
+        },
+      ]),
+    );
+    const { screen } = await renderWithQuery(<StockScreen />);
+    await screen.findAllByText('Огурцы гладкие');
+    expect(screen.queryByTestId('stock-fab')).toBeNull();
+    expect(screen.queryByTestId('fab-action-RECEIPT')).toBeNull();
+    expect(screen.getByTestId('stock-add-receipt')).toBeTruthy();
+  });
+
+  it('сводка — одна панель: Позиций/Мало/Нет табличными цифрами', async () => {
+    stockApi.fetchStockBalances.mockResolvedValue(
+      balancesList([
+        {
+          offerId: 'offer-1',
+          locationId: 'loc-1',
+          locationName: 'Основной склад',
+          physicalQty: 120,
+          reservedQty: 5,
+          availableQty: 115,
+          updatedAt: '2026-11-15T08:00:00Z',
+        },
+        {
+          offerId: 'offer-2',
+          locationId: 'loc-1',
+          locationName: 'Основной склад',
+          physicalQty: 8,
+          reservedQty: 0,
+          availableQty: 8,
+          updatedAt: '2026-11-15T08:00:00Z',
+        },
+      ]),
+    );
+    const { screen } = await renderWithQuery(<StockScreen />);
+    expect(await screen.findAllByText('Позиций')).toBeTruthy();
+    // Сводка-панель и чипы фильтра: «Мало»/«Нет» встречаются дважды.
+    expect(screen.getAllByText('Мало').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Нет').length).toBeGreaterThan(0);
+    // Позиций 2 (offer-1, offer-2), мало 1 (offer-2) — ждём данные.
+    await waitFor(() => {
+      expect(screen.getByLabelText(/позиций 2/i)).toBeTruthy();
+    });
+  });
+
+  it('«Добавить приход» открывает выбор позиции и ведёт в форму', async () => {
+    stockApi.fetchStockBalances.mockResolvedValue(
+      balancesList([
+        {
+          offerId: 'offer-1',
+          locationId: 'loc-1',
+          locationName: 'Основной склад',
+          physicalQty: 120,
+          reservedQty: 5,
+          availableQty: 115,
+          updatedAt: '2026-11-15T08:00:00Z',
+        },
+      ]),
+    );
+    const { screen } = await renderWithQuery(<StockScreen />);
+    await screen.findAllByText('Огурцы гладкие');
+    await fireEvent.press(screen.getByTestId('stock-add-receipt'));
+    expect(await screen.findAllByText('Приход: выбрать позицию')).toBeTruthy();
+    await fireEvent.press(
+      screen.getByRole('button', { name: /Огурцы гладкие, доступно 115/ }),
+    );
+    expect(routerMock.router.push).toHaveBeenCalledWith(
+      '/wholesale/stock/offer-1/movement?type=RECEIPT',
+    );
   });
 
   it('остатки рендерятся StockRow с резервом и итогом', async () => {
@@ -256,8 +339,7 @@ describe('StockScreen (обзор)', () => {
     expect(
       screen.getAllByText('Резерв: 5 · Доступно: 115').length,
     ).toBeGreaterThan(0);
-    // Сводка: 2 позиции, 128 единиц.
-    expect(screen.getByText('128')).toBeTruthy();
+    expect(screen.getAllByText(/₽\/кг/).length).toBeGreaterThan(0);
   });
 
   it('сегмент «Мало» показывает только заканчивающиеся позиции', async () => {
@@ -433,7 +515,7 @@ describe('StockDetailScreen (журнал)', () => {
     expect(await screen.findAllByText('Пока нет движений')).toBeTruthy();
     expect(
       screen.getByText(
-        'Добавьте приход через форму сверху — журнал заполнится автоматически.',
+        'Добавьте приход кнопкой выше — журнал заполнится автоматически.',
       ),
     ).toBeTruthy();
   });
@@ -518,6 +600,35 @@ describe('MovementFormScreen (форма движения)', () => {
         reason: 'Закупка у фермера',
       });
     });
+  });
+
+  it('чипы типа: переключение на списание меняет заголовок и валидацию', async () => {
+    const { screen } = await renderWithQuery(<MovementFormScreen />);
+    await screen.findAllByText('Доступно сейчас');
+    expect(
+      screen.getByTestId('movement-kind-receipt').props.accessibilityState
+        .selected,
+    ).toBe(true);
+    await fireEvent.press(screen.getByTestId('movement-kind-writeoff'));
+    expect(
+      screen.getByTestId('movement-kind-writeoff').props.accessibilityState
+        .selected,
+    ).toBe(true);
+    // Заголовок формы сменился на «Списание», появились быстрые причины.
+    expect(screen.getByTestId('writeoff-reason-порча')).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('movement-quantity'), '999');
+    expect(
+      await screen.findAllByText('Недоступно: на складе только 115 кг'),
+    ).toBeTruthy();
+  });
+
+  it('чип «Перемещение» ведёт на форму transfer', async () => {
+    const { screen } = await renderWithQuery(<MovementFormScreen />);
+    await screen.findAllByText('Доступно сейчас');
+    await fireEvent.press(screen.getByTestId('movement-kind-transfer'));
+    expect(routerMock.router.replace).toHaveBeenCalledWith(
+      '/wholesale/stock/offer-1/transfer',
+    );
   });
 
   it('списание больше доступного — inline ошибка, submit заблокирован', async () => {

@@ -21,6 +21,8 @@ export interface FilterChipProps {
   /** Тег со крестиком: onPress убирает фильтр. */
   onRemove?: () => void;
   onPress?: () => void;
+  /** sm (36) — фильтры рабочих списков; md (40) — каталог. */
+  size?: 'sm' | 'md';
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -31,6 +33,7 @@ export function FilterChip({
   active = false,
   onRemove,
   onPress,
+  size = 'md',
   style,
   testID,
 }: FilterChipProps) {
@@ -52,11 +55,11 @@ export function FilterChip({
   const content = (
     <View
       style={{
-        height: 40,
+        height: size === 'sm' ? 36 : 40,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs + 2,
-        paddingHorizontal: spacing.md,
+        gap: size === 'sm' ? 4 : spacing.xs + 2,
+        paddingHorizontal: size === 'sm' ? spacing.md - 4 : spacing.md,
         borderRadius: radii.pill,
         backgroundColor: background,
         borderWidth: 1,
@@ -65,13 +68,13 @@ export function FilterChip({
     >
       {Icon ? (
         <Icon
-          size={16}
+          size={size === 'sm' ? 14 : 16}
           color={
             active && !removable ? colors.primaryText : colors.textSecondary
           }
         />
       ) : null}
-      <Text variant="bodySmall" color={textColor}>
+      <Text variant={size === 'sm' ? 'caption' : 'bodySmall'} color={textColor}>
         {label}
       </Text>
       {removable ? <X size={16} color={colors.textSecondary} /> : null}

@@ -8,12 +8,7 @@
  * API замокан: проверяется рендер и вызовы действий.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Delivery, DeliveryBrief, Role } from '@bazar/types';
 import CarrierFeedScreen from '../app/(tabs)/carrier/feed';

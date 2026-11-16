@@ -1,10 +1,13 @@
 /**
- * StockRow — строка остатка в списке «Склад» (Промт 11b).
+ * StockRow — компактная строка остатка в списке «Склад»
+ * (Промт 11b; редизайн Промта 12, Часть A).
  *
- * Рабочая плотность 64–72 px: фото 48×48, товар и подпись слева;
- * справа — остаток крупно (tabular-nums, bodyStrong) и раскладка
- * «Резерв · Доступно» мелко. Уровень наличия — точка-индикатор
- * у названия. Только презентация; данные соединяет useStockOverview.
+ * Рабочая строка 64 px без карточной обёртки: фото 40×40 (круглое),
+ * товар bodyStrong и цена caption слева; справа — остаток крупно
+ * (numberL, tabular-nums) с точкой-индикатором уровня и раскладкой
+ * «Резерв · Доступно» micro снизу. Разделитель — Divider снаружи
+ * (список), не рамка и не тень. Только презентация; данные
+ * соединяет useStockOverview.
  */
 import { Image, Pressable, View } from 'react-native';
 import { Package } from 'lucide-react-native';
@@ -65,7 +68,7 @@ export function StockRow({
   onPress,
   testID,
 }: StockRowProps) {
-  const { colors, spacing, radii } = useTheme();
+  const { colors } = useTheme();
 
   const level = stockLevelOf(availableQty, minQuantity);
   const dotColor =
@@ -76,10 +79,12 @@ export function StockRow({
         : colors.danger;
 
   const unitSuffix = unit ? ` ${unit}` : '';
+  // Без резерва доступно = физическому остатку: дубль числа не нужен
+  // (решение по VLM-ревью Промта 12, Часть A).
   const breakdown =
     reservedQty > 0
       ? `Резерв: ${reservedQty} · Доступно: ${availableQty}`
-      : `Доступно: ${availableQty}`;
+      : null;
   const subtitle = priceKopecks
     ? `${formatPrice(priceKopecks)}${unit ? `/${unit}` : ''}`
     : null;
@@ -89,38 +94,50 @@ export function StockRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        minHeight: 68,
-        paddingVertical: spacing.sm,
+        gap: 12,
+        minHeight: 64,
+        paddingVertical: 6,
       }}
     >
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: radii.sm,
-            backgroundColor: colors.surface,
-          }}
-          accessibilityLabel={`Фото: ${title}`}
-        />
-      ) : (
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: radii.sm,
-            backgroundColor: colors.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          accessibilityLabel="Фото не загружено"
-        >
-          <Package size={22} color={colors.textMuted} />
-        </View>
-      )}
-      <View style={{ flex: 1, gap: 3 }}>
+      {/* Плейсхолдер всегда под фото: пастерный фон + иконка;
+          загрузившееся фото закрывает его собой. */}
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: colors.surfaceMuted,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        accessibilityLabel={imageUrl ? `Фото: ${title}` : 'Фото не загружено'}
+      >
+        <Package size={18} color={colors.textMuted} />
+        {imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+            }}
+          />
+        ) : null}
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text variant="bodyStrong" numberOfLines={1} style={{ flexShrink: 1 }}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text variant="caption" color="textSecondary" numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <View
             style={{
@@ -131,22 +148,14 @@ export function StockRow({
             }}
             accessibilityLabel={LEVEL_LABELS[level]}
           />
-          <Text variant="bodySmall" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {title}
+          <Text variant="numberL" style={{ color: colors.text }}>
+            {`${physicalQty}${unitSuffix}`}
           </Text>
         </View>
-        {subtitle ? (
-          <Text variant="caption" color="textSecondary">
-            {subtitle}
-          </Text>
-        ) : null}
-        <Text variant="caption" color="textMuted" numberOfLines={1}>
+        <Text variant="micro" color="textMuted" numberOfLines={1}>
           {breakdown}
         </Text>
       </View>
-      <Text variant="bodyStrong" mono style={{ color: colors.text }}>
-        {`${physicalQty}${unitSuffix}`}
-      </Text>
     </View>
   );
 
@@ -154,7 +163,7 @@ export function StockRow({
     return (
       <View
         testID={testID}
-        accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}, ${breakdown}`}
+        accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}${breakdown ? `, ${breakdown}` : ''}`}
       >
         {body}
       </View>
@@ -166,8 +175,11 @@ export function StockRow({
       testID={testID}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}, ${breakdown}`}
-      hitSlop={4}
+      accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}${breakdown ? `, ${breakdown}` : ''}`}
+      hitSlop={2}
+      style={({ pressed }) => [
+        { backgroundColor: colors.surface, opacity: pressed ? 0.75 : 1 },
+      ]}
     >
       {body}
     </Pressable>

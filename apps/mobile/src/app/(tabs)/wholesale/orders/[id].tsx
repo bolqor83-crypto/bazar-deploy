@@ -17,7 +17,6 @@ import {
   ErrorState,
   OrderStatus,
   OrderTimeline,
-  PartyCard,
   ProductRow,
   Skeleton,
   Text,

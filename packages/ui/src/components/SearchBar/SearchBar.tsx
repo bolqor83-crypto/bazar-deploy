@@ -1,9 +1,10 @@
 /**
  * SearchBar — поле поиска каталога.
  *
- * Высота 48, рамка вместо тени. Иконка-лупа слева, кнопка очистки
- * появляется только с текстом (цель 48×48 через hitSlop). Ввод
- * отправляется по кнопке «Готово» на клавиатуре.
+ * Высота 48 (рамка вместо тени), compact — 36 для строки фильтров
+ * рабочих списков (Промт 12, Часть A). Иконка-лупа слева, кнопка
+ * очистки появляется только с текстом (цель ≥48×48 через hitSlop).
+ * Ввод отправляется по кнопке «Готово» на клавиатуре.
  */
 import {
   Pressable,
@@ -23,6 +24,10 @@ export interface SearchBarProps {
   /** Отправка запроса (кнопка «Готово» на клавиатуре). */
   onSubmit?: () => void;
   autoFocus?: boolean;
+  /** Компактная строка (36) для строки фильтров. */
+  compact?: boolean;
+  /** Подпись доступности (контекст поля). */
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -33,29 +38,33 @@ export function SearchBar({
   placeholder = 'Поиск',
   onSubmit,
   autoFocus = false,
+  compact = false,
+  accessibilityLabel = 'Поиск по каталогу',
   style,
   testID,
 }: SearchBarProps) {
   const { colors, radii, spacing } = useTheme();
 
+  const height = compact ? 36 : 48;
+
   return (
     <View
       style={[
         {
-          height: 48,
+          height,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: spacing.sm,
-          paddingHorizontal: spacing.md,
+          gap: compact ? 6 : spacing.sm,
+          paddingHorizontal: compact ? spacing.sm : spacing.md,
           backgroundColor: colors.surface,
-          borderRadius: radii.md,
+          borderRadius: compact ? radii.sm : radii.md,
           borderWidth: 1,
           borderColor: colors.border,
         },
         style,
       ]}
     >
-      <Search size={20} color={colors.textMuted} />
+      <Search size={compact ? 16 : 20} color={colors.textMuted} />
       <TextInput
         testID={testID}
         value={value}
@@ -66,12 +75,12 @@ export function SearchBar({
         autoCorrect={false}
         returnKeyType="search"
         onSubmitEditing={onSubmit}
-        accessibilityLabel="Поиск по каталогу"
+        accessibilityLabel={accessibilityLabel}
         style={{
           flex: 1,
-          minHeight: 48,
+          minHeight: height,
           color: colors.text,
-          fontSize: 17,
+          fontSize: compact ? 15 : 17,
           fontFamily: 'Inter_400Regular',
           paddingVertical: 0,
           paddingHorizontal: 0,
@@ -87,13 +96,13 @@ export function SearchBar({
             onChangeText('');
           }}
           style={{
-            width: 32,
-            height: 48,
+            width: compact ? 28 : 32,
+            height,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <X size={18} color={colors.textMuted} />
+          <X size={compact ? 16 : 18} color={colors.textMuted} />
         </Pressable>
       ) : null}
     </View>
