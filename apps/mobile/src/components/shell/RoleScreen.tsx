@@ -26,7 +26,7 @@ export function RoleScreen({
   title,
   children,
 }: RoleScreenProps) {
-  const { tabItems, moreItems, onTabChange } = useRoleNavigation(role);
+  const { tabItems, onTabChange } = useRoleNavigation(role);
   const cartBadge = useCartBadge(role);
 
   const itemsWithBadge = useMemo(() => {
@@ -44,7 +44,6 @@ export function RoleScreen({
       tabItems={itemsWithBadge}
       activeTabKey={section}
       onTabChange={onTabChange}
-      moreItems={moreItems}
     >
       {children}
     </RoleShell>

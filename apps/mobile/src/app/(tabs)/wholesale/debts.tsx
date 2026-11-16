@@ -1,0 +1,19 @@
+/**
+ * Долги (debts) — экран-заглушка роли «оптовик» (Промт 12, Часть D).
+ * Бизнес-логики нет: структура навигации и осмысленный EmptyState.
+ */
+import { ReceiptText } from 'lucide-react-native';
+import { EmptyState } from '@bazar/ui';
+import { RoleScreen } from '../../../components/shell/RoleScreen';
+
+export default function DebtsScreen() {
+  return (
+    <RoleScreen role="wholesale_seller" section="debts" title="Долги">
+      <EmptyState
+        icon={ReceiptText}
+        title="Долги в разработке"
+        description="Контроль оплат и отсрочек клиентов появится после раздела финансов."
+      />
+    </RoleScreen>
+  );
+}

@@ -1,6 +1,6 @@
 /**
  * useRoleNavigation — связывает роль и раздел с конфигурацией
- * навигации: пункты таб-бара, разделы «Ещё» и переходы.
+ * навигации: пункты таб-бара, группы «Все инструменты» и переходы.
  */
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
@@ -15,8 +15,8 @@ export function useRoleNavigation(role: Role) {
     (key: string) => {
       router.replace(routeFor(role, key));
     },
-    [router, role]
+    [router, role],
   );
 
-  return { tabItems: tabs, moreItems: more, onTabChange };
+  return { tabItems: tabs, moreGroups: more, onTabChange };
 }

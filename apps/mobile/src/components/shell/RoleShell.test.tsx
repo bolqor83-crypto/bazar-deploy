@@ -1,5 +1,6 @@
 /**
- * Тесты RoleShell: шапка + контент + таб-бар, шит «Ещё».
+ * Тесты RoleShell: шапка + контент + таб-бар. Пункт «Инструменты» —
+ * переход на полноэкранный экран (Промт 12, Часть D), не шит.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 import { Text } from '@bazar/ui';
@@ -7,7 +8,6 @@ import { RoleShell } from './RoleShell';
 import { ROLE_NAV } from './navigation';
 
 const TABS = ROLE_NAV.store_owner.tabs;
-const MORE = ROLE_NAV.store_owner.more;
 
 async function setup() {
   return render(
@@ -16,10 +16,9 @@ async function setup() {
       tabItems={TABS}
       activeTabKey="purchase"
       onTabChange={() => {}}
-      moreItems={MORE}
     >
       <Text>Контент экрана</Text>
-    </RoleShell>
+    </RoleShell>,
   );
 }
 
@@ -31,12 +30,12 @@ describe('RoleShell', () => {
     expect(screen.getByText('Контент экрана')).toBeTruthy();
   });
 
-  it('рендерит таб-бар роли store_owner', async () => {
+  it('рендерит таб-бар роли store_owner с пунктом «Инструменты»', async () => {
     const screen = await setup();
     expect(screen.getByRole('tab', { name: 'Закупка' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Лента' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Витрина' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Ещё' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Инструменты' })).toBeTruthy();
   });
 
   it('нажатие вкладки вызывает onTabChange', async () => {
@@ -47,16 +46,15 @@ describe('RoleShell', () => {
         tabItems={TABS}
         activeTabKey="purchase"
         onTabChange={onTabChange}
-        moreItems={MORE}
       >
         <Text>Контент</Text>
-      </RoleShell>
+      </RoleShell>,
     );
     await fireEvent.press(screen.getByRole('tab', { name: 'Заказы' }));
     expect(onTabChange).toHaveBeenCalledWith('orders');
   });
 
-  it('«Ещё» открывает шит с остальными разделами', async () => {
+  it('«Инструменты» прокидывается в onTabChange (переход на /more)', async () => {
     const onTabChange = jest.fn();
     const screen = await render(
       <RoleShell
@@ -64,24 +62,15 @@ describe('RoleShell', () => {
         tabItems={TABS}
         activeTabKey="purchase"
         onTabChange={onTabChange}
-        moreItems={MORE}
       >
         <Text>Контент</Text>
-      </RoleShell>
+      </RoleShell>,
     );
-    await fireEvent.press(screen.getByRole('tab', { name: 'Ещё' }));
-    expect(screen.getByText('Долги')).toBeTruthy();
-    expect(screen.getByText('Заметки')).toBeTruthy();
-    expect(screen.getByText('Финансы')).toBeTruthy();
-    expect(screen.getByText('Профиль')).toBeTruthy();
-    expect(screen.getByText('Настройки')).toBeTruthy();
-
-    // Выбор раздела из шита прокидывается в onTabChange
-    await fireEvent.press(screen.getByLabelText('Долги'));
-    expect(onTabChange).toHaveBeenCalledWith('debts');
+    await fireEvent.press(screen.getByRole('tab', { name: 'Инструменты' }));
+    expect(onTabChange).toHaveBeenCalledWith('more');
   });
 
-  it('роль без «Ещё» (customer) не открывает шит', async () => {
+  it('роль без «Инструментов» (customer) их не показывает', async () => {
     const screen = await render(
       <RoleShell
         title="Главная"
@@ -90,10 +79,9 @@ describe('RoleShell', () => {
         onTabChange={() => {}}
       >
         <Text>Контент</Text>
-      </RoleShell>
+      </RoleShell>,
     );
-    // У customer нет пункта «Ещё»
-    expect(screen.queryByRole('tab', { name: 'Ещё' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Инструменты' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Избранное' })).toBeTruthy();
   });
 });

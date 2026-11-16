@@ -1,11 +1,13 @@
 /**
  * Конфигурация навигации по ролям Bazar.
  *
- * Каждая роль — свой набор вкладок (4–5) и набор разделов
- * за кнопкой «Ещё». Маршруты имеют префикс роли, потому что
- * Expo Router не допускает дублирующихся путей в группах
- * (orders есть у трёх ролей — это разные экраны). Имена каталогов
- * сокращены: customer / store / wholesale / carrier. См. ADR 0003.
+ * Каждая роль — свой набор вкладок (4–5). Пункт «Инструменты» ведёт
+ * на полноэкранный экран «Все инструменты» (Промт 12, Часть D) с
+ * группами разделов и поиском — вместо шита с плоским списком.
+ * Маршруты имеют префикс роли, потому что Expo Router не допускает
+ * дублирующихся путей в группах (orders есть у трёх ролей — это
+ * разные экраны). Имена каталогов сокращены: customer / store /
+ * wholesale / carrier. См. ADR 0003.
  */
 import type { LucideIcon } from 'lucide-react-native';
 import {
@@ -13,7 +15,6 @@ import {
   BarChart3,
   Bell,
   ClipboardList,
-  Ellipsis,
   Heart,
   History,
   Inbox,
@@ -42,15 +43,23 @@ export interface TabItem {
   badge?: number;
 }
 
-/** Раздел за кнопкой «Ещё». */
+/** Раздел экрана «Все инструменты». */
 export interface MoreItem {
   key: string;
   label: string;
   icon: LucideIcon;
   route: string;
+  /** Ключ данных для бейджа (например, непрочитанные уведомления). */
+  badgeKind?: 'notifications';
 }
 
-/** Ключ 'more' открывает шит с moreItems. */
+/** Группа разделов «Все инструменты». */
+export interface MoreGroup {
+  title: string;
+  items: MoreItem[];
+}
+
+/** Ключ 'more' открывает экран «Все инструменты». */
 export const MORE_KEY = 'more';
 
 /** Префикс пути роли (имя каталога в (tabs)). */
@@ -88,7 +97,8 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 export interface RoleNavConfig {
   tabs: TabItem[];
-  more: MoreItem[];
+  /** Группы разделов экрана «Все инструменты». */
+  more: MoreGroup[];
 }
 
 const customerNav: RoleNavConfig = {
@@ -109,85 +119,224 @@ const storeNav: RoleNavConfig = {
     { key: 'feed', label: 'Лента', icon: Newspaper },
     { key: 'storefront', label: 'Витрина', icon: Store },
     { key: 'orders', label: 'Заказы', icon: Package },
-    { key: MORE_KEY, label: 'Ещё', icon: Ellipsis },
+    // Промт 12, Часть D: «Ещё» → «Инструменты» (полноэкранный экран).
+    { key: MORE_KEY, label: 'Инструменты', icon: LayoutGrid },
   ],
   more: [
-    { key: 'debts', label: 'Долги', icon: ReceiptText, route: '/store/debts' },
-    { key: 'notes', label: 'Заметки', icon: StickyNote, route: '/store/notes' },
     {
-      key: 'finance',
-      label: 'Финансы',
-      icon: Banknote,
-      route: '/store/finance',
+      title: 'Торговля',
+      items: [
+        {
+          key: 'purchase',
+          label: 'Закупка',
+          icon: ShoppingCart,
+          route: '/store/purchase',
+        },
+        { key: 'feed', label: 'Лента', icon: Newspaper, route: '/store/feed' },
+        {
+          key: 'storefront',
+          label: 'Витрина',
+          icon: Store,
+          route: '/store/storefront',
+        },
+        {
+          key: 'orders',
+          label: 'Заказы',
+          icon: Package,
+          route: '/store/orders',
+        },
+      ],
     },
-    { key: 'profile', label: 'Профиль', icon: User, route: '/store/profile' },
     {
-      key: 'settings',
-      label: 'Настройки',
-      icon: Settings,
-      route: '/store/settings',
+      title: 'Финансы',
+      items: [
+        // Заглушки — функциональность Промта 13+.
+        {
+          key: 'debts',
+          label: 'Долги',
+          icon: ReceiptText,
+          route: '/store/debts',
+        },
+        {
+          key: 'finance',
+          label: 'Финансы',
+          icon: Banknote,
+          route: '/store/finance',
+        },
+      ],
+    },
+    {
+      title: 'Рабочие записи',
+      items: [
+        {
+          key: 'notes',
+          label: 'Заметки',
+          icon: StickyNote,
+          route: '/store/notes',
+        },
+      ],
+    },
+    {
+      title: 'Аккаунт',
+      items: [
+        {
+          key: 'profile',
+          label: 'Профиль',
+          icon: User,
+          route: '/store/profile',
+        },
+        {
+          key: 'settings',
+          label: 'Настройки',
+          icon: Settings,
+          route: '/store/settings',
+        },
+      ],
     },
   ],
 };
 
 const wholesaleNav: RoleNavConfig = {
-  // Промт 10: «Предложения» (партии) вместо заглушки «Запросы».
   tabs: [
     { key: 'overview', label: 'Обзор', icon: LayoutDashboard },
     { key: 'products', label: 'Товары', icon: Package },
     { key: 'orders', label: 'Заказы', icon: ClipboardList },
     { key: 'offers', label: 'Предложения', icon: Layers },
-    { key: MORE_KEY, label: 'Ещё', icon: Ellipsis },
+    // Промт 12, Часть D: «Ещё» → «Инструменты» (полноэкранный экран).
+    { key: MORE_KEY, label: 'Инструменты', icon: LayoutGrid },
   ],
   more: [
     {
-      key: 'notifications',
-      label: 'Уведомления',
-      icon: Bell,
-      route: '/wholesale/notifications',
+      title: 'Торговля',
+      items: [
+        {
+          key: 'products',
+          label: 'Товары',
+          icon: Package,
+          route: '/wholesale/products',
+        },
+        {
+          key: 'offers',
+          label: 'Предложения',
+          icon: Layers,
+          route: '/wholesale/offers',
+        },
+        {
+          key: 'orders',
+          label: 'Заказы',
+          icon: ClipboardList,
+          route: '/wholesale/orders',
+        },
+        {
+          key: 'requests',
+          label: 'Запросы',
+          icon: Inbox,
+          route: '/wholesale/requests',
+        },
+      ],
     },
     {
-      key: 'requests',
-      label: 'Запросы',
-      icon: Inbox,
-      route: '/wholesale/requests',
+      title: 'Склад',
+      items: [
+        // Склад — рабочий инструмент продавца (ADR 0012).
+        {
+          key: 'stock',
+          label: 'Склад',
+          icon: Warehouse,
+          route: '/wholesale/stock',
+        },
+        {
+          key: 'stock-locations',
+          label: 'Склады',
+          icon: Warehouse,
+          route: '/wholesale/stock/locations',
+        },
+        {
+          key: 'movements',
+          label: 'Движения',
+          icon: History,
+          route: '/wholesale/movements',
+        },
+      ],
     },
     {
-      key: 'clients',
-      label: 'Клиенты',
-      icon: Users,
-      route: '/wholesale/clients',
-    },
-    // Промт 11b: склад — рабочий инструмент продавца (ADR 0012).
-    {
-      key: 'stock',
-      label: 'Склад',
-      icon: Warehouse,
-      route: '/wholesale/stock',
-    },
-    {
-      key: 'finance',
-      label: 'Финансы',
-      icon: Banknote,
-      route: '/wholesale/finance',
-    },
-    {
-      key: 'analytics',
-      label: 'Аналитика',
-      icon: BarChart3,
-      route: '/wholesale/analytics',
+      title: 'Клиенты',
+      items: [
+        {
+          key: 'clients',
+          label: 'Клиенты',
+          icon: Users,
+          route: '/wholesale/clients',
+        },
+        // Заглушка — функциональность Промта 13+.
+        {
+          key: 'notes',
+          label: 'Заметки',
+          icon: StickyNote,
+          route: '/wholesale/notes',
+        },
+      ],
     },
     {
-      key: 'profile',
-      label: 'Профиль',
-      icon: User,
-      route: '/wholesale/profile',
+      title: 'Финансы',
+      items: [
+        // Заглушки — функциональность Промта 13+.
+        {
+          key: 'debts',
+          label: 'Долги',
+          icon: ReceiptText,
+          route: '/wholesale/debts',
+        },
+        {
+          key: 'finance',
+          label: 'Финансы',
+          icon: Banknote,
+          route: '/wholesale/finance',
+        },
+        {
+          key: 'analytics',
+          label: 'Аналитика',
+          icon: BarChart3,
+          route: '/wholesale/analytics',
+        },
+      ],
     },
     {
-      key: 'settings',
-      label: 'Настройки',
-      icon: Settings,
-      route: '/wholesale/settings',
+      title: 'Аккаунт',
+      items: [
+        // Заглушки — функциональность Промта 13+.
+        {
+          key: 'organization',
+          label: 'Организация',
+          icon: Store,
+          route: '/wholesale/organization',
+        },
+        {
+          key: 'staff',
+          label: 'Сотрудники',
+          icon: Users,
+          route: '/wholesale/staff',
+        },
+        {
+          key: 'notifications',
+          label: 'Уведомления',
+          icon: Bell,
+          route: '/wholesale/notifications',
+          badgeKind: 'notifications',
+        },
+        {
+          key: 'profile',
+          label: 'Профиль',
+          icon: User,
+          route: '/wholesale/profile',
+        },
+        {
+          key: 'settings',
+          label: 'Настройки',
+          icon: Settings,
+          route: '/wholesale/settings',
+        },
+      ],
     },
   ],
 };
@@ -211,7 +360,7 @@ export const ROLE_NAV: Record<Role, RoleNavConfig> = {
   carrier: carrierNav,
 };
 
-/** Секции роли в порядке «Ещё» (для шита). */
-export function moreItemsFor(role: Role): MoreItem[] {
+/** Группы «Все инструменты» роли. */
+export function moreGroupsFor(role: Role): MoreGroup[] {
   return ROLE_NAV[role].more;
 }
