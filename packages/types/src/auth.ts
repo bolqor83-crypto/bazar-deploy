@@ -70,10 +70,18 @@ export type AuthErrorCode =
 /** Ошибка клиента API с машинным кодом. */
 export class AuthError extends Error {
   readonly code: AuthErrorCode;
+  /**
+   * Исходный код доменной ошибки сервера (STOCK_OUT_OF_STOCK,
+   * STOCK_LOCATION_HAS_MOVEMENTS…), когда он не относится к
+   * аутентификации. Промт 11b: складским экранам нужен точный
+   * код для конкретных сообщений; в auth-сценариях — undefined.
+   */
+  readonly serverCode?: string;
 
-  constructor(code: AuthErrorCode, message: string) {
+  constructor(code: AuthErrorCode, message: string, serverCode?: string) {
     super(message);
     this.name = 'AuthError';
     this.code = code;
+    this.serverCode = serverCode;
   }
 }

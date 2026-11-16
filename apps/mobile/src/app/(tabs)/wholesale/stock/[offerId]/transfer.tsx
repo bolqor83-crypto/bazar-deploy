@@ -1,0 +1,305 @@
+/**
+ * Форма перемещения между складами (Промт 11b).
+ *
+ * С какого склада, на какой (не тот же), количество в пределах
+ * доступного на складе-источнике, причина. Остатки обоих складов
+ * показаны крупно; после сохранения — toast и возврат в журнал.
+ */
+import { useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  LocationSelector,
+  QuantitySelector,
+  Skeleton,
+  Text,
+  useTheme,
+  useToast,
+} from '@bazar/ui';
+import { AuthError } from '@bazar/types';
+import { RoleScreen } from '../../../../../components/shell/RoleScreen';
+import { useSellerOffer } from '../../../../../hooks/useSeller';
+import {
+  useStockBalances,
+  useStockLocations,
+  useTransferStock,
+} from '../../../../../hooks/useStock';
+
+/** Разбор количества: целое > 0 или null. */
+function parsePositiveInt(value: string): number | null {
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+export default function StockTransferFormScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors, spacing } = useTheme();
+  const toast = useToast();
+
+  const offerQuery = useSellerOffer(id);
+  const balancesQuery = useStockBalances({ offerId: id });
+  const locationsQuery = useStockLocations();
+  const mutation = useTransferStock();
+
+  const locations = useMemo(
+    () => locationsQuery.data ?? [],
+    [locationsQuery.data],
+  );
+  const defaultLocationId = useMemo(
+    () => locations.find((l) => l.isDefault)?.id ?? locations[0]?.id ?? null,
+    [locations],
+  );
+  const otherLocationId = useMemo(
+    () => locations.find((l) => l.id !== defaultLocationId)?.id ?? null,
+    [locations, defaultLocationId],
+  );
+
+  const [fromId, setFromId] = useState<string | null>(null);
+  const [toId, setToId] = useState<string | null>(null);
+  const [quantityText, setQuantityText] = useState('');
+  const [reason, setReason] = useState('');
+  const [touched, setTouched] = useState(false);
+
+  const effectiveFrom = fromId ?? defaultLocationId;
+  const effectiveTo = toId ?? otherLocationId;
+
+  const offer = offerQuery.data;
+  const unit = offer?.product.unit ?? '';
+
+  const balanceAt = (locationId: string | null) =>
+    locationId === null
+      ? 0
+      : (balancesQuery.data?.items.find((b) => b.locationId === locationId)
+          ?.availableQty ?? 0);
+
+  const availableFrom = balanceAt(effectiveFrom);
+  const availableTo = balanceAt(effectiveTo);
+  const quantity = parsePositiveInt(quantityText);
+
+  const sameLocation = effectiveFrom !== null && effectiveFrom === effectiveTo;
+
+  const quantityError =
+    touched && quantityText !== '' && quantity === null
+      ? 'Введите целое число больше нуля'
+      : quantity !== null && quantity > availableFrom
+        ? `Недоступно: на складе-источнике только ${availableFrom}${unit ? ` ${unit}` : ''}`
+        : null;
+
+  const reasonError =
+    touched && reason.trim().length < 3
+      ? 'Укажите причину (минимум 3 символа)'
+      : null;
+
+  const sameError =
+    touched && sameLocation ? 'Склады должны различаться' : null;
+
+  const valid =
+    quantity !== null &&
+    quantity <= availableFrom &&
+    quantityError === null &&
+    reason.trim().length >= 3 &&
+    !sameLocation &&
+    effectiveFrom !== null &&
+    effectiveTo !== null;
+
+  if (offerQuery.isLoading) {
+    return (
+      <RoleScreen role="wholesale_seller" section="stock" title="Склад">
+        <View style={{ padding: spacing.lg, gap: spacing.md }}>
+          <Skeleton height={72} />
+          <Skeleton height={56} />
+          <Skeleton height={56} />
+        </View>
+      </RoleScreen>
+    );
+  }
+
+  if (offerQuery.isError || !offer) {
+    return (
+      <RoleScreen role="wholesale_seller" section="stock" title="Склад">
+        <ErrorState
+          title="Позиция не найдена"
+          onRetry={() => router.replace('/wholesale/stock')}
+        />
+      </RoleScreen>
+    );
+  }
+
+  if (locations.length < 2) {
+    return (
+      <RoleScreen role="wholesale_seller" section="stock" title="Перемещение">
+        <Card style={{ padding: spacing.md }}>
+          <Text variant="bodySmall" color="textSecondary">
+            Для перемещения нужно минимум два склада. Создайте второй склад на
+            экране «Склады», затем вернитесь к перемещению.
+          </Text>
+        </Card>
+      </RoleScreen>
+    );
+  }
+
+  const onSave = () => {
+    setTouched(true);
+    if (!valid || effectiveFrom === null || effectiveTo === null) {
+      return;
+    }
+    mutation.mutate(
+      {
+        offerId: id,
+        fromLocationId: effectiveFrom,
+        toLocationId: effectiveTo,
+        quantity,
+        reason: reason.trim(),
+      },
+      {
+        onSuccess: () => {
+          const fromName =
+            locations.find((l) => l.id === effectiveFrom)?.name ?? 'склад';
+          const toName =
+            locations.find((l) => l.id === effectiveTo)?.name ?? 'склад';
+          toast.show({
+            variant: 'success',
+            message:
+              `Перемещено ${quantity} ${unit}: ${fromName} → ${toName}`.trim(),
+          });
+          router.back();
+        },
+        onError: (error) => {
+          const serverCode =
+            error instanceof AuthError ? error.serverCode : undefined;
+          toast.show({
+            variant: 'error',
+            message:
+              serverCode === 'STOCK_OUT_OF_STOCK'
+                ? 'Недостаточно остатка на складе-источнике — обновите экран'
+                : 'Не удалось переместить. Проверьте связь и попробуйте ещё раз',
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <RoleScreen
+      role="wholesale_seller"
+      section="stock"
+      title={`Перемещение · ${offer.product.name}`}
+    >
+      <View style={{ flex: 1, width: '100%' }}>
+        <ScrollView
+          contentContainerStyle={{
+            padding: spacing.md,
+            paddingBottom: spacing.xl,
+            gap: spacing.md,
+          }}
+        >
+          <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+            <LocationSelector
+              locations={locations.map((l) => ({
+                id: l.id,
+                name: l.name,
+                address: l.address ?? undefined,
+              }))}
+              value={effectiveFrom}
+              onChange={setFromId}
+              label="С какого склада"
+              allowAll={false}
+            />
+            <View style={{ gap: 2 }}>
+              <Text variant="caption" color="textSecondary">
+                Доступно на складе-источнике
+              </Text>
+              <Text variant="h3" mono style={{ color: colors.text }}>
+                {`${availableFrom}${unit ? ` ${unit}` : ''}`}
+              </Text>
+            </View>
+          </Card>
+
+          <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+            <LocationSelector
+              locations={locations.map((l) => ({
+                id: l.id,
+                name: l.name,
+                address: l.address ?? undefined,
+              }))}
+              value={effectiveTo}
+              onChange={setToId}
+              label="На какой склад"
+              allowAll={false}
+            />
+            <View style={{ gap: 2 }}>
+              <Text variant="caption" color="textSecondary">
+                Доступно на складе-получателе
+              </Text>
+              <Text variant="h3" mono style={{ color: colors.text }}>
+                {`${availableTo}${unit ? ` ${unit}` : ''}`}
+              </Text>
+            </View>
+            {sameError ? (
+              <Text variant="caption" style={{ color: colors.danger }}>
+                {sameError}
+              </Text>
+            ) : null}
+          </Card>
+
+          <View style={{ gap: spacing.sm }}>
+            <Text variant="bodySmall" color="textSecondary">
+              {`Количество, ${unit || 'ед.'}`}
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+              }}
+            >
+              <QuantitySelector
+                value={quantity ?? 0}
+                onChange={(value) => setQuantityText(String(value))}
+                min={0}
+                max={Math.max(availableFrom, 0)}
+              />
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={quantityText}
+                  onChangeText={setQuantityText}
+                  keyboardType="numeric"
+                  error={quantityError}
+                  testID="transfer-quantity"
+                />
+              </View>
+            </View>
+          </View>
+
+          <Input
+            label="Причина"
+            value={reason}
+            onChangeText={setReason}
+            multiline
+            placeholder="развоз по точкам, передача на реализацию…"
+            error={reasonError}
+            hint="Запись в журнал движений обоих складов"
+            testID="transfer-reason"
+          />
+
+          <Button
+            onPress={onSave}
+            disabled={!valid || mutation.isPending}
+            testID="transfer-save"
+          >
+            {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
+          </Button>
+        </ScrollView>
+      </View>
+    </RoleScreen>
+  );
+}

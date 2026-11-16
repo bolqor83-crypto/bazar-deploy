@@ -22,11 +22,18 @@ export interface SelectorLocation {
 
 export interface LocationSelectorProps {
   locations: SelectorLocation[];
-  /** Идентификатор выбранной точки; null — «Вся сеть». */
+  /** Идентификатор выбранной точки; null — «все» (см. allLabel). */
   value: string | null;
   onChange: (value: string | null) => void;
   /** Подпись шита; по умолчанию «Торговая точка». */
   label?: string;
+  /** Подпись опции «все точки»; по умолчанию «Вся сеть»
+   * (склад: «Все склады»). */
+  allLabel?: string;
+  /** Показывать опцию «все точки» (формы склада — без неё). */
+  allowAll?: boolean;
+  /** Подпись-пояснение под опцией «все»; null — скрыть. */
+  allCaption?: string | null;
   disabled?: boolean;
 }
 
@@ -35,13 +42,16 @@ export function LocationSelector({
   value,
   onChange,
   label = 'Торговая точка',
+  allLabel = 'Вся сеть',
+  allowAll = true,
+  allCaption = 'Все точки организации',
   disabled = false,
 }: LocationSelectorProps) {
   const { colors, radii, spacing } = useTheme();
   const [open, setOpen] = useState(false);
 
   const selected = locations.find((loc) => loc.id === value) ?? null;
-  const triggerLabel = selected ? selected.name : 'Вся сеть';
+  const triggerLabel = selected ? selected.name : allLabel;
 
   const pick = (id: string | null) => {
     hapticSelection();
@@ -97,26 +107,32 @@ export function LocationSelector({
 
       <Dialog visible={open} onClose={() => setOpen(false)} title={label}>
         <View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Вся сеть"
-            accessibilityState={{ selected: value === null }}
-            onPress={() => pick(null)}
-            style={rowStyle}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                variant="body"
-                color={value === null ? 'primaryText' : 'text'}
-              >
-                Вся сеть
-              </Text>
-              <Text variant="caption" color="textMuted">
-                Все точки организации
-              </Text>
-            </View>
-            {value === null ? <Check size={20} color={colors.primary} /> : null}
-          </Pressable>
+          {allowAll ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={allLabel}
+              accessibilityState={{ selected: value === null }}
+              onPress={() => pick(null)}
+              style={rowStyle}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  variant="body"
+                  color={value === null ? 'primaryText' : 'text'}
+                >
+                  {allLabel}
+                </Text>
+                {allCaption ? (
+                  <Text variant="caption" color="textMuted">
+                    {allCaption}
+                  </Text>
+                ) : null}
+              </View>
+              {value === null ? (
+                <Check size={20} color={colors.primary} />
+              ) : null}
+            </Pressable>
+          ) : null}
 
           {locations.map((loc) => {
             const isSelected = loc.id === value;

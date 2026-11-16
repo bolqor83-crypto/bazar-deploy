@@ -30,6 +30,7 @@ import {
   Truck,
   User,
   Users,
+  Warehouse,
 } from 'lucide-react-native';
 import type { Role } from '@bazar/types';
 
@@ -156,6 +157,13 @@ const wholesaleNav: RoleNavConfig = {
       label: 'Клиенты',
       icon: Users,
       route: '/wholesale/clients',
+    },
+    // Промт 11b: склад — рабочий инструмент продавца (ADR 0012).
+    {
+      key: 'stock',
+      label: 'Склад',
+      icon: Warehouse,
+      route: '/wholesale/stock',
     },
     {
       key: 'finance',

@@ -5,9 +5,9 @@
  * Смена полей — PATCH; создание предложения — из этого же экрана.
  */
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Package } from 'lucide-react-native';
+import { ChevronRight, Package, Warehouse } from 'lucide-react-native';
 import {
   Button,
   Card,
@@ -32,7 +32,7 @@ import { fetchSellerOffers } from '../../../../services/api/sellerApi';
 export default function SellerProductEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const toast = useToast();
 
   const productsQuery = useSellerProducts(false);
@@ -50,7 +50,15 @@ export default function SellerProductEditScreen() {
   }>({});
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [offers, setOffers] = useState<
-    { id: string; title: string; price: number; stock: number; unit: string; badge: string | null; archivedAt: string | null }[]
+    {
+      id: string;
+      title: string;
+      price: number;
+      stock: number;
+      unit: string;
+      badge: string | null;
+      archivedAt: string | null;
+    }[]
   >([]);
 
   const product =
@@ -104,7 +112,7 @@ export default function SellerProductEditScreen() {
   }
 
   const title = edits.title ?? product.title;
-  const subtitle = edits.subtitle ?? (product.subtitle ?? '');
+  const subtitle = edits.subtitle ?? product.subtitle ?? '';
   const description = edits.description ?? product.description;
   const unit = edits.unit ?? product.unit;
   const categoryId = edits.categoryId ?? product.categoryId;
@@ -133,7 +141,11 @@ export default function SellerProductEditScreen() {
           toast.show({ variant: 'success', message: 'Изменения сохранены' });
         },
         onError: () => {
-          toast.show({ variant: 'error', message: 'Не удалось сохранить. Проверьте связь и попробуйте ещё раз' });
+          toast.show({
+            variant: 'error',
+            message:
+              'Не удалось сохранить. Проверьте связь и попробуйте ещё раз',
+          });
         },
       },
     );
@@ -197,6 +209,36 @@ export default function SellerProductEditScreen() {
 
           <View style={{ gap: spacing.sm, paddingTop: spacing.md }}>
             <Text variant="h3">Предложения</Text>
+            {/* Промт 11b: сводка остатков по всем предложениям
+                (offer.stock = сумма availableQty по складам). */}
+            <Card style={{ padding: spacing.md }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Остатки склада. Открыть список складов"
+                onPress={() => router.push('/wholesale/stock')}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  minHeight: 44,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+                testID="product-stock-summary"
+              >
+                <Warehouse size={18} color={colors.primary} />
+                <Text
+                  variant="bodySmall"
+                  color="textSecondary"
+                  style={{ flex: 1 }}
+                >
+                  Доступно по всем предложениям
+                </Text>
+                <Text variant="bodyStrong" mono>
+                  {`${offers.reduce((sum, o) => sum + o.stock, 0)} ${unit}`}
+                </Text>
+                <ChevronRight size={16} color={colors.textMuted} />
+              </Pressable>
+            </Card>
             {offers.length === 0 ? (
               <Card>
                 <EmptyState
@@ -242,10 +284,12 @@ export default function SellerProductEditScreen() {
             </Card>
           ) : (
             <Button
-    variant="ghost"
-    onPress={() => setConfirmArchive(true)}
-    testID="edit-archive"
-    >Архивировать товар</Button>
+              variant="ghost"
+              onPress={() => setConfirmArchive(true)}
+              testID="edit-archive"
+            >
+              Архивировать товар
+            </Button>
           )}
         </ScrollView>
 
@@ -257,7 +301,13 @@ export default function SellerProductEditScreen() {
           <Text variant="bodySmall" color="textSecondary">
             {`«${product.title}» исчезнет из каталога для покупателей. Предложения и история сохранятся.`}
           </Text>
-          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.sm,
+              marginTop: spacing.md,
+            }}
+          >
             <View style={{ flex: 1 }}>
               <Button
                 variant="secondary"
@@ -272,7 +322,10 @@ export default function SellerProductEditScreen() {
                   setConfirmArchive(false);
                   archiveMutation.mutate(product.id, {
                     onSuccess: () => {
-                      toast.show({ variant: 'success', message: 'Товар в архиве' });
+                      toast.show({
+                        variant: 'success',
+                        message: 'Товар в архиве',
+                      });
                       router.replace('/wholesale/products');
                     },
                   });

@@ -157,13 +157,22 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     let code: string | undefined;
+    let message = 'Ошибка запроса';
     try {
       const body = (await response.json()) as ApiErrorBody;
       code = typeof body.code === 'string' ? body.code : undefined;
+      if (typeof body.message === 'string') {
+        message = body.message;
+      } else if (Array.isArray(body.message) && body.message[0]) {
+        message = body.message[0];
+      }
     } catch {
       // Ответ без JSON — код останется AUTH_UNKNOWN.
     }
-    throw new AuthError(toAuthCode(code), 'Ошибка запроса');
+    // Доменные коды сервера (STOCK_*, OFFER_*…) сохраняются в
+    // serverCode: код ошибки клиента остаётся auth-контрактом.
+    const known = code?.startsWith('AUTH_') ? code : undefined;
+    throw new AuthError(toAuthCode(known), message, known ? undefined : code);
   }
 
   return (await response.json()) as T;

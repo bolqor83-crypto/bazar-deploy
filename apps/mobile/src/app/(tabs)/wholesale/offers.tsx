@@ -5,9 +5,9 @@
  * цена, склад, бейдж). Empty — осмысленный с CTA в товары.
  */
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Layers } from 'lucide-react-native';
+import { ChevronRight, Layers, Warehouse } from 'lucide-react-native';
 import {
   Card,
   EmptyState,
@@ -95,9 +95,14 @@ export default function SellerOffersScreen() {
             key={offer.id}
             offer={offer}
             onPress={() => router.push(`/wholesale/offers/${offer.id}`)}
+            onStockPress={() => router.push(`/wholesale/stock/${offer.id}`)}
           />
         ))}
-        <Text variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>
+        <Text
+          variant="caption"
+          color="textSecondary"
+          style={{ textAlign: 'center' }}
+        >
           {`Всего: ${offersQuery.data?.total ?? offers.length}`}
         </Text>
       </ScrollView>
@@ -152,10 +157,13 @@ export default function SellerOffersScreen() {
 function OfferCard({
   offer,
   onPress,
+  onStockPress,
 }: {
   offer: SellerOffer;
   onPress: () => void;
+  onStockPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Card>
       <View style={{ paddingHorizontal: 12 }}>
@@ -171,6 +179,30 @@ function OfferCard({
           onPress={onPress}
           testID={`seller-offer-${offer.id}`}
         />
+        {/* Промт 11b: остаток — вход в склад позиции. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Остатки склада: ${offer.stock} ${offer.product.unit}. Открыть`}
+          onPress={onStockPress}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            minHeight: 44,
+            paddingBottom: 4,
+            opacity: pressed ? 0.7 : 1,
+          })}
+          testID={`offer-stock-${offer.id}`}
+        >
+          <Warehouse size={16} color={colors.primary} />
+          <Text variant="caption" color="textSecondary" style={{ flex: 1 }}>
+            Остатки склада
+          </Text>
+          <Text variant="caption" mono>
+            {`${offer.stock} ${offer.product.unit}`}
+          </Text>
+          <ChevronRight size={16} color={colors.textMuted} />
+        </Pressable>
       </View>
     </Card>
   );
