@@ -98,7 +98,9 @@ export function StockRow({
   // «166 × 100 г» в numberL прижимала название к краю (VLM-ревью).
   const packMatch = unit?.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
   const packUnit =
-    packMatch && Number(packMatch[1].replace(',', '.')) !== 1
+    packMatch &&
+    packMatch[1] !== undefined &&
+    Number(packMatch[1].replace(',', '.')) !== 1
       ? `× ${unit}`
       : null;
   const inlineUnit = packUnit ? '' : unit ? ` ${unit}` : '';
