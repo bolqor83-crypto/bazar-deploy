@@ -79,6 +79,22 @@ export type {
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 
+// Формы (Промт 12, Часть C)
+export { Select } from './components/Select';
+export type { SelectOption, SelectProps } from './components/Select';
+
+export { Checkbox } from './components/Checkbox';
+export type { CheckboxProps } from './components/Checkbox';
+
+export { Radio } from './components/Radio';
+export type { RadioProps } from './components/Radio';
+
+export { Switch } from './components/Switch';
+export type { SwitchProps } from './components/Switch';
+
+export { DatePicker, formatDateRu } from './components/DatePicker';
+export type { DatePickerProps } from './components/DatePicker';
+
 export { Card } from './components/Card';
 export type { CardProps, CardVariant } from './components/Card';
 

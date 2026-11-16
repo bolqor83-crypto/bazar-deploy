@@ -183,6 +183,23 @@ caption 14/20/400, micro 12/16/400.
 - Заглушки изображений — пастельные тона `tokens/placeholder.ts`
   (одинаковые в обеих темах), до настоящих фото (Промт 9).
 
+## Формы (Промт 12, Часть C)
+
+Базовая библиотека полей в `packages/ui` (триггеры height 48, рамка
+вместо тени, зоны нажатия >= 48×48, light/dark, полный набор тестов):
+
+- `<Select>` — combobox: триггер + шит Dialog с radio-списком;
+  выбранная опция — чекмарк и primary-текст.
+- `<Checkbox>` — квадрат 24×24 (radius 4), checked — primary fill +
+  белый чекмарк; `accessibilityState.checked`.
+- `<Radio>` — круг 24×24, selected — primary border + точка.
+- `<Switch>` — трек 48×28, бегунок 24, haptic selection,
+  `accessibilityState.checked` (RN не поддерживает `on`).
+- `<DatePicker>` — триггер dd.mm.yyyy + шит с календарём 7×6
+  (неделя с понедельника), кнопки дней 40×40 (hit 48), «Сегодня /
+  Отмена / Применить», min/max.
+- Все — в витрине `/dev/design` (секция «Формы»).
+
 ## Склад (Промт 11, ADR 0012)
 
 - **Event-sourced**: `StockMovement` (append-only журнал, источник

@@ -13,6 +13,8 @@ import {
   Button,
   Card,
   CategoryChip,
+  Checkbox,
+  DatePicker,
   DeliveryCard,
   Dialog,
   Divider,
@@ -32,11 +34,14 @@ import {
   ProductDetailCard,
   ProductGallery,
   QuantitySelector,
+  Radio,
   SearchBar,
   SectionHeader,
+  Select,
   Skeleton,
   SortPicker,
   StockIndicator,
+  Switch,
   Text,
   ToastProvider,
   useTheme,
@@ -87,6 +92,13 @@ function ShowcaseBody() {
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [activeCategory, setActiveCategory] = useState('vegetables');
+  const [selectValue, setSelectValue] = useState<string | null>('msk');
+  const [checkboxChecked, setCheckboxChecked] = useState(true);
+  const [radioValue, setRadioValue] = useState('courier');
+  const [switchOn, setSwitchOn] = useState(false);
+  const [pickedDate, setPickedDate] = useState<Date | null>(
+    new Date(2026, 10, 15),
+  );
 
   return (
     <ToastProvider>
@@ -105,7 +117,7 @@ function ShowcaseBody() {
           color="textSecondary"
           style={{ marginBottom: spacing.lg }}
         >
-          31 компонент · токены · темы light/dark/system · режим: {mode}
+          36 компонентов · токены · темы light/dark/system · режим: {mode}
         </Text>
 
         <Button variant="ghost" size="sm" onPress={cycleMode}>
@@ -210,6 +222,69 @@ function ShowcaseBody() {
               value=""
               onChangeText={() => {}}
               error="Проверьте ИНН"
+            />
+          </View>
+        </Section>
+
+        <Section title="Формы">
+          <View style={{ gap: spacing.xl }}>
+            <Select
+              label="Склад отгрузки"
+              value={selectValue}
+              onChange={setSelectValue}
+              options={[
+                {
+                  value: 'msk',
+                  label: 'Основной склад',
+                  hint: 'ул. Южная, 12',
+                },
+                {
+                  value: 'north',
+                  label: 'Точка на Северной',
+                  hint: 'ул. Северная, 1',
+                },
+                { value: 'spb', label: 'Склад в Петербурге' },
+              ]}
+              placeholder="Выберите склад"
+            />
+            <View style={{ gap: spacing.xs }}>
+              <Checkbox
+                checked={checkboxChecked}
+                onChange={setCheckboxChecked}
+                label="Скоропортящийся товар"
+                hint="Хранение до 12 часов"
+              />
+              <Checkbox
+                checked={!checkboxChecked}
+                onChange={() => setCheckboxChecked((v) => !v)}
+                label="Требует сертификации"
+              />
+            </View>
+            <View style={{ gap: spacing.xs }}>
+              <Radio
+                selected={radioValue === 'courier'}
+                onPress={() => setRadioValue('courier')}
+                label="Доставка перевозчиком"
+                hint="От 2 часов по городу"
+              />
+              <Radio
+                selected={radioValue === 'pickup'}
+                onPress={() => setRadioValue('pickup')}
+                label="Самовывоз со склада"
+              />
+            </View>
+            <Switch
+              value={switchOn}
+              onChange={setSwitchOn}
+              label="Автоприём заказов"
+              hint="Новые заказы подтверждаются без вашего участия"
+            />
+            <DatePicker
+              label="Дата поставки"
+              value={pickedDate}
+              onChange={setPickedDate}
+              min={new Date(2026, 10, 1)}
+              max={new Date(2026, 11, 31)}
             />
           </View>
         </Section>
