@@ -15,6 +15,22 @@ import { useTheme } from '../../theme';
 import { Text } from '../Text';
 import { formatPrice } from '../PriceDisplay';
 
+/** Количество с юнитом оффера: «1 кг» → «75 кг», «100 г» → «166 × 100 г». */
+export function formatQuantity(qty: number, unit?: string): string {
+  if (!unit) {
+    return String(qty);
+  }
+  const match = unit.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
+  if (!match || match[1] === undefined || match[2] === undefined) {
+    return `${qty} ${unit}`;
+  }
+  const multiplier = Number(match[1].replace(',', '.'));
+  if (multiplier === 1) {
+    return `${qty} ${match[2]}`;
+  }
+  return `${qty} × ${unit}`;
+}
+
 /** Уровень остатка: нет / мало / в наличии. */
 export type StockLevel = 'in' | 'low' | 'out';
 
@@ -78,7 +94,15 @@ export function StockRow({
         ? colors.accent
         : colors.danger;
 
-  const unitSuffix = unit ? ` ${unit}` : '';
+  // Юнит-мультипакет («100 г») уходит под число: широкая строка
+  // «166 × 100 г» в numberL прижимала название к краю (VLM-ревью).
+  const packMatch = unit?.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
+  const packUnit =
+    packMatch && Number(packMatch[1].replace(',', '.')) !== 1
+      ? `× ${unit}`
+      : null;
+  const inlineUnit = packUnit ? '' : unit ? ` ${unit}` : '';
+  const quantityText = `${physicalQty}${inlineUnit}`;
   // Без резерва доступно = физическому остатку: дубль числа не нужен
   // (решение по VLM-ревью Промта 12, Часть A).
   const breakdown =
@@ -149,11 +173,11 @@ export function StockRow({
             accessibilityLabel={LEVEL_LABELS[level]}
           />
           <Text variant="numberL" style={{ color: colors.text }}>
-            {`${physicalQty}${unitSuffix}`}
+            {quantityText}
           </Text>
         </View>
         <Text variant="micro" color="textMuted" numberOfLines={1}>
-          {breakdown}
+          {[packUnit, breakdown].filter(Boolean).join(' · ')}
         </Text>
       </View>
     </View>
@@ -163,7 +187,7 @@ export function StockRow({
     return (
       <View
         testID={testID}
-        accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}${breakdown ? `, ${breakdown}` : ''}`}
+        accessibilityLabel={`${title}, остаток ${quantityText}${packUnit ? ` ${packUnit}` : ''}${breakdown ? `, ${breakdown}` : ''}`}
       >
         {body}
       </View>
@@ -175,7 +199,7 @@ export function StockRow({
       testID={testID}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, остаток ${physicalQty}${unitSuffix}${breakdown ? `, ${breakdown}` : ''}`}
+      accessibilityLabel={`${title}, остаток ${quantityText}${packUnit ? ` ${packUnit}` : ''}${breakdown ? `, ${breakdown}` : ''}`}
       hitSlop={2}
       style={({ pressed }) => [
         { backgroundColor: colors.surface, opacity: pressed ? 0.75 : 1 },

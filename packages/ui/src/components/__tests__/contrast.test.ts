@@ -1,17 +1,14 @@
 /**
  * Проверка контраста WCAG AA для всех смысловых пар «текст/фон»
- * в обеих темах.
+ * в обеих темах + не-текстовой контраст рамок (1.4.11).
  *
  * Относительная яркость и коэффициент контраста считаются вручную
  * по формулам WCAG 2.1 (https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html),
  * без внешних библиотек.
  *
- * Порог: 4.5:1 для обычного текста, 3:1 для крупного.
- * Все пары ниже — обычный текст (caption/body), поэтому порог 4.5:1.
- *
- * Известное ограничение (см. ADR 0002): не-текстовой контраст рамок
- * в покое (border #E4EAE4 на фоне) ниже 3:1 — вынесено на полевые
- * испытания, принято по отчёту Промта 2.
+ * Порог: 4.5:1 для обычного текста, 3:1 для крупного и для рамок
+ * полей в покое (Промт 12, Часть E — закрытый долг ADR 0002,
+ * см. ADR 0013).
  */
 import { colorsDark, colorsLight, type ColorPalette } from '../../tokens';
 
@@ -45,6 +42,8 @@ function contrastRatio(fgHex: string, bgHex: string): number {
 
 /** Порог WCAG AA для обычного текста. */
 const AA_NORMAL = 4.5;
+/** Порог WCAG 1.4.11 для не-текстовых элементов (рамки). */
+const AA_NON_TEXT = 3;
 
 type PairName =
   | 'text/background'
@@ -59,6 +58,12 @@ type PairName =
   | 'info/surface'
   | 'accent/surface';
 
+type BorderPairName =
+  | 'border/surface'
+  | 'border/background'
+  | 'border/surfaceMuted'
+  | 'borderStrong/surface';
+
 const PAIRS: readonly [PairName, keyof ColorPalette, keyof ColorPalette][] = [
   ['text/background', 'text', 'background'],
   ['textSecondary/surface', 'textSecondary', 'surface'],
@@ -71,6 +76,18 @@ const PAIRS: readonly [PairName, keyof ColorPalette, keyof ColorPalette][] = [
   ['success/surface', 'success', 'surface'],
   ['info/surface', 'info', 'surface'],
   ['accent/surface', 'accent', 'surface'],
+];
+
+/** Рамки против всех смежных фонов (WCAG 1.4.11, Промт 12). */
+const BORDER_PAIRS: readonly [
+  BorderPairName,
+  keyof ColorPalette,
+  keyof ColorPalette,
+][] = [
+  ['border/surface', 'border', 'surface'],
+  ['border/background', 'border', 'background'],
+  ['border/surfaceMuted', 'border', 'surfaceMuted'],
+  ['borderStrong/surface', 'borderStrong', 'surface'],
 ];
 
 describe('Контраст WCAG AA', () => {
@@ -88,10 +105,24 @@ describe('Контраст WCAG AA', () => {
     });
   });
 
+  describe('рамки полей — не-текстовой контраст ≥ 3:1 (WCAG 1.4.11)', () => {
+    it.each(BORDER_PAIRS)('light: %s', (_name, fg, bg) => {
+      const ratio = contrastRatio(colorsLight[fg], colorsLight[bg]);
+      expect(ratio).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    });
+
+    it.each(BORDER_PAIRS)('dark: %s', (_name, fg, bg) => {
+      const ratio = contrastRatio(colorsDark[fg], colorsDark[bg]);
+      expect(ratio).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    });
+  });
+
   it('красные цвета запрещены правилами проекта', () => {
     const forbidden = ['#FF0000', '#E74C3C', '#DC3545'];
     const collect = (palette: ColorPalette): string[] =>
-      Object.values(palette).filter((v) => typeof v === 'string' && v.startsWith('#'));
+      Object.values(palette).filter(
+        (v) => typeof v === 'string' && v.startsWith('#'),
+      );
     const all = [...collect(colorsLight), ...collect(colorsDark)];
     for (const value of all) {
       expect(forbidden).not.toContain(value.toUpperCase());

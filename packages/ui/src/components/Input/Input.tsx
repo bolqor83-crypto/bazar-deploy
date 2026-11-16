@@ -74,6 +74,8 @@ export function Input({
     color: colors.text,
     paddingVertical: spacing.sm,
     flex: 1,
+    // Веб-фокус-рамка браузера запрещена: фокус показывает рамка поля.
+    outlineWidth: 0,
   };
 
   return (

@@ -30,12 +30,12 @@ describe('RoleShell', () => {
     expect(screen.getByText('Контент экрана')).toBeTruthy();
   });
 
-  it('рендерит таб-бар роли store_owner с пунктом «Инструменты»', async () => {
+  it('рендерит таб-бар роли store_owner с пунктом «Ещё»', async () => {
     const screen = await setup();
     expect(screen.getByRole('tab', { name: 'Закупка' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Лента' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Витрина' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Инструменты' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Ещё' })).toBeTruthy();
   });
 
   it('нажатие вкладки вызывает onTabChange', async () => {
@@ -54,7 +54,7 @@ describe('RoleShell', () => {
     expect(onTabChange).toHaveBeenCalledWith('orders');
   });
 
-  it('«Инструменты» прокидывается в onTabChange (переход на /more)', async () => {
+  it('«Ещё» прокидывается в onTabChange (переход на /more)', async () => {
     const onTabChange = jest.fn();
     const screen = await render(
       <RoleShell
@@ -66,11 +66,11 @@ describe('RoleShell', () => {
         <Text>Контент</Text>
       </RoleShell>,
     );
-    await fireEvent.press(screen.getByRole('tab', { name: 'Инструменты' }));
+    await fireEvent.press(screen.getByRole('tab', { name: 'Ещё' }));
     expect(onTabChange).toHaveBeenCalledWith('more');
   });
 
-  it('роль без «Инструментов» (customer) их не показывает', async () => {
+  it('роль без «Ещё» (customer) его не показывает', async () => {
     const screen = await render(
       <RoleShell
         title="Главная"
@@ -81,7 +81,7 @@ describe('RoleShell', () => {
         <Text>Контент</Text>
       </RoleShell>,
     );
-    expect(screen.queryByRole('tab', { name: 'Инструменты' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Ещё' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Избранное' })).toBeTruthy();
   });
 });

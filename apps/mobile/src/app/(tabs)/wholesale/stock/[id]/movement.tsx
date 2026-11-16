@@ -21,6 +21,7 @@ import {
   LocationSelector,
   Skeleton,
   Text,
+  formatQuantity,
   useTheme,
   useToast,
 } from '@bazar/ui';
@@ -129,7 +130,7 @@ export default function StockMovementFormScreen() {
           : quantity !== null &&
               kind === 'WRITE_OFF' &&
               quantity > currentAvailable
-            ? `Недоступно: на складе только ${currentAvailable}${unit ? ` ${unit}` : ''}`
+            ? `Недоступно: на складе только ${formatQuantity(currentAvailable, unit)}`
             : quantity !== null &&
                 kind === 'ADJUSTMENT' &&
                 adjustmentDelta === 0
@@ -275,6 +276,7 @@ export default function StockMovementFormScreen() {
               onChange={setLocationId}
               label="Склад"
               allowAll={false}
+              showLabel
               disabled={locationsQuery.isLoading}
             />
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -283,7 +285,7 @@ export default function StockMovementFormScreen() {
                   Доступно сейчас
                 </Text>
                 <Text variant="bodyStrong" mono>
-                  {`${currentAvailable}${unit ? ` ${unit}` : ''}`}
+                  {formatQuantity(currentAvailable, unit)}
                 </Text>
               </View>
               {kind === 'ADJUSTMENT' && adjustmentDelta !== null ? (
@@ -322,14 +324,14 @@ export default function StockMovementFormScreen() {
                 onChangeText={setQuantityText}
                 keyboardType="numeric"
                 error={quantityError}
-                hint={`Текущий: ${currentAvailable}${unit ? ` ${unit}` : ''}. Система посчитает дельту — минус допустим (недостача)`}
+                hint={`Текущий: ${formatQuantity(currentAvailable, unit)}. Система посчитает дельту — минус допустим (недостача)`}
                 testID="movement-quantity"
               />
               {quantity !== null &&
               adjustmentDelta !== null &&
               adjustmentDelta !== 0 ? (
                 <Text variant="bodySmall" mono>
-                  {`После сохранения доступно: ${quantity}${unit ? ` ${unit}` : ''}`}
+                  {`После сохранения доступно: ${formatQuantity(quantity, unit)}`}
                 </Text>
               ) : null}
             </View>
@@ -354,15 +356,15 @@ export default function StockMovementFormScreen() {
               ) : (
                 <Text variant="caption" color="textMuted">
                   {kind === 'WRITE_OFF'
-                    ? `Максимум: ${currentAvailable}${unit ? ` ${unit}` : ''} — доступный остаток`
+                    ? `Максимум: ${formatQuantity(currentAvailable, unit)} — доступный остаток`
                     : 'Приход увеличит доступный остаток на эту величину'}
                 </Text>
               )}
               {quantity !== null && delta !== null && delta !== 0 ? (
                 <Text variant="bodySmall" mono>
                   {kind === 'WRITE_OFF'
-                    ? `После списания доступно: ${Math.max(currentAvailable - quantity, 0)}${unit ? ` ${unit}` : ''}`
-                    : `После прихода доступно: ${currentAvailable + quantity}${unit ? ` ${unit}` : ''}`}
+                    ? `После списания доступно: ${formatQuantity(Math.max(currentAvailable - quantity, 0), unit)}`
+                    : `После прихода доступно: ${formatQuantity(currentAvailable + quantity, unit)}`}
                 </Text>
               ) : null}
             </View>
@@ -438,15 +440,6 @@ export default function StockMovementFormScreen() {
           >
             {mutation.isPending ? 'Сохраняем…' : 'Сохранить'}
           </Button>
-          {!valid ? (
-            <Text
-              variant="caption"
-              color="textMuted"
-              style={{ textAlign: 'center' }}
-            >
-              Укажите количество и причину — кнопка активируется
-            </Text>
-          ) : null}
         </View>
       </View>
     </RoleScreen>

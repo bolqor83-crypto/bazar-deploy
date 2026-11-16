@@ -10,7 +10,7 @@ describe('Card', () => {
     const screen = await render(
       <Card>
         <Text>Содержимое карточки</Text>
-      </Card>
+      </Card>,
     );
     expect(screen.getByText('Содержимое карточки')).toBeTruthy();
   });
@@ -20,20 +20,23 @@ describe('Card', () => {
     const screen = await render(
       <Card onPress={onPress}>
         <Text>Тап</Text>
-      </Card>
+      </Card>,
     );
     await fireEvent.press(screen.getByRole('button'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['default', 'elevated', 'outlined'] as const)('вариант %s рендерится', async (variant) => {
-    const screen = await render(<Card variant={variant} />);
-    expect(screen.toJSON()).toBeTruthy();
-  });
+  it.each(['default', 'elevated', 'outlined'] as const)(
+    'вариант %s рендерится',
+    async (variant) => {
+      const screen = await render(<Card variant={variant} />);
+      expect(screen.toJSON()).toBeTruthy();
+    },
+  );
 
   it('outlined использует borderStrong', async () => {
     const screen = await render(<Card variant="outlined" />);
     const json = JSON.stringify(screen.toJSON());
-    expect(json).toContain('#C9D2C9');
+    expect(json).toContain('#666D66');
   });
 });

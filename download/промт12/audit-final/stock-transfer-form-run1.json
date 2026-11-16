@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":7,\"impression\":7,\"total\":65,\"notes\":\"Поле 'Причина' обрезается нижней панелью и не имеет собственных подсказок/вариантов; низ экрана перегружен кнопкой+подсказкой при пустом пространстве в карточках — плотность распределена неравномерно, цифры без явного tabular-nums в крупном размере.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852800,
+  "id": "2026111702131719c56533978c433b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111702131719c56533978c433b",
+  "usage": {
+    "completion_tokens": 126,
+    "completion_tokens_details": {
+      "reasoning_tokens": 125
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2223
+  }
+}

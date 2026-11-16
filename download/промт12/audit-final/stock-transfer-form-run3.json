@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":8,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":77,\"notes\":\"Поле количества пустое с нулём в центре — нет видимого плейсхолдера/подсказки ввода и клавиатура с tabular-nums неочевидна; textarea «Причина» обрезается нижним листом без явного скролла, а disabled-кнопка слишком бледная для перчаток/слабого света.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852806,
+  "id": "202611170213226a90c7b75ba5437a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611170213226a90c7b75ba5437a",
+  "usage": {
+    "completion_tokens": 136,
+    "completion_tokens_details": {
+      "reasoning_tokens": 135
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2233
+  }
+}

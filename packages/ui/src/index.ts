@@ -152,7 +152,7 @@ export type {
   StockLevel,
 } from './components/StockIndicator';
 
-export { StockRow, stockLevelOf } from './components/StockRow';
+export { StockRow, stockLevelOf, formatQuantity } from './components/StockRow';
 export type { StockRowProps } from './components/StockRow';
 
 export { MovementRow } from './components/MovementRow';

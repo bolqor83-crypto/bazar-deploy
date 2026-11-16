@@ -17,14 +17,17 @@ describe('Divider', () => {
     expect(json).toContain('"width":1');
   });
 
-  it.each(['none', 'sm', 'md', 'lg'] as const)('inset %s рендерится', async (inset) => {
-    const screen = await render(<Divider inset={inset} />);
-    expect(screen.toJSON()).toBeTruthy();
-  });
+  it.each(['none', 'sm', 'md', 'lg'] as const)(
+    'inset %s рендерится',
+    async (inset) => {
+      const screen = await render(<Divider inset={inset} />);
+      expect(screen.toJSON()).toBeTruthy();
+    },
+  );
 
   it('использует цвет border темы', async () => {
     const screen = await render(<Divider />);
     const json = JSON.stringify(screen.toJSON());
-    expect(json).toContain('#E4EAE4');
+    expect(json).toContain('#818880');
   });
 });

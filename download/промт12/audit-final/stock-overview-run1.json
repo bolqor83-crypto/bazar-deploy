@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":76,\"notes\":\"Количество товара справа конфликтует с названием при длинных строках (обрезка 'Виноград кишм…', '× 500 г' прижата к краю) — нужен min-width/перенос. Нет обработки пустого состояния поиска и активная вкладка 'Ещё' в таббаре дублирует склад; повторяющиеся имена 'Бананы' требуют различия (склад/партия).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852766,
+  "id": "2026111702124145804ed9684b4392",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111702124145804ed9684b4392",
+  "usage": {
+    "completion_tokens": 146,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3953
+  }
+}

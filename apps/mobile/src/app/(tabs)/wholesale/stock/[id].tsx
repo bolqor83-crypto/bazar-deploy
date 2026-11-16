@@ -25,6 +25,7 @@ import {
   MovementRow,
   Skeleton,
   Text,
+  formatQuantity,
   useTheme,
 } from '@bazar/ui';
 import type { LucideIcon } from 'lucide-react-native';
@@ -196,7 +197,8 @@ export default function StockMovementsScreen() {
         />
       </View>
 
-      {/* Четыре действия в один ряд. */}
+      {/* Четыре действия в один ряд: кнопки растут от контента,
+          длинная подпись «Перемещение» не обрезается на 360. */}
       <View
         style={{
           flexDirection: 'row',
@@ -339,7 +341,7 @@ function BalanceCell({
           color: emphasize ? colors.primaryText : colors.text,
         }}
       >
-        {`${value}${unit ? ` ${unit}` : ''}`}
+        {formatQuantity(value, unit)}
       </Text>
     </View>
   );
@@ -366,11 +368,14 @@ function ActionButton({
       testID={testID}
       style={({ pressed }) => [
         {
-          flex: 1,
+          flexGrow: 1,
+          flexBasis: 'auto',
+          minWidth: 64,
           height: 48,
           alignItems: 'center',
           justifyContent: 'center',
           gap: 3,
+          paddingHorizontal: 6,
           borderRadius: radii.sm,
           borderWidth: 1,
           borderColor: colors.border,

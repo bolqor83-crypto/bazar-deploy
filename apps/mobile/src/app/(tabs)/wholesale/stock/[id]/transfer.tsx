@@ -16,6 +16,7 @@ import {
   LocationSelector,
   Skeleton,
   Text,
+  formatQuantity,
   useTheme,
   useToast,
 } from '@bazar/ui';
@@ -93,7 +94,7 @@ export default function StockTransferFormScreen() {
     touched && quantityText !== '' && quantity === null
       ? 'Введите целое число больше нуля'
       : quantity !== null && quantity > availableFrom
-        ? `Недоступно: на складе-источнике только ${availableFrom}${unit ? ` ${unit}` : ''}`
+        ? `Недоступно: на складе-источнике только ${formatQuantity(availableFrom, unit)}`
         : null;
 
   const reasonError =
@@ -196,7 +197,7 @@ export default function StockTransferFormScreen() {
         <ScrollView
           contentContainerStyle={{
             padding: spacing.md,
-            paddingBottom: spacing.xl,
+            paddingBottom: spacing.xxl,
             gap: spacing.md,
           }}
         >
@@ -218,6 +219,7 @@ export default function StockTransferFormScreen() {
               value={effectiveFrom}
               onChange={setFromId}
               label="С какого склада"
+              showLabel
               allowAll={false}
             />
             <View style={{ gap: 2 }}>
@@ -225,7 +227,7 @@ export default function StockTransferFormScreen() {
                 Доступно на складе-источнике
               </Text>
               <Text variant="h3" mono style={{ color: colors.text }}>
-                {`${availableFrom}${unit ? ` ${unit}` : ''}`}
+                {formatQuantity(availableFrom, unit)}
               </Text>
             </View>
           </Card>
@@ -240,6 +242,7 @@ export default function StockTransferFormScreen() {
               value={effectiveTo}
               onChange={setToId}
               label="На какой склад"
+              showLabel
               allowAll={false}
             />
             <View style={{ gap: 2 }}>
@@ -247,7 +250,7 @@ export default function StockTransferFormScreen() {
                 Доступно на складе-получателе
               </Text>
               <Text variant="h3" mono style={{ color: colors.text }}>
-                {`${availableTo}${unit ? ` ${unit}` : ''}`}
+                {formatQuantity(availableTo, unit)}
               </Text>
             </View>
             {sameError ? (
@@ -274,12 +277,12 @@ export default function StockTransferFormScreen() {
               </Text>
             ) : (
               <Text variant="caption" color="textMuted">
-                {`Максимум: ${availableFrom}${unit ? ` ${unit}` : ''} — остаток склада-источника`}
+                {`Максимум: ${formatQuantity(availableFrom, unit)} — остаток склада-источника`}
               </Text>
             )}
             {quantity !== null && quantity > 0 && quantity <= availableFrom ? (
               <Text variant="bodySmall" mono>
-                {`После перемещения: ${availableFrom - quantity} → ${availableTo + quantity}${unit ? ` ${unit}` : ''}`}
+                {`После перемещения: ${formatQuantity(availableFrom - quantity, unit)} → ${formatQuantity(availableTo + quantity, unit)}`}
               </Text>
             ) : null}
           </View>

@@ -80,7 +80,10 @@ await page.emulateMedia({ colorScheme: 'light' });
 const firstRow = page.locator('[data-testid^="stock-row-"]').first();
 if (await firstRow.count()) {
   await firstRow.click();
-  await page.waitForTimeout(1500);
+  await page
+    .waitForSelector('[data-testid^="movement-"]', { timeout: 15_000 })
+    .catch(() => {});
+  await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(OUT_DIR, 'stock-detail-light.png') });
   const url = page.url();
   // Форма движения от этой же позиции.

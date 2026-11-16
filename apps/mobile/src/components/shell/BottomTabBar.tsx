@@ -18,7 +18,11 @@ export interface BottomTabBarProps {
   onChange: (key: string) => void;
 }
 
-export function BottomTabBar({ items, activeKey, onChange }: BottomTabBarProps) {
+export function BottomTabBar({
+  items,
+  activeKey,
+  onChange,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
 
@@ -55,10 +59,16 @@ export function BottomTabBar({ items, activeKey, onChange }: BottomTabBarProps) 
               hapticSelection();
               onChange(item.key);
             }}
-            style={({ pressed }) => [itemStyle, pressed ? { opacity: 0.7 } : null]}
+            style={({ pressed }) => [
+              itemStyle,
+              pressed ? { opacity: 0.7 } : null,
+            ]}
           >
             <View>
-              <Icon size={22} color={active ? colors.primary : colors.textSecondary} />
+              <Icon
+                size={22}
+                color={active ? colors.primary : colors.textSecondary}
+              />
               {typeof item.badge === 'number' && item.badge > 0 ? (
                 <View style={{ position: 'absolute', top: -4, right: -10 }}>
                   <Badge variant="danger" size="sm">
@@ -70,7 +80,17 @@ export function BottomTabBar({ items, activeKey, onChange }: BottomTabBarProps) 
             <Text
               variant="caption"
               color={active ? 'primaryText' : 'textSecondary'}
-              style={active ? { fontFamily: 'Inter_600SemiBold' } : undefined}
+              numberOfLines={1}
+              style={[
+                {
+                  // Компактные подписи: 5 вкладок с длинными именами
+                  // («Предложения») не накладываются на 360–390.
+                  fontSize: 12,
+                  lineHeight: 16,
+                  paddingHorizontal: 2,
+                },
+                active ? { fontFamily: 'Inter_600SemiBold' } : undefined,
+              ]}
             >
               {item.label}
             </Text>

@@ -42,8 +42,12 @@ export const colorsLight = {
   textMuted: '#6C716A',
   textDisabled: '#B8BDB6',
 
-  border: '#E4EAE4',
-  borderStrong: '#C9D2C9',
+  // Промт 12, Часть E: не-текстовой контраст рамок ≥ 3:1 (WCAG
+  // 1.4.11) — против surface (#FFFFFF), background (#FAF8F4) и
+  // surfaceMuted (#F2EFE9). Значения из промта (#C9D2C9/#3E4440)
+  // дают лишь 1.5–1.8:1 — см. ADR 0013.
+  border: '#818880',
+  borderStrong: '#666D66',
 
   overlay: 'rgba(0, 0, 0, 0.45)',
 } as const;
@@ -79,8 +83,10 @@ export const colorsDark = {
   textMuted: '#878E84',
   textDisabled: '#5A605A',
 
-  border: '#2A2E2B',
-  borderStrong: '#3E4440',
+  // Промт 12, Часть E: рамки светлее фона до ≥ 3:1 против surface
+  // (#1E211F), background (#161917) и surfaceMuted (#252925).
+  border: '#6E746F',
+  borderStrong: '#878E88',
 
   overlay: 'rgba(0, 0, 0, 0.65)',
 } as const;

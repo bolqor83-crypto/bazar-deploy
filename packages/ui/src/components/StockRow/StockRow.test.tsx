@@ -3,7 +3,7 @@
  * индикатор уровня, плейсхолдер фото, кнопка-строка.
  */
 import { render } from '@testing-library/react-native';
-import { StockRow } from './StockRow';
+import { StockRow, formatQuantity } from './StockRow';
 
 const BASE = {
   title: 'Огурцы гладкие',
@@ -65,8 +65,34 @@ describe('StockRow', () => {
     ).toBeTruthy();
   });
 
+  it('мультипакет («100 г») — число крупно, пак под ним', async () => {
+    const screen = await render(
+      <StockRow {...BASE} unit="100 г" physicalQty={166} reservedQty={0} />,
+    );
+    expect(screen.getByText('166')).toBeTruthy();
+    expect(screen.getByText('× 100 г')).toBeTruthy();
+  });
+
   it('без фото — плейсхолдер с подписью', async () => {
     const screen = await render(<StockRow {...BASE} imageUrl={null} />);
     expect(screen.getByLabelText('Фото не загружено')).toBeTruthy();
+  });
+});
+
+describe('formatQuantity', () => {
+  it('юнит «1 кг» сворачивается: 75 → «75 кг»', () => {
+    expect(formatQuantity(75, '1 кг')).toBe('75 кг');
+  });
+
+  it('юнит-мультипакет: 166 → «166 × 100 г»', () => {
+    expect(formatQuantity(166, '100 г')).toBe('166 × 100 г');
+  });
+
+  it('обычный юнит: 12 → «12 шт»', () => {
+    expect(formatQuantity(12, 'шт')).toBe('12 шт');
+  });
+
+  it('без юнита — просто число', () => {
+    expect(formatQuantity(7)).toBe('7');
   });
 });

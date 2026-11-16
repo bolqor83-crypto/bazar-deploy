@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":74,\"notes\":\"Пустота карточки позиции и поля причины сжимает плотность — при 4 утра лишний скролл; цифра «0» и «75 кг» без tabular-nums и контекстной единицы рядом со степпером. Нижняя CTA перекрыта подсказкой — неясно, доступна ли она в перчатках одной рукой.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852796,
+  "id": "20261117021313e6973f8325fe45d7",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117021313e6973f8325fe45d7",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2229
+  }
+}

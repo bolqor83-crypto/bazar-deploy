@@ -84,6 +84,9 @@ export function SearchBar({
           fontFamily: 'Inter_400Regular',
           paddingVertical: 0,
           paddingHorizontal: 0,
+          // Веб-фокус-рамка браузера (оранжевый аутлайн) запрещена:
+          // фокус показывает рамка контейнера.
+          outlineWidth: 0,
         }}
       />
       {value.length > 0 ? (

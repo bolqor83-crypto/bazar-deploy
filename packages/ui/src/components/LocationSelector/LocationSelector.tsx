@@ -27,6 +27,8 @@ export interface LocationSelectorProps {
   onChange: (value: string | null) => void;
   /** Подпись шита; по умолчанию «Торговая точка». */
   label?: string;
+  /** Показывать подпись над триггером (формы; списки — компактно). */
+  showLabel?: boolean;
   /** Подпись опции «все точки»; по умолчанию «Вся сеть»
    * (склад: «Все склады»). */
   allLabel?: string;
@@ -45,6 +47,7 @@ export function LocationSelector({
   allLabel = 'Вся сеть',
   allowAll = true,
   allCaption = 'Все точки организации',
+  showLabel = false,
   disabled = false,
 }: LocationSelectorProps) {
   const { colors, radii, spacing } = useTheme();
@@ -69,6 +72,15 @@ export function LocationSelector({
 
   return (
     <View>
+      {showLabel && label ? (
+        <Text
+          variant="bodySmall"
+          color="textSecondary"
+          style={{ marginBottom: spacing.sm }}
+        >
+          {label}
+        </Text>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${triggerLabel}. Изменить`}

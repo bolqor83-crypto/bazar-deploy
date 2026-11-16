@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":7,\"grid\":7,\"components\":8,\"icons\":6,\"states\":5,\"density\":8,\"a11y\":7,\"impression\":7,\"total\":71,\"notes\":\"Правая колонка с количеством обрезается у края (166 × 100 г, 114 × 500 г) — нет зарезервированной зоны, цифры прижаты к экрану; одинаковые иконки-коробки у всех позиций не несут информации, а единицы («мало/нет») не отличаются по контрасту в тёмной теме при 4 утра.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852769,
+  "id": "2026111702124618ed132f8c62407b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111702124618ed132f8c62407b",
+  "usage": {
+    "completion_tokens": 141,
+    "completion_tokens_details": {
+      "reasoning_tokens": 140
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3948
+  }
+}

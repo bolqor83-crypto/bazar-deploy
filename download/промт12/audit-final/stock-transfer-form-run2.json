@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":6,\"impression\":7,\"total\":65,\"notes\":\"Поле «Количество» и карточка причины обрезаются фиксированной CTA-панелью — ключевое поле ввода уходит под кнопку; цифры остатков и стелсы без tabular-nums и слабый контраст disabled-кнопки затрудняют работу в перчатках при слабом свете.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794852802,
+  "id": "20261117021320d7ee7fb51d664110",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261117021320d7ee7fb51d664110",
+  "usage": {
+    "completion_tokens": 123,
+    "completion_tokens_details": {
+      "reasoning_tokens": 122
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2220
+  }
+}

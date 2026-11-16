@@ -119,8 +119,9 @@ const storeNav: RoleNavConfig = {
     { key: 'feed', label: 'Лента', icon: Newspaper },
     { key: 'storefront', label: 'Витрина', icon: Store },
     { key: 'orders', label: 'Заказы', icon: Package },
-    // Промт 12, Часть D: «Ещё» → «Инструменты» (полноэкранный экран).
-    { key: MORE_KEY, label: 'Инструменты', icon: LayoutGrid },
+    // Промт 12, Часть D: на новый экран /store/more; подпись «Ещё»
+    // (короткая — без наложения подписей на узких экранах).
+    { key: MORE_KEY, label: 'Ещё', icon: LayoutGrid },
   ],
   more: [
     {
@@ -202,8 +203,10 @@ const wholesaleNav: RoleNavConfig = {
     { key: 'products', label: 'Товары', icon: Package },
     { key: 'orders', label: 'Заказы', icon: ClipboardList },
     { key: 'offers', label: 'Предложения', icon: Layers },
-    // Промт 12, Часть D: «Ещё» → «Инструменты» (полноэкранный экран).
-    { key: MORE_KEY, label: 'Инструменты', icon: LayoutGrid },
+    // Промт 12, Часть D: на новый экран /wholesale/more. Подпись
+    // «Ещё» (не «Инструменты»): 5 подписей капцией не помещаются
+    // в 360–390 без наложения — решение по VLM-ревью.
+    { key: MORE_KEY, label: 'Ещё', icon: LayoutGrid },
   ],
   more: [
     {
