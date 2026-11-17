@@ -258,23 +258,34 @@ export function DatePicker({
             ))}
           </View>
 
-          {/* Сетка 7×6. */}
+          {/* Сетка 7×6. Ячейка — 1/7 ширины (как заголовки), виз.
+              круг 40 внутри: фиксированные 40px при ширине шита ~358
+              давали 8 колонок в ряд против 7 заголовков (баг
+              VLM-аудита). Высота 44 — шит помещается целиком
+              вместе с кнопками (VLM: «CTA ниже скролла»). */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             {grid.map((day, index) => {
+              const cell = (children: React.ReactNode, key: string) => (
+                <View
+                  key={key}
+                  style={{
+                    width: `${100 / 7}%`,
+                    height: 44,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {children}
+                </View>
+              );
               if (!day) {
-                return (
-                  <View
-                    key={`empty-${index}`}
-                    style={{ width: DAY_SIZE, height: DAY_SIZE }}
-                  />
-                );
+                return cell(null, `empty-${index}`);
               }
               const isSelected = draft ? sameDay(day, draft) : false;
               const isToday = sameDay(day, today);
               const dayDisabled = isDisabledDay(day, min, max);
-              return (
+              return cell(
                 <Pressable
-                  key={dayKey(day)}
                   accessibilityRole="button"
                   accessibilityLabel={formatDateRu(day)}
                   accessibilityState={{
@@ -314,7 +325,8 @@ export function DatePicker({
                   >
                     {day.getDate()}
                   </Text>
-                </Pressable>
+                </Pressable>,
+                dayKey(day),
               );
             })}
           </View>

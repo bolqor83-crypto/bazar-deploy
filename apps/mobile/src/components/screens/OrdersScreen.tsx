@@ -19,13 +19,15 @@ import {
 } from '@bazar/ui';
 import { useOrders } from '../../hooks/useOrders';
 
-/** Фильтры-чипы: человекочитаемые группы статусов. */
+/** Фильтры-чипы: человекочитаемые группы статусов. Подписи
+ *  короткие (глагольная форма): длинные «Завершённые» обрезались
+ *  у края без признака скролла (VLM-аудит доработки Промта 12). */
 const STATUS_FILTERS = [
   { key: 'all', label: 'Все' },
   { key: 'pending', label: 'Ожидают' },
   { key: 'active', label: 'В работе' },
-  { key: 'completed', label: 'Завершённые' },
-  { key: 'cancelled', label: 'Отменённые' },
+  { key: 'completed', label: 'Завершён' },
+  { key: 'cancelled', label: 'Отменён' },
 ] as const;
 
 type FilterKey = (typeof STATUS_FILTERS)[number]['key'];
@@ -126,6 +128,11 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
                 status={order.status}
                 createdAt={order.createdAt}
                 itemCount={order.items.length}
+                items={order.items.map((item) => ({
+                  title: item.title,
+                  quantity: item.quantity,
+                  unit: item.unit,
+                }))}
                 totalKopecks={order.total}
                 sellerName={order.seller.name}
                 onPress={() =>

@@ -5,6 +5,8 @@
  * приклеены к полю (attached stepper), читается как одна группа.
  * Значение — TextInput по центру (tabular-nums, крупно). Лимит
  * максимума — блокировкой плюса; подсказки и ошибки — снаружи.
+ * Плейсхолдер «0» — приглушённым цветом: полужирный ноль в цвете
+ * поля читался как введённое значение (VLM-аудит).
  */
 import { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
@@ -103,7 +105,7 @@ export function QuantityField({
           onBlur={() => setFocused(false)}
           keyboardType="numeric"
           placeholder="0"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textDisabled}
           accessibilityLabel="Количество"
           style={{
             flex: 1,

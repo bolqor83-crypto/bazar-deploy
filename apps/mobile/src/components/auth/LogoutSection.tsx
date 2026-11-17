@@ -85,6 +85,9 @@ export function LogoutSection() {
     'Без организации';
   const locationName =
     locations.find((l) => l.id === active.locationId)?.name ?? null;
+  // Покупателю блок «Контекст работы» не нужен: роль дублирует шапку,
+  // организации нет (VLM-аудит: «верх перегружен дублями»).
+  const showContext = active.role !== 'customer';
 
   const confirmLogout = async () => {
     setBusy(true);
@@ -96,7 +99,7 @@ export function LogoutSection() {
   };
 
   return (
-    <View style={{ padding: spacing.lg, gap: spacing.lg }}>
+    <View style={{ gap: spacing.md }}>
       <Card>
         <View
           style={{
@@ -131,31 +134,33 @@ export function LogoutSection() {
 
         <Divider inset="sm" />
 
-        <View style={{ gap: spacing.xs }}>
-          <Text variant="caption" color="textMuted">
-            Контекст работы
-          </Text>
-          <ContextRow
-            icon={Briefcase}
-            label="Роль"
-            value={ROLE_LABEL[active.role]}
-          />
-          <ContextRow
-            icon={Building2}
-            label="Организация"
-            value={organizationName}
-          />
-          <ContextRow
-            icon={MapPin}
-            label="Точка"
-            value={locationName ?? 'Не выбрана'}
-          />
-        </View>
-        {locationName === null ? (
-          <Text variant="caption" color="textMuted">
-            Точка выбирается при переключении контекста — так заказы и доставки
-            привяжутся к нужному адресу.
-          </Text>
+        {showContext ? (
+          <View style={{ gap: spacing.xs, paddingTop: spacing.sm }}>
+            <Text variant="caption" color="textMuted">
+              Контекст работы
+            </Text>
+            <ContextRow
+              icon={Briefcase}
+              label="Роль"
+              value={ROLE_LABEL[active.role]}
+            />
+            <ContextRow
+              icon={Building2}
+              label="Организация"
+              value={organizationName}
+            />
+            <ContextRow
+              icon={MapPin}
+              label="Точка"
+              value={locationName ?? 'Не выбрана'}
+            />
+            {locationName === null ? (
+              <Text variant="caption" color="textMuted">
+                Точка выбирается при переключении контекста — так заказы и
+                доставки привяжутся к нужному адресу.
+              </Text>
+            ) : null}
+          </View>
         ) : null}
       </Card>
 
@@ -166,9 +171,12 @@ export function LogoutSection() {
         onPress={openSheet}
         testID="switch-context"
       >
-        Переключить контекст
+        {showContext ? 'Переключить контекст' : 'Сменить роль или организацию'}
       </Button>
 
+      {/* Выход — спокойная нейтральная строка: деструктивность
+          живёт в диалоге подтверждения, а терракота-текст читалась
+          как «красная кнопка» (VLM-аудит доработки Промта 12). */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Выйти из аккаунта"
@@ -184,8 +192,8 @@ export function LogoutSection() {
           borderRadius: radii.sm,
         }}
       >
-        <LogOut size={18} color={colors.danger} />
-        <Text variant="body" style={{ color: colors.danger }}>
+        <LogOut size={18} color={colors.textSecondary} />
+        <Text variant="body" color="textSecondary">
           Выйти из аккаунта
         </Text>
       </Pressable>

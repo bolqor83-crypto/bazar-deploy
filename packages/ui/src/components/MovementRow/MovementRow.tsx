@@ -68,6 +68,9 @@ export interface MovementRowProps {
   type: MovementType;
   /** Дельта доступности: +50 / −20. */
   quantityDelta: number;
+  /** Единица для дельты: «+50 кг» (VLM-аудит: без юнита
+   *  журнал терял информативность). */
+  unit?: string;
   /** Причина / комментарий. */
   reason: string;
   /** Склад, где прошло движение. */
@@ -94,6 +97,7 @@ function formatDateTime(iso: string): string {
 export function MovementRow({
   type,
   quantityDelta,
+  unit,
   reason,
   locationName,
   createdAt,
@@ -105,9 +109,14 @@ export function MovementRow({
   const { colors } = useTheme();
   const Icon = TYPE_ICONS[type];
   const positive = quantityDelta >= 0;
-  const deltaColor = positive ? colors.success : colors.danger;
+  // Приходные — success; расходные — нейтральный textSecondary:
+  // терракота/danger в numberL-весе читались как «красные цифры»
+  // и нарушали спокойствие палитры (VLM-аудит доработки Промта 12).
+  const deltaColor = positive ? colors.success : colors.textSecondary;
   // Типографский минус (U+2212) — как в PriceDisplay.
-  const delta = positive ? `+${quantityDelta}` : `−${Math.abs(quantityDelta)}`;
+  const delta = positive
+    ? `+${quantityDelta}${unit ? ` ${unit}` : ''}`
+    : `−${Math.abs(quantityDelta)}${unit ? ` ${unit}` : ''}`;
   const label = TYPE_LABELS[type];
 
   const body = (
@@ -159,11 +168,13 @@ export function MovementRow({
             </Text>
           ) : null}
         </View>
-        <Text variant="caption" color="textSecondary" numberOfLines={1}>
+        <Text variant="caption" color="textSecondary" numberOfLines={2}>
           {reason}
         </Text>
+        {/* Дата и время — caption: micro 12 в mono читалось как
+            «пропавшее» в тёмной теме (VLM-аудит доработки). */}
         <Text
-          variant="micro"
+          variant="caption"
           color="textMuted"
           mono
           numberOfLines={1}

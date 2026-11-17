@@ -4,6 +4,8 @@
  * С какого склада, на какой (не тот же), количество в пределах
  * доступного на складе-источнике, причина. Остатки обоих складов
  * показаны крупно; после сохранения — toast и возврат в журнал.
+ * Количество предзаполнено минимальной партией, кнопка — в потоке
+ * формы (доработка по VLM-аудиту Промта 12).
  */
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -68,7 +70,8 @@ export default function StockTransferFormScreen() {
 
   const [fromId, setFromId] = useState<string | null>(null);
   const [toId, setToId] = useState<string | null>(null);
-  const [quantityText, setQuantityText] = useState('');
+  /** null — ещё не трогали: показывается предзаполнение. */
+  const [quantityInput, setQuantityInput] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
 
@@ -86,6 +89,16 @@ export default function StockTransferFormScreen() {
 
   const availableFrom = balanceAt(effectiveFrom);
   const availableTo = balanceAt(effectiveTo);
+
+  // Предзаполнение минимальной партией в пределах доступного на
+  // источнике: герой-число видно сразу (VLM-аудит доработки).
+  // Вычисляется на рендере — без эффекта.
+  const prefillQuantity =
+    offer && availableFrom > 0
+      ? String(Math.min(Math.max(1, offer.minQuantity), availableFrom))
+      : '';
+  const quantityText = quantityInput ?? prefillQuantity;
+  const setQuantityText = setQuantityInput;
   const quantity = parsePositiveInt(quantityText);
 
   const sameLocation = effectiveFrom !== null && effectiveFrom === effectiveTo;
@@ -226,7 +239,9 @@ export default function StockTransferFormScreen() {
               <Text variant="caption" color="textSecondary">
                 Доступно на складе-источнике
               </Text>
-              <Text variant="h3" mono style={{ color: colors.text }}>
+              {/* numberL: ключевые цифры формы — крупный табличный
+                  акцент (VLM-аудит: «0/120 кг могли бы быть выделены»). */}
+              <Text variant="numberL" mono style={{ color: colors.text }}>
                 {formatQuantity(availableFrom, unit)}
               </Text>
             </View>
@@ -249,7 +264,7 @@ export default function StockTransferFormScreen() {
               <Text variant="caption" color="textSecondary">
                 Доступно на складе-получателе
               </Text>
-              <Text variant="h3" mono style={{ color: colors.text }}>
+              <Text variant="numberL" mono style={{ color: colors.text }}>
                 {formatQuantity(availableTo, unit)}
               </Text>
             </View>
@@ -297,38 +312,35 @@ export default function StockTransferFormScreen() {
             hint="Запись в журнал движений обоих складов"
             testID="transfer-reason"
           />
-        </ScrollView>
-
-        {/* Кнопка закреплена внизу формы — всегда в thumb zone. */}
-        <View
-          style={{
-            paddingHorizontal: spacing.md,
-            paddingTop: spacing.sm,
-            paddingBottom: spacing.md,
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-            backgroundColor: colors.background,
-            gap: spacing.xs,
-          }}
-        >
-          <Button
-            onPress={onSave}
-            disabled={!valid || mutation.isPending}
-            fullWidth
-            testID="transfer-save"
+          {/* Кнопка в потоке формы (VLM-аудит: без провала пустоты
+              и без «оборванной» причины у прижатого футера). */}
+          <View
+            style={{
+              paddingTop: spacing.sm,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              gap: spacing.xs,
+            }}
           >
-            {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
-          </Button>
-          {!valid ? (
-            <Text
-              variant="caption"
-              color="textMuted"
-              style={{ textAlign: 'center' }}
+            <Button
+              onPress={onSave}
+              disabled={!valid || mutation.isPending}
+              fullWidth
+              testID="transfer-save"
             >
-              Укажите количество и причину — кнопка активируется
-            </Text>
-          ) : null}
-        </View>
+              {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
+            </Button>
+            {!valid ? (
+              <Text
+                variant="caption"
+                color="textSecondary"
+                style={{ textAlign: 'center' }}
+              >
+                Укажите причину — кнопка активируется
+              </Text>
+            ) : null}
+          </View>
+        </ScrollView>
       </View>
     </RoleScreen>
   );

@@ -1,6 +1,6 @@
 /**
  * Тесты OrderCard (Промт 9, Часть E): номер, дата, статус,
- * превью позиций со «+N», итог, нажатие.
+ * сводка состава заказа (Промт 12, доработка), итог, нажатие.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 import { NARROW_NBSP } from '../PriceDisplay';
@@ -38,11 +38,25 @@ describe('OrderCard', () => {
     expect(screen.getByText('Отменён')).toBeTruthy();
   });
 
-  it('превью: 3 заглушки + бейдж «+2» при 5 позициях', async () => {
+  it('сводка состава: две позиции с количеством + «ещё N»', async () => {
+    const screen = await render(
+      <OrderCard
+        {...PROPS}
+        items={[
+          { title: 'Огурцы гладкие', quantity: 12, unit: 'кг' },
+          { title: 'Помидоры розовые', quantity: 5, unit: 'кг' },
+          { title: 'Зелень', quantity: 3, unit: 'шт' },
+        ]}
+      />,
+    );
+    expect(
+      screen.getByText('Огурцы гладкие 12 кг · Помидоры розовые 5 кг · ещё 3'),
+    ).toBeTruthy();
+  });
+
+  it('без состава — количество позиций текстом', async () => {
     const screen = await render(<OrderCard {...PROPS} />);
-    expect(screen.getByLabelText('Позиция 1')).toBeTruthy();
-    expect(screen.getByLabelText('Позиция 3')).toBeTruthy();
-    expect(screen.getByText('+2')).toBeTruthy();
+    expect(screen.getByText('5 позиций')).toBeTruthy();
   });
 
   it('нажатие вызывает onPress с a11y-подписью', async () => {

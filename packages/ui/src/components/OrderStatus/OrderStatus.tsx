@@ -39,11 +39,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
   disputed: 'Спор',
 };
 
-/** Статус → вариант Badge (янтарь и терракота, красного нет). */
+/** Статус → вариант Badge (янтарь и терракота, красного нет).
+ *  «Подтверждён» — success: info-синий выбивался из зелёной
+ *  палитры приложения (VLM-аудит доработки Промта 12). */
 const ORDER_STATUS_BADGE: Record<OrderStatusType, BadgeVariant> = {
   draft: 'neutral',
-  new: 'info',
-  confirmed: 'info',
+  new: 'warning',
+  confirmed: 'success',
   assembling: 'warning',
   ready: 'success',
   in_delivery: 'info',

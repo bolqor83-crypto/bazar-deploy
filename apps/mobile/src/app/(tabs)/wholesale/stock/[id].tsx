@@ -254,15 +254,16 @@ export default function StockMovementsScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => (
-          <View style={{ paddingHorizontal: spacing.md }}>
+          <View style={{ paddingHorizontal: spacing.lg }}>
             <Divider />
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={{ paddingHorizontal: spacing.md }}>
+          <View style={{ paddingHorizontal: spacing.lg }}>
             <MovementRow
               type={item.type as MovementType}
               quantityDelta={item.quantityDelta}
+              unit={unit}
               reason={item.reason}
               locationName={item.locationName}
               createdAt={item.createdAt}
@@ -298,6 +299,16 @@ export default function StockMovementsScreen() {
               style={{ textAlign: 'center', paddingVertical: spacing.sm }}
             >
               Прокрутите вниз — подгружаем ещё
+            </Text>
+          ) : movements.length > 0 ? (
+            /* Явный финализатор: после последней записи не должно
+               читаться «обрыв» (VLM-аудит доработки). */
+            <Text
+              variant="caption"
+              color="textMuted"
+              style={{ textAlign: 'center', paddingVertical: spacing.sm }}
+            >
+              Это все движения позиции
             </Text>
           ) : undefined
         }

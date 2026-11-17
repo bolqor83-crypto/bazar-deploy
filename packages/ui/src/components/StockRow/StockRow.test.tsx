@@ -17,9 +17,10 @@ const BASE = {
 };
 
 describe('StockRow', () => {
-  it('показывает остаток крупно с единицей и раскладку резерва', async () => {
+  it('показывает остаток крупно, юнит отдельно мелко, раскладку резерва', async () => {
     const screen = await render(<StockRow {...BASE} />);
-    expect(screen.getByText('120 кг')).toBeTruthy();
+    expect(screen.getByText('120')).toBeTruthy();
+    expect(screen.getByText('кг')).toBeTruthy();
     expect(screen.getByText('Резерв: 5 · Доступно: 115')).toBeTruthy();
     // formatPrice(4500) → «45 ₽» (узкий пробел U+202F).
     expect(screen.getByText(/₽\/кг/)).toBeTruthy();
@@ -32,7 +33,8 @@ describe('StockRow', () => {
     // Доступно = физическому: дубль числа под остатком не нужен.
     expect(screen.queryByText(/Доступно/)).toBeNull();
     expect(screen.queryByText(/Резерв/)).toBeNull();
-    expect(screen.getByText('120 кг')).toBeTruthy();
+    expect(screen.getByText('120')).toBeTruthy();
+    expect(screen.getByText('кг')).toBeTruthy();
   });
 
   it('уровень «мало» когда доступно меньше двух минимальных партий', async () => {

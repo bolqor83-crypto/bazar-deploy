@@ -1,7 +1,7 @@
 /**
  * SearchBar — поле поиска каталога.
  *
- * Высота 48 (рамка вместо тени), compact — 36 для строки фильтров
+ * Высота 48 (рамка вместо тени), compact — 40 для строки фильтров
  * рабочих списков (Промт 12, Часть A). Иконка-лупа слева, кнопка
  * очистки появляется только с текстом (цель ≥48×48 через hitSlop).
  * Ввод отправляется по кнопке «Готово» на клавиатуре.
@@ -45,7 +45,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const { colors, radii, spacing } = useTheme();
 
-  const height = compact ? 36 : 48;
+  const height = compact ? 40 : 48;
 
   return (
     <View

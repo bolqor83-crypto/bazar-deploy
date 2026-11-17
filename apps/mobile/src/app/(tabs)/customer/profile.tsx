@@ -7,7 +7,7 @@
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell, ChevronRight } from 'lucide-react-native';
-import { Card, Text, useTheme } from '@bazar/ui';
+import { Badge, Card, Text, useTheme } from '@bazar/ui';
 import { LogoutSection } from '../../../components/auth/LogoutSection';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useUnreadNotificationsCount } from '../../../hooks/useNotifications';
@@ -44,9 +44,9 @@ export default function ProfileScreen() {
               Уведомления
             </Text>
             {unread > 0 ? (
-              <Text variant="bodySmall" mono style={{ color: colors.primary }}>
-                {`${unread}`}
-              </Text>
+              <Badge variant="info" size="sm">
+                {unread > 99 ? '99+' : String(unread)}
+              </Badge>
             ) : null}
             <ChevronRight size={20} color={colors.textSecondary} />
           </Pressable>

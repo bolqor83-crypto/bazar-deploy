@@ -177,17 +177,17 @@ export function useStockOverview(locationId: string | null) {
   const rows = joinBalancesWithOffers(balances, offers);
 
   const totals: StockOverviewTotals = {
-    positions: rows.filter((r) => r.physicalQty > 0 || r.reservedQty > 0)
-      .length,
+    // Сводка согласована со строками списка и точками-индикаторами
+    // (VLM-аудит доработки): «Позиций» — все активные предложения,
+    // «Нет» — любой нулевой доступный остаток, а не только «весь в резерве».
+    positions: rows.length,
     units: rows.reduce((sum, r) => sum + r.physicalQty, 0),
     low: rows.filter(
       (r) =>
         r.availableQty > 0 &&
         stockLevelOf(r.availableQty, r.offer.minQuantity) === 'low',
     ).length,
-    out: rows.filter(
-      (r) => r.availableQty <= 0 && (r.physicalQty > 0 || r.reservedQty > 0),
-    ).length,
+    out: rows.filter((r) => r.availableQty <= 0).length,
   };
 
   return {

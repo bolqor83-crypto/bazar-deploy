@@ -30,7 +30,10 @@ export function RoleShell({
     <View style={{ flex: 1 }}>
       <AppHeader title={title} />
 
-      <View style={{ flex: 1, justifyContent: 'center' }}>{children}</View>
+      {/* Контент от верха: центрирование коротких экранов давало
+          «огромные пустоты сверху и снизу» (VLM-аудит доработки
+          Промта 12) — рабочий инструмент начинается от шапки. */}
+      <View style={{ flex: 1, justifyContent: 'flex-start' }}>{children}</View>
 
       <BottomTabBar
         items={tabItems}

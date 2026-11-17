@@ -21,7 +21,7 @@ export interface FilterChipProps {
   /** Тег со крестиком: onPress убирает фильтр. */
   onRemove?: () => void;
   onPress?: () => void;
-  /** sm (36) — фильтры рабочих списков; md (40) — каталог. */
+  /** sm (44) — фильтры рабочих списков; md (44) — каталог. */
   size?: 'sm' | 'md';
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -55,10 +55,10 @@ export function FilterChip({
   const content = (
     <View
       style={{
-        height: size === 'sm' ? 36 : 40,
+        height: 44,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: size === 'sm' ? 4 : spacing.xs + 2,
+        gap: size === 'sm' ? 6 : spacing.xs + 2,
         paddingHorizontal: size === 'sm' ? spacing.md - 4 : spacing.md,
         borderRadius: radii.pill,
         backgroundColor: background,

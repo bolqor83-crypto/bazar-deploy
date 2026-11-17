@@ -12,7 +12,9 @@ describe('ProductCard', () => {
     );
     expect(screen.getByText('Молоко 3,2%')).toBeTruthy();
     expect(screen.getByText(`89${NARROW_NBSP}₽`)).toBeTruthy();
-    expect(screen.getByText('1 л')).toBeTruthy();
+    // Юнит — в строке цены «/ 1 л» (VLM-аудит: отдельная строка
+    // юнита над ценой дублировала информацию).
+    expect(screen.getByText('/ 1 л')).toBeTruthy();
   });
 
   it('наличие отображается индикатором', async () => {

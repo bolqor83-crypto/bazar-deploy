@@ -25,7 +25,9 @@ import {
   SearchBar,
   Skeleton,
   SortPicker,
+  Text,
   useTheme,
+  useToast,
   type SortValue,
 } from '@bazar/ui';
 import {
@@ -43,6 +45,7 @@ import {
   fetchCategories,
   fetchProducts,
 } from '../../../services/api/catalogApi';
+import { useAddToCart } from '../../../hooks/useCart';
 
 /** slug категории → иконка Lucide (fallback — Package). */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -55,6 +58,17 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 const PAGE_SIZE = 10;
+
+/** Русская плюрализация для счётчика результатов. */
+function pluralTovarov(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'товар';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return 'товара';
+  }
+  return 'товаров';
+}
 
 /** Скелетон сетки на время первой загрузки. */
 function CatalogSkeleton() {
@@ -82,6 +96,8 @@ function CatalogSkeleton() {
 function CatalogBody() {
   const router = useRouter();
   const { colors, spacing } = useTheme();
+  const toast = useToast();
+  const addToCartMutation = useAddToCart();
 
   // Ввод поиска применяется с дебаунсом; onSubmit — сразу.
   const [searchInput, setSearchInput] = useState('');
@@ -152,6 +168,32 @@ function CatalogBody() {
     router.push(`/customer/product/${id}`);
   };
 
+  /** Быстрое добавление из карточки — минимальной партией
+   *  лучшего предложения (Промт 12: VLM-аудит — «карточка пассивна»). */
+  const quickAdd = (item: CatalogProduct) => {
+    const offer = item.bestOffer;
+    if (!offer || offer.stock <= 0) {
+      return;
+    }
+    addToCartMutation.mutate(
+      { offerId: offer.id, quantity: offer.minQuantity },
+      {
+        onSuccess: () => {
+          toast.show({
+            variant: 'success',
+            message: `${item.name} — в корзине (${offer.minQuantity} ${item.unit})`,
+          });
+        },
+        onError: () => {
+          toast.show({
+            variant: 'info',
+            message: 'Не удалось добавить: проверьте наличие и партию',
+          });
+        },
+      },
+    );
+  };
+
   const header = (
     <View style={{ padding: spacing.lg, gap: spacing.md }}>
       <SearchBar
@@ -209,6 +251,16 @@ function CatalogBody() {
           onMaxChange={setPriceMax}
         />
       ) : null}
+
+      {/* Счётчик результатов (VLM-аудит: «нет счётчика результатов»). */}
+      {productsQuery.data ? (
+        <Text variant="caption" color="textSecondary">
+          {`${productsQuery.data.pages[0]?.total ?? products.length} ${pluralTovarov(
+            productsQuery.data.pages[0]?.total ?? products.length,
+          )}`}
+          {productsQuery.hasNextPage ? ' · прокрутите за остальными' : ''}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -254,6 +306,11 @@ function CatalogBody() {
           toneIndex={index}
           testID="catalog-product"
           onPress={() => openProduct(item.id)}
+          onAddToCart={
+            item.bestOffer && item.bestOffer.stock > 0
+              ? () => quickAdd(item)
+              : undefined
+          }
           style={{ flex: 1 }}
         />
       )}

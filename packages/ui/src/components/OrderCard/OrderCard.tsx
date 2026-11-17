@@ -1,13 +1,14 @@
 /**
  * OrderCard — карточка заказа в списке (Промт 9, Часть E).
  *
- * Номер табличными цифрами, дата, статус, превью позиций
- * (заглушки-тона до настоящих фото) и итог. Только презентация.
+ * Номер табличными цифрами, дата, статус, состав заказа текстом
+ * (Промт 12, доработка по VLM-аудиту: бежевые квадраты-заглушки
+ * читались как «незавершённый» дизайн) и итог. Только презентация.
  */
 import { Pressable, View } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import type { OrderStatus as ApiOrderStatus } from '@bazar/types';
 import { useTheme } from '../../theme';
-import { placeholderTone } from '../../tokens/placeholder';
 import { formatPrice } from '../PriceDisplay';
 import { OrderStatus } from '../OrderStatus';
 import { Text } from '../Text';
@@ -51,8 +52,10 @@ export interface OrderCardProps {
   number: string;
   status: ApiOrderStatus;
   createdAt: string;
-  /** Число позиций (для превью «+N»). */
+  /** Число позиций (для «ещё N» в сводке состава). */
   itemCount: number;
+  /** Состав заказа для сводки: «Огурцы 12 кг · Помидоры 5 кг». */
+  items?: { title: string; quantity: number; unit: string }[];
   /** Итог заказа, копейки. */
   totalKopecks: number;
   /** Продавец (вид покупателя). */
@@ -70,6 +73,7 @@ export function OrderCard({
   status,
   createdAt,
   itemCount,
+  items,
   totalKopecks,
   sellerName,
   partyName,
@@ -77,8 +81,22 @@ export function OrderCard({
   testID,
 }: OrderCardProps) {
   const { colors, spacing, radii } = useTheme();
-  const previewCount = Math.min(3, itemCount);
   const party = partyName ?? sellerName;
+
+  // Сводка состава: до двух позиций с количеством, дальше «ещё N».
+  const summaryParts = (items ?? [])
+    .slice(0, 2)
+    .map((item) => `${item.title} ${item.quantity} ${item.unit}`.trim());
+  if (summaryParts.length > 0) {
+    const restCount = itemCount - summaryParts.length;
+    if (restCount > 0) {
+      summaryParts.push(`ещё ${restCount}`);
+    }
+  }
+  const summary =
+    summaryParts.length > 0
+      ? summaryParts.join(' · ')
+      : `${itemCount} ${itemCount === 1 ? 'позиция' : 'позиций'}`;
 
   return (
     <Pressable
@@ -116,49 +134,30 @@ export function OrderCard({
         <OrderStatus status={STATUS_MAP[status]} />
       </View>
 
+      {/* Состав заказа текстом + итог: квадраты-заглушки без
+          подписей читались как пустые (VLM-аудит доработки). */}
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
           gap: spacing.sm,
         }}
       >
-        {/* Превью позиций: заглушки-тона + «+N». */}
-        <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-          {Array.from({ length: previewCount }, (_, i) => (
-            <View
-              key={i}
-              accessibilityLabel={`Позиция ${i + 1}`}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: radii.sm,
-                backgroundColor: placeholderTone(i),
-              }}
-            />
-          ))}
-          {itemCount > previewCount ? (
-            <View
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: radii.sm,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text variant="caption" color="textSecondary" mono>
-                +{itemCount - previewCount}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        <Text
+          variant="bodySmall"
+          color="textSecondary"
+          numberOfLines={2}
+          style={{ flexShrink: 1 }}
+        >
+          {summary}
+        </Text>
         <Text variant="bodyStrong" mono>
           {formatPrice(totalKopecks)}
         </Text>
+        {/* Шеврон — аффорданс перехода (VLM-аудит: «карточки без
+            первичного действия»). */}
+        <ChevronRight size={18} color={colors.textMuted} />
       </View>
     </Pressable>
   );

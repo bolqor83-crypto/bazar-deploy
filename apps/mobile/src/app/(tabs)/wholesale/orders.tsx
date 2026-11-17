@@ -147,6 +147,11 @@ export default function SellerOrdersScreen() {
             status={order.status}
             createdAt={order.createdAt}
             itemCount={order.items.length}
+            items={order.items.map((item) => ({
+              title: item.title,
+              quantity: item.quantity,
+              unit: item.unit,
+            }))}
             totalKopecks={order.total}
             partyName={order.buyer.name}
             onPress={() => router.push(`/wholesale/orders/${order.id}`)}

@@ -65,6 +65,38 @@ await page.addInitScript(() => {
 await loginAsDemo(page);
 await switchRole(page, 'Оптовик');
 
+// Детали позиции «Голден склад»: у неё детерминированные 5 движений
+// в журнале — кадр деталей не «пустеет» после первой записи
+// (VLM-аудит доработки).
+async function goldenOfferId() {
+  const auth = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone: '+79001234567',
+      password: 'qwerty123',
+    }),
+  }).then((r) => r.json());
+  const me = await fetch(`${BASE_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${auth.accessToken}` },
+  }).then((r) => r.json());
+  const org = me.memberships.find(
+    (m) => String(m.role).toUpperCase() === 'WHOLESALE_SELLER',
+  )?.organizationId;
+  const offers = await fetch(
+    `${BASE_URL}/api/seller/offers?search=${encodeURIComponent('Голден')}&pageSize=5`,
+    {
+      headers: {
+        Authorization: `Bearer ${auth.accessToken}`,
+        'X-Organization-Id': org,
+      },
+    },
+  ).then((r) => r.json());
+  return offers.items[0]?.id ?? null;
+}
+
+const detailOfferId = (await goldenOfferId()) ?? null;
+
 // Склад: обзор, light и dark.
 await page.emulateMedia({ colorScheme: 'light' });
 await page.goto(`${BASE_URL}/wholesale/stock`, { waitUntil: 'networkidle' });
@@ -75,26 +107,25 @@ await page.emulateMedia({ colorScheme: 'dark' });
 await page.waitForTimeout(500);
 await page.screenshot({ path: path.join(OUT_DIR, 'stock-overview-dark.png') });
 
-// Детали первой позиции.
+// Детали позиции (Голден — полный журнал) и форма движения от неё.
 await page.emulateMedia({ colorScheme: 'light' });
-const firstRow = page.locator('[data-testid^="stock-row-"]').first();
-if (await firstRow.count()) {
-  await firstRow.click();
-  await page
-    .waitForSelector('[data-testid^="movement-"]', { timeout: 15_000 })
-    .catch(() => {});
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: path.join(OUT_DIR, 'stock-detail-light.png') });
-  const url = page.url();
-  // Форма движения от этой же позиции.
-  await page.goto(`${url}/movement?type=RECEIPT`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1500);
-  await page.screenshot({
-    path: path.join(OUT_DIR, 'stock-movement-light.png'),
-  });
-} else {
-  console.log('строки не найдены — пустой склад?');
-}
+const detailUrl = detailOfferId
+  ? `${BASE_URL}/wholesale/stock/${detailOfferId}`
+  : page.url();
+await page.goto(detailUrl, { waitUntil: 'networkidle' });
+await page
+  .waitForSelector('[data-testid^="movement-"]', { timeout: 15_000 })
+  .catch(() => {});
+await page.waitForTimeout(800);
+await page.screenshot({ path: path.join(OUT_DIR, 'stock-detail-light.png') });
+// Форма движения от этой же позиции.
+await page.goto(`${detailUrl}/movement?type=RECEIPT`, {
+  waitUntil: 'networkidle',
+});
+await page.waitForTimeout(1500);
+await page.screenshot({
+  path: path.join(OUT_DIR, 'stock-movement-light.png'),
+});
 
 await browser.close();
 console.log('снято в', OUT_DIR);

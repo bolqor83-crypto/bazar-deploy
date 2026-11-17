@@ -278,9 +278,10 @@ describe('StockScreen (обзор)', () => {
     // Сводка-панель и чипы фильтра: «Мало»/«Нет» встречаются дважды.
     expect(screen.getAllByText('Мало').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Нет').length).toBeGreaterThan(0);
-    // Позиций 2 (offer-1, offer-2), мало 1 (offer-2) — ждём данные.
+    // Позиций 3 — все активные предложения (offer-3 без остатка тоже
+    // в списке; VLM-аудит: сводка обязана сходиться со строками).
     await waitFor(() => {
-      expect(screen.getByLabelText(/позиций 2/i)).toBeTruthy();
+      expect(screen.getByLabelText(/позиций 3/i)).toBeTruthy();
     });
   });
 
@@ -335,7 +336,10 @@ describe('StockScreen (обзор)', () => {
     );
     const { screen } = await renderWithQuery(<StockScreen />);
     expect(await screen.findAllByText('Огурцы гладкие')).toBeTruthy();
-    expect(screen.getAllByText('120 кг').length).toBeGreaterThan(0);
+    // Число и юнит — раздельные узлы (VLM-аудит: слитное «120 кг»
+    // в одном кегле numberL читалось как одно слово).
+    expect(screen.getAllByText('120').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('кг').length).toBeGreaterThan(0);
     expect(
       screen.getAllByText('Резерв: 5 · Доступно: 115').length,
     ).toBeGreaterThan(0);
@@ -492,9 +496,10 @@ describe('StockDetailScreen (журнал)', () => {
     const { screen } = await renderWithQuery(<StockDetailScreen />);
     expect(await screen.findAllByText('Приход')).toBeTruthy();
     expect(screen.getByText('Закупка у фермера')).toBeTruthy();
-    expect(screen.getByText('+50')).toBeTruthy();
+    // Дельта с юнитом (VLM-аудит: без юнита журнал терял информативность).
+    expect(screen.getByText('+50 кг')).toBeTruthy();
     expect(screen.getByText('Резерв заказа')).toBeTruthy();
-    expect(screen.getByText('−20')).toBeTruthy();
+    expect(screen.getByText('−20 кг')).toBeTruthy();
     // Карточка остатка: доступно 115.
     expect(screen.getByText('115 кг')).toBeTruthy();
     // Движение с заказом — кнопка.
@@ -557,7 +562,7 @@ describe('MovementFormScreen (форма движения)', () => {
 
   it('кнопка сохранения выключена до валидности (количество + причина)', async () => {
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     const save = screen.getByTestId('movement-save');
     expect(save.props.accessibilityState?.disabled).toBe(true);
   });
@@ -582,7 +587,7 @@ describe('MovementFormScreen (форма движения)', () => {
       },
     });
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     await fireEvent.changeText(screen.getByTestId('movement-quantity'), '50');
     await fireEvent.changeText(
       screen.getByTestId('movement-reason'),
@@ -604,7 +609,7 @@ describe('MovementFormScreen (форма движения)', () => {
 
   it('чипы типа: переключение на списание меняет заголовок и валидацию', async () => {
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     expect(
       screen.getByTestId('movement-kind-receipt').props.accessibilityState
         .selected,
@@ -624,7 +629,7 @@ describe('MovementFormScreen (форма движения)', () => {
 
   it('чип «Перемещение» ведёт на форму transfer', async () => {
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     await fireEvent.press(screen.getByTestId('movement-kind-transfer'));
     expect(routerMock.router.replace).toHaveBeenCalledWith(
       '/wholesale/stock/offer-1/transfer',
@@ -634,7 +639,7 @@ describe('MovementFormScreen (форма движения)', () => {
   it('списание больше доступного — inline ошибка, submit заблокирован', async () => {
     mockParams.type = 'WRITE_OFF';
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     await fireEvent.changeText(screen.getByTestId('movement-quantity'), '999');
     expect(
       await screen.findAllByText('Недоступно: на складе только 115 кг'),
@@ -650,7 +655,7 @@ describe('MovementFormScreen (форма движения)', () => {
       totals: {},
     });
     const { screen } = await renderWithQuery(<MovementFormScreen />);
-    await screen.findAllByText('Доступно сейчас');
+    await screen.findAllByText(/Доступно:/);
     // Быстрые причины списания — чипы «порча», «потеря», «инвентаризация».
     expect(screen.getByTestId('writeoff-reason-порча')).toBeTruthy();
     await fireEvent.changeText(screen.getByTestId('movement-quantity'), '10');

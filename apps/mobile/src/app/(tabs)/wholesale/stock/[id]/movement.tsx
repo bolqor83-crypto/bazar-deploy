@@ -7,7 +7,7 @@
  * (multiline, 3 строки; для списания — быстрые «порча»/«потеря»/
  * «инвентаризация»). Корректировка вводит новый остаток — дельту
  * считает система, минус допустим (недостача). Кнопка «Сохранить» —
- * sticky внизу, primary lg; активна только на валидной форме.
+ * primary lg в потоке формы; активна только на валидной форме.
  */
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -99,7 +99,8 @@ export default function StockMovementFormScreen() {
   );
 
   const [locationId, setLocationId] = useState<string | null>(null);
-  const [quantityText, setQuantityText] = useState('');
+  /** null — ещё не трогали: показывается предзаполнение. */
+  const [quantityInput, setQuantityInput] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
 
@@ -109,6 +110,21 @@ export default function StockMovementFormScreen() {
   const currentAvailable =
     balancesQuery.data?.items.find((b) => b.locationId === effectiveLocationId)
       ?.availableQty ?? 0;
+
+  // Предзаполнение (кроме коррекции — там вводится новый остаток):
+  // приход — минимальная партия, списание — не больше доступного.
+  // Герой-число формы видно сразу, поле не читается как «пустое»
+  // (VLM-аудит доработки). Вычисляется на рендере — без эффекта.
+  const prefillQuantity =
+    offer && kind !== 'ADJUSTMENT'
+      ? kind === 'WRITE_OFF'
+        ? currentAvailable > 0
+          ? String(Math.min(Math.max(1, offer.minQuantity), currentAvailable))
+          : ''
+        : String(Math.max(1, offer.minQuantity))
+      : '';
+  const quantityText = quantityInput ?? prefillQuantity;
+  const setQuantityText = setQuantityInput;
 
   const quantity = parseIntStrict(quantityText);
 
@@ -234,7 +250,7 @@ export default function StockMovementFormScreen() {
           contentContainerStyle={{
             padding: spacing.md,
             paddingBottom: spacing.xl,
-            gap: spacing.md,
+            gap: spacing.sm,
           }}
         >
           {/* Выбор типа движения — 4 чипа в ряд. */}
@@ -258,12 +274,20 @@ export default function StockMovementFormScreen() {
           </View>
 
           <Card style={{ padding: spacing.md, gap: spacing.sm }}>
-            <View style={{ gap: 2, paddingBottom: spacing.xs }}>
-              <Text variant="caption" color="textSecondary">
-                Позиция
-              </Text>
-              <Text variant="bodyStrong" numberOfLines={2}>
+            {/* Позиция и доступный остаток — одна строка (VLM-аудит:
+                трёхуровневая карточка съедала вертикаль без пользы). */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'baseline',
+                gap: spacing.sm,
+              }}
+            >
+              <Text variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
                 {offer.product.name}
+              </Text>
+              <Text variant="caption" color="textSecondary">
+                {`Доступно: ${formatQuantity(currentAvailable, unit)}`}
               </Text>
             </View>
             <LocationSelector
@@ -279,41 +303,33 @@ export default function StockMovementFormScreen() {
               showLabel
               disabled={locationsQuery.isLoading}
             />
-            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-              <View style={{ flex: 1, gap: 2 }}>
+            {kind === 'ADJUSTMENT' && adjustmentDelta !== null ? (
+              <View
+                style={{ flexDirection: 'row', justifyContent: 'flex-end' }}
+              >
                 <Text variant="caption" color="textSecondary">
-                  Доступно сейчас
+                  {`Дельта после коррекции: `}
                 </Text>
-                <Text variant="bodyStrong" mono>
-                  {formatQuantity(currentAvailable, unit)}
+                <Text
+                  variant="caption"
+                  mono
+                  style={{
+                    color:
+                      adjustmentDelta > 0
+                        ? colors.success
+                        : adjustmentDelta < 0
+                          ? colors.danger
+                          : colors.text,
+                  }}
+                >
+                  {adjustmentDelta > 0
+                    ? `+${adjustmentDelta}`
+                    : adjustmentDelta < 0
+                      ? `−${Math.abs(adjustmentDelta)}`
+                      : '0'}
                 </Text>
               </View>
-              {kind === 'ADJUSTMENT' && adjustmentDelta !== null ? (
-                <View style={{ flex: 1, gap: 2, alignItems: 'flex-end' }}>
-                  <Text variant="caption" color="textSecondary">
-                    Дельта
-                  </Text>
-                  <Text
-                    variant="bodyStrong"
-                    mono
-                    style={{
-                      color:
-                        adjustmentDelta > 0
-                          ? colors.success
-                          : adjustmentDelta < 0
-                            ? colors.danger
-                            : colors.text,
-                    }}
-                  >
-                    {adjustmentDelta > 0
-                      ? `+${adjustmentDelta}`
-                      : adjustmentDelta < 0
-                        ? `−${Math.abs(adjustmentDelta)}`
-                        : '0'}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
+            ) : null}
           </Card>
 
           {kind === 'ADJUSTMENT' ? (
@@ -377,7 +393,7 @@ export default function StockMovementFormScreen() {
                 value={reason}
                 onChangeText={setReason}
                 multiline
-                numberOfLines={3}
+                numberOfLines={2}
                 placeholder="порча при перевозке, потеря на точке…"
                 error={reasonError}
                 testID="movement-reason"
@@ -406,7 +422,7 @@ export default function StockMovementFormScreen() {
               value={reason}
               onChangeText={setReason}
               multiline
-              numberOfLines={3}
+              numberOfLines={2}
               placeholder={
                 kind === 'RECEIPT'
                   ? 'закупка у фермера, возврат с точки…'
@@ -417,30 +433,39 @@ export default function StockMovementFormScreen() {
               testID="movement-reason"
             />
           )}
-        </ScrollView>
 
-        {/* Кнопка закреплена внизу формы — всегда в thumb zone. */}
-        <View
-          style={{
-            paddingHorizontal: spacing.md,
-            paddingTop: spacing.sm,
-            paddingBottom: spacing.md,
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-            backgroundColor: colors.background,
-            gap: spacing.xs,
-          }}
-        >
-          <Button
-            size="lg"
-            onPress={onSave}
-            disabled={!valid || mutation.isPending}
-            fullWidth
-            testID="movement-save"
+          {/* Кнопка в потоке формы: при короткой форме нет «провала
+              пустоты» до прижатого к низу футера (VLM-аудит). */}
+          <View
+            style={{
+              paddingTop: spacing.sm,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              gap: spacing.xs,
+            }}
           >
-            {mutation.isPending ? 'Сохраняем…' : 'Сохранить'}
-          </Button>
-        </View>
+            <Button
+              size="lg"
+              onPress={onSave}
+              disabled={!valid || mutation.isPending}
+              fullWidth
+              testID="movement-save"
+            >
+              {mutation.isPending ? 'Сохраняем…' : 'Сохранить'}
+            </Button>
+            {/* Подсказка под неактивной кнопкой: что именно не заполнено
+                (VLM-аудит: disabled без объяснения — блокер в 4 утра). */}
+            {!valid && !mutation.isPending ? (
+              <Text
+                variant="caption"
+                color="textSecondary"
+                style={{ textAlign: 'center' }}
+              >
+                Укажите причину — кнопка активируется
+              </Text>
+            ) : null}
+          </View>
+        </ScrollView>
       </View>
     </RoleScreen>
   );

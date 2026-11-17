@@ -94,8 +94,8 @@ export function StockRow({
         ? colors.accent
         : colors.danger;
 
-  // Юнит-мультипакет («100 г») уходит под число: широкая строка
-  // «166 × 100 г» в numberL прижимала название к краю (VLM-ревью).
+  // Фасовка-мультипакет («100 г») уходит под числом отдельной строкой:
+  // широкая «166 × 100 г» в numberL прижимала название к краю (VLM-ревью).
   const packMatch = unit?.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
   const packUnit =
     packMatch &&
@@ -103,8 +103,12 @@ export function StockRow({
     Number(packMatch[1].replace(',', '.')) !== 1
       ? `× ${unit}`
       : null;
-  const inlineUnit = packUnit ? '' : unit ? ` ${unit}` : '';
-  const quantityText = `${physicalQty}${inlineUnit}`;
+  // Простой юнит — отдельным мелким текстом рядом с числом (слитное
+  // «120 кг» в одном кегле numberL читалось как одно слово, VLM-аудит).
+  // Юнит «1 кг» сворачивается до «кг» — множитель 1 не показываем.
+  const plainUnit = packMatch?.[2] ?? unit ?? null;
+  const inlineUnit = packUnit ? null : plainUnit;
+  const quantityText = `${physicalQty}${inlineUnit ? ` ${inlineUnit}` : ''}`;
   // Без резерва доступно = физическому остатку: дубль числа не нужен
   // (решение по VLM-ревью Промта 12, Часть A).
   const breakdown =
@@ -112,7 +116,7 @@ export function StockRow({
       ? `Резерв: ${reservedQty} · Доступно: ${availableQty}`
       : null;
   const subtitle = priceKopecks
-    ? `${formatPrice(priceKopecks)}${unit ? `/${unit}` : ''}`
+    ? `${formatPrice(priceKopecks)}${plainUnit ? `/${plainUnit}` : ''}`
     : null;
 
   const body = (
@@ -175,10 +179,17 @@ export function StockRow({
             accessibilityLabel={LEVEL_LABELS[level]}
           />
           <Text variant="numberL" style={{ color: colors.text }}>
-            {quantityText}
+            {physicalQty}
           </Text>
+          {inlineUnit ? (
+            <Text variant="bodySmall" color="textSecondary">
+              {inlineUnit}
+            </Text>
+          ) : null}
         </View>
-        <Text variant="micro" color="textMuted" numberOfLines={1}>
+        {/* Фасовка и раскладка резерва — caption: micro 12 в этом месте
+            читался как «слишком мелкий» на слабом свету (VLM-аудит). */}
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
           {[packUnit, breakdown].filter(Boolean).join(' · ')}
         </Text>
       </View>

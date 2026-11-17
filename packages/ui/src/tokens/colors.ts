@@ -80,7 +80,9 @@ export const colorsDark = {
 
   text: '#F0EDE8',
   textSecondary: '#A8AFA6',
-  textMuted: '#878E84',
+  // Промт 12 (доработка по VLM-аудиту): +1 ступень светлее — микротексты
+  // (даты журнала, подписи строк) читались как «пропавшие» в dark.
+  textMuted: '#9CA39B',
   textDisabled: '#5A605A',
 
   // Промт 12, Часть E: рамки светлее фона до ≥ 3:1 против surface

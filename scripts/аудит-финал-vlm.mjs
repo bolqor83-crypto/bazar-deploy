@@ -96,7 +96,8 @@ async function auditOnce(name, run, images) {
   for (const img of images) args.push('-i', img);
   args.push('-o', outFile);
   let lastError = null;
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  // 429 у z-ai бывают затяжными: до 8 попыток с растущими паузами.
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
     try {
       execFileSync('z-ai', args, { stdio: 'pipe', timeout: 120_000 });
       return JSON.parse(fs.readFileSync(outFile, 'utf-8')).choices[0].message
@@ -105,8 +106,8 @@ async function auditOnce(name, run, images) {
       lastError = error;
       const is429 = String(error.message ?? '').includes('429');
       if (!is429) throw error;
-      console.log(`  429, ждём ${attempt * 20}с…`);
-      await sleep(attempt * 20_000);
+      console.log(`  429, ждём ${attempt * 30}с…`);
+      await sleep(attempt * 30_000);
     }
   }
   throw lastError;
@@ -124,7 +125,14 @@ function parseVerdict(raw) {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
   try {
-    return JSON.parse(match[0]);
+    const verdict = JSON.parse(match[0]);
+    if (!verdict || typeof verdict.total !== 'number') return null;
+    // Модель иногда отвечает по шкале 0–10 вместо 0–100 —
+    // нормализуем, иначе медиана ломается (6.8 рядом с 68).
+    if (verdict.total <= 10) {
+      verdict.total = Math.round(verdict.total * 10);
+    }
+    return verdict;
   } catch {
     return null;
   }

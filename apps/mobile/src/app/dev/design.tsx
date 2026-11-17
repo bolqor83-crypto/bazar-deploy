@@ -218,16 +218,27 @@ function ShowcaseBody() {
               error={inputError}
             />
             <Input
-              label="ИНН"
-              value=""
+              label="ИНН организации"
+              value="402345678"
               onChangeText={() => {}}
-              error="Проверьте ИНН"
+              error="В ИНН должно быть 10 или 12 цифр — проверьте количество"
+              hint="Как в документах организации"
             />
           </View>
         </Section>
 
+        {/* Промт 12 (доработка по VLM-аудиту): секция собрана как
+            реальная форма «Параметры поставки», а не как стенд с
+            разрозненными контролами — так она читается рабочим
+            экраном, а не UI-китом. */}
         <Section title="Формы">
-          <View style={{ gap: spacing.xl }}>
+          <Card style={{ padding: spacing.md, gap: spacing.md }}>
+            <View style={{ gap: 2 }}>
+              <Text variant="h3">Параметры поставки</Text>
+              <Text variant="caption" color="textSecondary">
+                Применяются к новым заказам этой точки
+              </Text>
+            </View>
             <Select
               label="Склад отгрузки"
               value={selectValue}
@@ -248,6 +259,9 @@ function ShowcaseBody() {
               placeholder="Выберите склад"
             />
             <View style={{ gap: spacing.xs }}>
+              <Text variant="bodySmall" color="textSecondary">
+                Условия товара
+              </Text>
               <Checkbox
                 checked={checkboxChecked}
                 onChange={setCheckboxChecked}
@@ -258,9 +272,13 @@ function ShowcaseBody() {
                 checked={!checkboxChecked}
                 onChange={() => setCheckboxChecked((v) => !v)}
                 label="Требует сертификации"
+                hint="Приложите документ при отгрузке"
               />
             </View>
             <View style={{ gap: spacing.xs }}>
+              <Text variant="bodySmall" color="textSecondary">
+                Способ доставки
+              </Text>
               <Radio
                 selected={radioValue === 'courier'}
                 onPress={() => setRadioValue('courier')}
@@ -271,22 +289,30 @@ function ShowcaseBody() {
                 selected={radioValue === 'pickup'}
                 onPress={() => setRadioValue('pickup')}
                 label="Самовывоз со склада"
+                hint="Бесплатно, в рабочие часы"
               />
             </View>
             <Switch
               value={switchOn}
               onChange={setSwitchOn}
               label="Автоприём заказов"
-              hint="Новые заказы подтверждаются без вашего участия"
+              hint={
+                switchOn
+                  ? 'Включен: новые заказы подтверждаются сами'
+                  : 'Выключен: заказы ждут вашего подтверждения'
+              }
             />
             <DatePicker
-              label="Дата поставки"
+              label="Ближайшая дата поставки"
               value={pickedDate}
               onChange={setPickedDate}
               min={new Date(2026, 10, 1)}
               max={new Date(2026, 11, 31)}
             />
-          </View>
+            <Button size="lg" fullWidth>
+              Сохранить параметры
+            </Button>
+          </Card>
         </Section>
 
         <Section title="Карточки">

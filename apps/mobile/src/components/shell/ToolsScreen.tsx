@@ -23,7 +23,7 @@ import {
 import type { Role } from '@bazar/types';
 import type { LucideIcon } from 'lucide-react-native';
 import { RoleScreen } from './RoleScreen';
-import { moreGroupsFor, type MoreGroup } from './navigation';
+import { moreGroupsFor } from './navigation';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 
 export function ToolsScreen({ role }: { role: Role }) {
@@ -62,7 +62,7 @@ export function ToolsScreen({ role }: { role: Role }) {
     typeof router.canGoBack === 'function' && router.canGoBack();
 
   return (
-    <RoleScreen role={role} section="more" title="Все инструменты">
+    <RoleScreen role={role} section="more" title="Инструменты">
       <View style={{ flex: 1, width: '100%' }}>
         <View
           style={{
@@ -116,11 +116,11 @@ export function ToolsScreen({ role }: { role: Role }) {
               style={{
                 backgroundColor: colors.background,
                 paddingHorizontal: spacing.md,
-                paddingTop: spacing.md,
+                paddingTop: spacing.sm,
                 paddingBottom: spacing.xs,
               }}
             >
-              <Text variant="caption" color="textSecondary">
+              <Text variant="bodySmall" color="textSecondary">
                 {section.title}
               </Text>
             </View>
@@ -128,6 +128,7 @@ export function ToolsScreen({ role }: { role: Role }) {
           renderItem={({ item }) => (
             <ToolRow
               label={item.label}
+              subtitle={item.subtitle}
               icon={item.icon}
               badge={item.badgeKind === 'notifications' ? unread : 0}
               onPress={() => router.push(item.route)}
@@ -153,15 +154,17 @@ export function ToolsScreen({ role }: { role: Role }) {
   );
 }
 
-/** Строка раздела: иконка, название, бейдж, шеврон. */
+/** Строка раздела: иконка, название с подзаголовком, бейдж, шеврон. */
 function ToolRow({
   label,
+  subtitle,
   icon: Icon,
   badge,
   onPress,
   testID,
 }: {
   label: string;
+  subtitle?: string;
   icon: LucideIcon;
   badge: number;
   onPress: () => void;
@@ -171,7 +174,7 @@ function ToolRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={subtitle ? `${label}, ${subtitle}` : label}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => [
@@ -188,9 +191,16 @@ function ToolRow({
       ]}
     >
       <Icon size={20} color={colors.textSecondary} />
-      <Text variant="body" style={{ flex: 1 }}>
-        {label}
-      </Text>
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text variant="body" numberOfLines={1}>
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text variant="caption" color="textSecondary" numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
       {badge > 0 ? (
         <Badge variant="info" size="sm">
           {badge > 99 ? '99+' : String(badge)}

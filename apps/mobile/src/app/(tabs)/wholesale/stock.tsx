@@ -144,12 +144,12 @@ export default function StockOverviewScreen() {
           paddingBottom: spacing.xl,
         }}
         ItemSeparatorComponent={() => (
-          <View style={{ paddingHorizontal: spacing.md }}>
+          <View style={{ paddingHorizontal: spacing.lg }}>
             <Divider />
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={{ paddingHorizontal: spacing.md }}>
+          <View style={{ paddingHorizontal: spacing.lg }}>
             <StockRow
               title={item.offer.product.name}
               unit={item.offer.product.unit}
@@ -315,10 +315,13 @@ function SummaryBar({
       value: totals.low,
       color: totals.low > 0 ? colors.accent : colors.text,
     },
+    // Счёт «Нет» — нейтральным цветом: терракотовые цифры в панели
+    // читались как «красный сигнал» (VLM-аудит доработки); сигнал
+    // уровня остаётся на точках-индикаторах строк.
     {
       label: 'Нет',
       value: totals.out,
-      color: totals.out > 0 ? colors.danger : colors.text,
+      color: colors.text,
     },
   ];
   return (
