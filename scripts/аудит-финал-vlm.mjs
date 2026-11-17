@@ -96,8 +96,10 @@ async function auditOnce(name, run, images) {
   for (const img of images) args.push('-i', img);
   args.push('-o', outFile);
   let lastError = null;
-  // 429 у z-ai бывают затяжными: до 8 попыток с растущими паузами.
-  for (let attempt = 1; attempt <= 8; attempt += 1) {
+  // 429 у z-ai бывают затяжными: несколько попыток с растущими паузами,
+  // дальше — быстрый отказ; внешний цикл (демон) повторит группу,
+  // кэш run-файлов сохранит уже полученные оценки.
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
     try {
       execFileSync('z-ai', args, { stdio: 'pipe', timeout: 120_000 });
       return JSON.parse(fs.readFileSync(outFile, 'utf-8')).choices[0].message
@@ -150,6 +152,9 @@ for (const [name, images] of Object.entries(items)) {
   const totals = [];
   const notes = [];
   for (let run = 1; run <= 3; run += 1) {
+    const cached = fs.existsSync(
+      path.join(OUT_DIR, `${name}-run${run}.json`),
+    );
     const raw = await auditOnce(name, run, images);
     const verdict = parseVerdict(raw);
     if (!verdict || typeof verdict.total !== 'number') {
@@ -159,6 +164,9 @@ for (const [name, images] of Object.entries(items)) {
     totals.push(verdict.total);
     if (verdict.notes) notes.push(verdict.notes);
     console.log(`${name} прогон ${run}: ${verdict.total}`);
+    // Пауза только после свежих (некэшированных) вызовов vision —
+    // смягчает 429 «Too many requests» на аккаунт.
+    if (!cached) await sleep(4000);
   }
   if (totals.length === 0) continue;
   const med = median(totals);
