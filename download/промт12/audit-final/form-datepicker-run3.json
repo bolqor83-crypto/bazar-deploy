@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":8,\"density\":7,\"a11y\":7,\"impression\":8,\"total\":78,\"notes\":\"Слишком воздушная вертикальная разрядка — форма длинная, много прокрутки для перчаток и 4 утра; toggle «Автоприём» визуально конфликтует с полем даты (появляется дублирующий блок/шит). Радио-подпись «От 2 часов» мелковата при слабом свете.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943481,
+  "id": "20261118032437d51ac357f8f042c5",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032437d51ac357f8f042c5",
+  "usage": {
+    "completion_tokens": 134,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 1792
+    },
+    "total_tokens": 3689
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":73,\"notes\":\"Нет цифр с tabular-nums и вторичных состояний (disabled/error/пустое) — плотность низкая, экран пустоват для рабочего инструмента; чекбоксы и радио визуально разнородны по размеру/стилю.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943422,
+  "id": "20261118032340d605f161378848d5",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032340d605f161378848d5",
+  "usage": {
+    "completion_tokens": 110,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1955
+  }
+}

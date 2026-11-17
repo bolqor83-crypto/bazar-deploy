@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":76,\"notes\":\"1) Опции чекбокса/радио не обёрнуты в явные нажимаемые карточки/строки с фоном — на рынке в перчатках при слабом свете сложно попасть точно в контрол, нужны полноширинные строки с hover/pressed-состоянием. 2) Шит-складов обрезает последний пункт без подсказки прокрутки, нет разделителей/ disabled-состояний и подтверждения выбора.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943377,
+  "id": "20261118032253b6dc3b914d28442f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032253b6dc3b914d28442f",
+  "usage": {
+    "completion_tokens": 154,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3709
+  }
+}

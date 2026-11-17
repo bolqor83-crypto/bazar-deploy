@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":74,\"notes\":\"Нет чисел с tabular-nums (дата 19.11.2026) и выключенный toggle серый без подписи состояния — при слабом свете непонятно off/disabled; крупные межблочные отступы снижают операционную плотность.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943429,
+  "id": "20261118032346b1b0b172da1c432c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032346b1b0b172da1c432c",
+  "usage": {
+    "completion_tokens": 113,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1958
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":7,\"density\":7,\"a11y\":6,\"impression\":8,\"total\":73,\"notes\":\"Цифры даты не tabular-nums, а в 4 утра при слабом свете недостаточный контраст серых подписей (secondary text ~4.5:1 на грани); строки селекта в bottom sheet без разделителей и чекбоксы/радио меньше 48px по зоне нажатия при перчатках.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943393,
+  "id": "20261118032309ab3d823a757f4962",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032309ab3d823a757f4962",
+  "usage": {
+    "completion_tokens": 128,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3683
+  }
+}

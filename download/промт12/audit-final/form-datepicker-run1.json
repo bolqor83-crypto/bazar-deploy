@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":9,\"grid\":8,\"components\":9,\"icons\":8,\"states\":8,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":8,\"notes\":\"Форма и календарь аккуратны, но даты не в tabular-nums (1 выровнена вправо, 17 бледный today-фон слабо читается в перчатках при 4 утра); toggles/чекбоксы имеют малые видимые тап-зоны относительно 48px\"}",
+        "reasoning_content": "Form is solid; minor issues: tabs missing? dates not tabular? Calendar looks good. Checkbox tap area fine. Toggle. Scores ~8.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943465,
+  "id": "20261118032420e6507b43eb424efc",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032420e6507b43eb424efc",
+  "usage": {
+    "completion_tokens": 155,
+    "completion_tokens_details": {
+      "reasoning_tokens": 30
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3710
+  }
+}

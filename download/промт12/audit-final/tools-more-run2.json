@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":8,\"components\":7,\"icons\":8,\"states\":4,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":64,\"notes\":\"Нет счётчиков/бейджей и статусов на пунктах — меню не информирует о работе (запросы, долги), что критично для рабочего инструмента; тёмная тема потеряла акцент: строка «Ещё» и аватар малоконтрастны, подписи серые слабочитаемы при 4 утра.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943342,
+  "id": "20261118032220f116e5c533ee4090",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032220f116e5c533ee4090",
+  "usage": {
+    "completion_tokens": 131,
+    "completion_tokens_details": {
+      "reasoning_tokens": 130
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3938
+  }
+}

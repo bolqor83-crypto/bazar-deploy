@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":6,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":78,\"notes\":\"Нет состояний ошибок/подсказок и видимой обратной связи disabled/disabled-логики; toggle 'Автоприём' визуально конфликтует с зелёной палитрой (серый off читается слабо в темноте). Цифрам даты нужен tabular-nums.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943436,
+  "id": "202611180323537619cb7bbb514e2a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180323537619cb7bbb514e2a",
+  "usage": {
+    "completion_tokens": 118,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1963
+  }
+}

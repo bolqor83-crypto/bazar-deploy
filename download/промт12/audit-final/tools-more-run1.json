@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":4,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":69,\"notes\":\"Ссылка «Аналитика» обрезана нижней навигацией — последний элемент списка не прокручивается с отступом (padding-bottom отсутствует). Нет счётчиков/бейджей на пунктах (запросы, долги) и быстрых действий — для 4 утра в перчатках список голый: только переходы, никаких рабочих данных, пустых состояний и подсказок.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943335,
+  "id": "20261118032212434139dfd17544a9",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032212434139dfd17544a9",
+  "usage": {
+    "completion_tokens": 145,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3952
+  }
+}

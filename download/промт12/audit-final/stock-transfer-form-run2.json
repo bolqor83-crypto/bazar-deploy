@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":8,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":75,\"notes\":\"Причина обрезается снизу за закреплённой кнопкой — поле ввода перекрыто; контраст disabled-кнопки низкий, текст 'Переместить' плохо читается при слабом свете\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943301,
+  "id": "2026111803213863b3280aeba04096",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111803213863b3280aeba04096",
+  "usage": {
+    "completion_tokens": 101,
+    "completion_tokens_details": {
+      "reasoning_tokens": 100
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2198
+  }
+}

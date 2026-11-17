@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":8,\"impression\":6,\"total\":62,\"notes\":\"Дублирование и визуальный шум: подсказки под каждым полем («Приход увеличит...», «Причина сохранится...») и строка «После прихода доступно» перегружают экран — оставить одну. Степпер количества разъезжается: рамка поля не стыкуется с кнопками ±, цифра без tabular-nums; чипы типов операции в две строки рвут сетку.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943271,
+  "id": "20261118032107b89fab9ee53a4918",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032107b89fab9ee53a4918",
+  "usage": {
+    "completion_tokens": 146,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2243
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":9,\"color\":8,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":9,\"a11y\":8,\"impression\":8,\"total\":83,\"notes\":\"Вторая строка метаданных обрезается везде («Основной ск…») — лучше переносить или расширять колонку; в тёмной теме слабый контраст вторичного текста и разделителей, для рынка в 4 утра не хватит яркости ключевых цифр\"}",
+        "reasoning_content": "Both light/dark variants look good. Score ~8-9s. Deduct: обрезанные точки («Основной ск…»), тёмная тема метаданные слабый контраст, целые строки не тапабельны явно.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943257,
+  "id": "20261118032053f1ee402e1d5f4b9d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032053f1ee402e1d5f4b9d",
+  "usage": {
+    "completion_tokens": 165,
+    "completion_tokens_details": {
+      "reasoning_tokens": 52
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3972
+  }
+}

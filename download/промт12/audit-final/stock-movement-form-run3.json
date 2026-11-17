@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":9,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":77,\"notes\":\"Основная проблема — многословные подсказки занимают два экрана и дробят внимание: смысловой фокус уводится от счётчика количества; при этом нет причины-причёсанки чипов (перенос «Перемещение» ломает строку) — лучше заменить на горизонтальный скролл или компактный селектор.\"}",
+        "reasoning_content": "Reasonable design. Notes: chips wrap, helper text verbose.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943286,
+  "id": "20261118032123576a9cdf1588458b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032123576a9cdf1588458b",
+  "usage": {
+    "completion_tokens": 145,
+    "completion_tokens_details": {
+      "reasoning_tokens": 13
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2242
+  }
+}

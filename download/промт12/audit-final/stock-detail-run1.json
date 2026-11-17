@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":7,\"grid\":8,\"components\":8,\"icons\":8,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":77,\"notes\":\"Отрицательные значения (-20, -10 кг) показаны тем же зелёным, что и приход — знак движения плохо считывается в перчатках на 4 утра; обрезка точек («Основной ск…») без раскрытия и узкие кнопки-действия в 4 колонки снижают удобство нажатия и полноту информации\"}",
+        "reasoning_content": "Light and dark states. Overall solid. Deduct: date/location truncated (\"Основной ск…\"), empty state \"Это все движения позиции\" fine; action buttons 4-in-row tight labels, touch targets ~small height? Buttons look ok. Negative amounts same green — risk: -20 кг not visually distinct, uses green for negatives — confusing. Notes about that.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943249,
+  "id": "20261118032044bb0d3ab5bece46a1",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032044bb0d3ab5bece46a1",
+  "usage": {
+    "completion_tokens": 205,
+    "completion_tokens_details": {
+      "reasoning_tokens": 74
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 4012
+  }
+}

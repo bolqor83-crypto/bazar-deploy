@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":72,\"notes\":\"Мало выраженных состояний (нет ошибок/disabled/подсказок при вводе) и крупная межблочная пустота — плотность ниже рабочей; чекбоксы/радио без видимой рамки зоны нажатия на всю строку могут быть <48px по высоте касания.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943409,
+  "id": "20261118032326018a936a146640db",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032326018a936a146640db",
+  "usage": {
+    "completion_tokens": 124,
+    "completion_tokens_details": {
+      "reasoning_tokens": 123
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1969
+  }
+}

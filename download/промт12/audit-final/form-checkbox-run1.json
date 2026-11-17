@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":72,\"notes\":\"Селект и радио-опции близки по весу с заголовками секций — иерархия размывается; нет состояний ошибок/подсказок при валидации даты и чекбоксов, toggle без лейбла состояния (вкл/выкл) плохо читается в перчатках при слабом свете.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943402,
+  "id": "20261118032317e06dc3267b0d465f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032317e06dc3267b0d465f",
+  "usage": {
+    "completion_tokens": 133,
+    "completion_tokens_details": {
+      "reasoning_tokens": 132
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1978
+  }
+}

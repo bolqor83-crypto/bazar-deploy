@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":72,\"notes\":\"Нет выраженных состояний (ошибки валидации, подсказка почему авоприём выключен) и слабая группировка секций — поля сливаются без разделителей/заголовков-микрогрупп. Переключатель автоприёма мелкий и его состояние не объясняет последствия включения для рынка в 4 утра.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943450,
+  "id": "20261118032407766c3890641b4160",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032407766c3890641b4160",
+  "usage": {
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1975
+  }
+}

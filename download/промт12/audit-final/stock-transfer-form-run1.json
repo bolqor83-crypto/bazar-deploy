@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":7,\"states\":7,\"density\":6,\"a11y\":7,\"impression\":6,\"total\":65,\"notes\":\"Поле «Причина» обрезано нижним фиксированным блоком с кнопкой и подсказкой — контент перекрыт, непонятно как раскрыть ввод; контраст disabled-кнопки низкий, а подсказка серым мелким текстом слабо читается в перчатках при тусклом свете; иерархия «Доступно 120 кг / 0 кг» важна, но теряется между карточками — нужны акценты и tabular-nums.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943294,
+  "id": "20261118032130247084decc084a85",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032130247084decc084a85",
+  "usage": {
+    "completion_tokens": 163,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2260
+  }
+}

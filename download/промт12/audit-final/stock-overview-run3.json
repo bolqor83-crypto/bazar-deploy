@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":9,\"a11y\":8,\"impression\":8,\"total\":80,\"notes\":\"Терракотовые точки «0» читаются как ошибка/алерт, но для статуса «нет товара» нужна более явная семантика (бейдж «Нет») — в перчатках и в 4 утра сканиться по точкам тяжело; смешение фото-превью и плейсхолдер-иконок в списке создаёт визуальный шум, единый стиль превью усилит professional-вид.\"}",
+        "reasoning_content": "Both light and dark states look solid. Dots red-ish terracotta ok. Numbers look tabular. Some issues: duplicates \"Грецкий орех\" cut off; filter chips + search cramped; stock dot near number spacing.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943239,
+  "id": "20261118032034acd0d18b02ea4e9d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032034acd0d18b02ea4e9d",
+  "usage": {
+    "completion_tokens": 197,
+    "completion_tokens_details": {
+      "reasoning_tokens": 47
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 4004
+  }
+}

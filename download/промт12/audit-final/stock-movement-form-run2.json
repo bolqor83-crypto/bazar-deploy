@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":9,\"density\":8,\"a11y\":8,\"impression\":7,\"total\":78,\"notes\":\"Несогласованность чисел: количество «5» набрано очень крупно без tabular-nums и выровнено не по центру поля (тень/линия под степпером выглядит как артефакт). Кнопка «Сохранить» в disabled-состоянии слишком бледная для 4 утра/перчаток — ключевой CTA почти сливается с фоном, а hint под ней занимает лишнюю строку.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943279,
+  "id": "2026111803211596c4bb5f31ea4b71",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111803211596c4bb5f31ea4b71",
+  "usage": {
+    "completion_tokens": 152,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2249
+  }
+}

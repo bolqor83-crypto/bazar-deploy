@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":78,\"notes\":\"Правая колонка цифр не выровнена по одной оси (0 кг / ×100 г рвут сетку) — нужны tabular-nums и фикс-ширина числа; статусные точки 0 (терракота) рядом с большим числом дублируют смысл — на тёмной теме точки малоконтрастны при слабом свете\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943230,
+  "id": "20261118032015b4d92733f88c4bd2",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118032015b4d92733f88c4bd2",
+  "usage": {
+    "completion_tokens": 131,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3938
+  }
+}

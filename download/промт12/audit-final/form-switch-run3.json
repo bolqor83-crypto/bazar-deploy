@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":74,\"notes\":\"Слабо выражены состояния (toggle-off без подсказки, нет disabled/ошибок) и большие вертикальные разрывы между секциями снижают плотность для работы в перчатках ночью\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794943456,
+  "id": "2026111803241438a85668e4e440bd",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111803241438a85668e4e440bd",
+  "usage": {
+    "completion_tokens": 98,
+    "completion_tokens_details": {
+      "reasoning_tokens": 97
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1943
+  }
+}
