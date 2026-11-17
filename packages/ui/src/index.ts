@@ -170,6 +170,13 @@ export type {
 
 export { ProductCard } from './components/ProductCard';
 export type { ProductCardProps } from './components/ProductCard';
+export { PRODUCT_CARD_COMPACT_WIDTH } from './components/ProductCard';
+
+export { HorizontalProductCarousel } from './components/HorizontalProductCarousel';
+export type {
+  HorizontalProductCarouselProps,
+  CarouselItem,
+} from './components/HorizontalProductCarousel';
 
 export { ProductRow } from './components/ProductRow';
 export type { ProductRowProps } from './components/ProductRow';

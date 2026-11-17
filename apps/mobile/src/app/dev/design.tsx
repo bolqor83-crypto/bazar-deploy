@@ -22,6 +22,7 @@ import {
   EmptyState,
   ErrorState,
   FilterChip,
+  HorizontalProductCarousel,
   IconButton,
   Input,
   LocationSelector,
@@ -504,6 +505,38 @@ function ShowcaseBody() {
               stock="low"
             />
           </View>
+
+          <Text variant="h3">HorizontalProductCarousel</Text>
+          <HorizontalProductCarousel
+            title="Похожие товары"
+            items={[
+              {
+                id: 'c1',
+                title: 'Огурцы гладкие',
+                subtitle: 'Овощи',
+                image: '/api/media/seed/products/cucumbers.png',
+                price: 10_400,
+                unit: '1 кг',
+              },
+              {
+                id: 'c2',
+                title: 'Бананы',
+                image: '/api/media/seed/products/bananas.png',
+                price: 8_900,
+                unit: '1 кг',
+                badge: 'Скоропорт',
+              },
+              {
+                id: 'c3',
+                title: 'Яблоки Гала',
+                image: '/api/media/seed/products/apples.png',
+                price: 12_000,
+                unit: '1 кг',
+              },
+            ]}
+            onItemPress={() => {}}
+            onSeeAllPress={() => {}}
+          />
 
           <Text variant="h3">ProductRow и OrderSummary</Text>
           <Card>

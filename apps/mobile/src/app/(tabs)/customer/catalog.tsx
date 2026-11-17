@@ -12,7 +12,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { CatalogCategory, CatalogProduct } from '@bazar/types';
 import {
@@ -107,6 +107,14 @@ function CatalogBody() {
   const updateItemMutation = useUpdateCartItem();
   const removeItemMutation = useRemoveCartItem();
 
+  // Промт 14a: «Все →» из карусели похожих ведёт в каталог с той же
+  // категорией — читаем стартовый фильтр из query-параметра.
+  const params = useLocalSearchParams<{ category?: string }>();
+  const initialCategory =
+    typeof params.category === 'string' && params.category.length > 0
+      ? params.category
+      : 'all';
+
   // Корзина контура: карта offerId → {itemId, quantity} — карточка
   // показывает состояние «уже в корзине» мини-степпером (VLM-аудит
   // итерации 3: карточка без состояния корзины читалась как пассивная).
@@ -122,7 +130,7 @@ function CatalogBody() {
   // Ввод поиска применяется с дебаунсом; onSubmit — сразу.
   const [searchInput, setSearchInput] = useState('');
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<string>('all');
+  const [category, setCategory] = useState<string>(initialCategory);
   const [sort, setSort] = useState<SortValue>('popular');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [priceMin, setPriceMin] = useState('');

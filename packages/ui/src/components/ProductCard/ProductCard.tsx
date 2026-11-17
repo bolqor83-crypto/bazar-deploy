@@ -18,6 +18,10 @@
  * юнит под ценой («за 500 г») — строка «490 ₽ / 500 г» съедалась
  * кнопкой «+»; мини-степпер «в корзине» вместо «+» (состояние
  * «товар уже в корзине»).
+ *
+ * Промт 14a: режим compact — компактная карточка для горизонтальной
+ * карусели похожих товаров: ширина 160, квадратное фото 1:1, один
+ * бейдж, без корзинных действий (карусель — навигация, не покупка).
  */
 import { useState } from 'react';
 import {
@@ -35,6 +39,9 @@ import { Card } from '../Card';
 import { PriceDisplay } from '../PriceDisplay';
 import { StockIndicator, type StockLevel } from '../StockIndicator';
 import { Text } from '../Text';
+
+/** Ширина compact-карточки (Промт 14a): карусель похожих. */
+export const PRODUCT_CARD_COMPACT_WIDTH = 160;
 
 export interface ProductCardProps {
   name: string;
@@ -67,6 +74,11 @@ export interface ProductCardProps {
   onDecrement?: () => void;
   onPress?: () => void;
   testID?: string;
+  /** Компактный режим (Промт 14a): для карусели похожих товаров —
+   * ширина 160, квадратное фото, без корзинных действий. */
+  compact?: boolean;
+  /** Единый бейдж для compact-режима («Хит», «Скоропорт»). */
+  badge?: string;
   /** Ширина карточки: по умолчанию 168, сетка каталога передаёт flex:1. */
   style?: StyleProp<ViewStyle>;
 }
@@ -89,6 +101,8 @@ export function ProductCard({
   onDecrement,
   onPress,
   testID,
+  compact = false,
+  badge,
   style,
 }: ProductCardProps) {
   const { colors, radii, spacing } = useTheme();
@@ -97,20 +111,25 @@ export function ProductCard({
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !imageFailed;
 
-  const hasBadges = isHit || isPerishable;
+  // Compact (Промт 14a): один бейдж из строки; обычный режим —
+  // пара isHit/isPerishable.
+  const hasBadges = compact ? Boolean(badge) : Boolean(isHit || isPerishable);
 
   const body = (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: compact ? spacing.xs : spacing.sm }}>
       {/* Бейджи — поверх фото в левом верхнем углу: у всех карточек
           одинаковая структура и высота (VLM-аудит: «разнобой —
           бейдж/цена/наличие на разных уровнях»). */}
       <View
-        style={{
-          height: 96,
-          borderRadius: radii.sm,
-          backgroundColor: placeholderTone(toneIndex),
-          overflow: 'hidden',
-        }}
+        style={[
+          {
+            backgroundColor: placeholderTone(toneIndex),
+            overflow: 'hidden',
+          },
+          compact
+            ? { aspectRatio: 1, borderRadius: radii.md }
+            : { height: 96, borderRadius: radii.sm },
+        ]}
       >
         {hasBadges ? (
           <View
@@ -123,16 +142,24 @@ export function ProductCard({
               zIndex: 1,
             }}
           >
-            {isHit ? (
-              <Badge variant="warning" size="sm">
-                Хит
-              </Badge>
-            ) : null}
-            {isPerishable ? (
+            {compact ? (
               <Badge variant="neutral" size="sm">
-                Скоропорт
+                {badge}
               </Badge>
-            ) : null}
+            ) : (
+              <>
+                {isHit ? (
+                  <Badge variant="warning" size="sm">
+                    Хит
+                  </Badge>
+                ) : null}
+                {isPerishable ? (
+                  <Badge variant="neutral" size="sm">
+                    Скоропорт
+                  </Badge>
+                ) : null}
+              </>
+            )}
           </View>
         ) : null}
         {showImage ? (
@@ -151,144 +178,186 @@ export function ProductCard({
               justifyContent: 'center',
             }}
           >
-            <ShoppingBasket size={32} color={colors.textMuted} />
+            <ShoppingBasket size={compact ? 28 : 32} color={colors.textMuted} />
           </View>
         )}
       </View>
 
-      <Text variant="bodyStrong" numberOfLines={2}>
-        {name}
-      </Text>
-
-      {description ? (
-        <Text variant="caption" color="textSecondary" numberOfLines={1}>
-          {description}
-        </Text>
-      ) : null}
-
-      {/* Цена и юнит в два этажа: «490 ₽ / 500 г» в одну строку
-          съедалась кнопкой «+» (VLM-аудит итерации 3) — юнит теперь
-          под ценой («за 500 г»). Справа — «+» или мини-степпер,
-          когда товар уже в корзине. */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: spacing.xs,
-        }}
-      >
-        <View style={{ flexShrink: 1 }}>
-          <PriceDisplay value={priceKopecks} oldPrice={oldPriceKopecks} />
-          {unit ? (
-            <Text
-              variant="micro"
-              color="textMuted"
-              numberOfLines={1}
-              style={{ marginTop: 1 }}
-            >
-              {`за ${unit}`}
+      {compact ? (
+        /* Compact (Промт 14a): bodySmall 600, две строки, цена
+           сильнее текста; без корзинных действий. */
+        <>
+          <Text
+            variant="bodySmall"
+            style={{ fontWeight: '600' }}
+            numberOfLines={2}
+          >
+            {name}
+          </Text>
+          {description ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {description}
             </Text>
           ) : null}
-        </View>
-        {quantityInCart > 0 && onIncrement && onDecrement ? (
+          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+            <PriceDisplay value={priceKopecks} oldPrice={null} size="sm" />
+            {unit ? (
+              <Text
+                variant="caption"
+                color="textMuted"
+                numberOfLines={1}
+                style={{ marginLeft: spacing.xs }}
+              >
+                {`/ ${unit}`}
+              </Text>
+            ) : null}
+          </View>
+        </>
+      ) : (
+        <>
+          <Text variant="bodyStrong" numberOfLines={2}>
+            {name}
+          </Text>
+
+          {description ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {description}
+            </Text>
+          ) : null}
+
+          {/* Цена и юнит в два этажа: «490 ₽ / 500 г» в одну строку
+              съедалась кнопкой «+» (VLM-аудит итерации 3) — юнит теперь
+              под ценой («за 500 г»). Справа — «+» или мини-степпер,
+              когда товар уже в корзине. */}
           <View
-            testID="product-in-cart-stepper"
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              height: 40,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.borderStrong,
-              backgroundColor: colors.primarySoft,
-              overflow: 'hidden',
+              justifyContent: 'space-between',
+              gap: spacing.xs,
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Убрать партию: ${name}`}
-              onPress={onDecrement}
-              hitSlop={8}
-              testID="product-decrement"
-              style={({ pressed }) => ({
-                width: 36,
-                height: 40,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <Minus size={16} color={colors.primaryText} />
-            </Pressable>
-            <Text
-              variant="bodyStrong"
-              mono
-              style={{ minWidth: 22, textAlign: 'center' }}
-            >
-              {quantityInCart}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Добавить партию: ${name}`}
-              onPress={onIncrement}
-              hitSlop={8}
-              testID="product-increment"
-              style={({ pressed }) => ({
-                width: 36,
-                height: 40,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <Plus size={16} color={colors.primaryText} />
-            </Pressable>
+            <View style={{ flexShrink: 1 }}>
+              <PriceDisplay value={priceKopecks} oldPrice={oldPriceKopecks} />
+              {unit ? (
+                <Text
+                  variant="micro"
+                  color="textMuted"
+                  numberOfLines={1}
+                  style={{ marginTop: 1 }}
+                >
+                  {`за ${unit}`}
+                </Text>
+              ) : null}
+            </View>
+            {quantityInCart > 0 && onIncrement && onDecrement ? (
+              <View
+                testID="product-in-cart-stepper"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  height: 40,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: colors.borderStrong,
+                  backgroundColor: colors.primarySoft,
+                  overflow: 'hidden',
+                }}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Убрать партию: ${name}`}
+                  onPress={onDecrement}
+                  hitSlop={8}
+                  testID="product-decrement"
+                  style={({ pressed }) => ({
+                    width: 36,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Minus size={16} color={colors.primaryText} />
+                </Pressable>
+                <Text
+                  variant="bodyStrong"
+                  mono
+                  style={{ minWidth: 22, textAlign: 'center' }}
+                >
+                  {quantityInCart}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Добавить партию: ${name}`}
+                  onPress={onIncrement}
+                  hitSlop={8}
+                  testID="product-increment"
+                  style={({ pressed }) => ({
+                    width: 36,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Plus size={16} color={colors.primaryText} />
+                </Pressable>
+              </View>
+            ) : onAddToCart ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Добавить в корзину: ${name}`}
+                onPress={onAddToCart}
+                hitSlop={2}
+                testID="product-quick-add"
+                style={({ pressed }) => [
+                  {
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: colors.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                  pressed ? { opacity: 0.8 } : null,
+                ]}
+              >
+                <Plus size={22} color={colors.onPrimary} />
+              </Pressable>
+            ) : null}
           </View>
-        ) : onAddToCart ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Добавить в корзину: ${name}`}
-            onPress={onAddToCart}
-            hitSlop={2}
-            testID="product-quick-add"
-            style={({ pressed }) => [
-              {
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-              pressed ? { opacity: 0.8 } : null,
-            ]}
-          >
-            <Plus size={22} color={colors.onPrimary} />
-          </Pressable>
-        ) : null}
-      </View>
 
-      {organizationName ? (
-        <Text variant="caption" color="textSecondary" numberOfLines={1}>
-          {organizationName}
-        </Text>
-      ) : null}
+          {organizationName ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {organizationName}
+            </Text>
+          ) : null}
 
-      {stock ? <StockIndicator stock={stock} /> : null}
+          {stock ? <StockIndicator stock={stock} /> : null}
+        </>
+      )}
     </View>
   );
 
+  const width = compact ? PRODUCT_CARD_COMPACT_WIDTH : 168;
+  const cardStyle: StyleProp<ViewStyle> = [
+    { width },
+    // Compact (Промт 14a): плотнее внутренние отступы.
+    ...(compact ? [{ padding: spacing.md }] : []),
+    style,
+  ];
+
   if (onPress) {
     return (
-      <Card onPress={onPress} style={[{ width: 168 }, style]} testID={testID}>
+      <Card onPress={onPress} style={cardStyle} testID={testID}>
         {body}
       </Card>
     );
   }
 
   return (
-    <Card style={[{ width: 168 }, style]} testID={testID}>
+    <Card style={cardStyle} testID={testID}>
       {body}
     </Card>
   );

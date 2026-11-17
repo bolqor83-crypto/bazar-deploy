@@ -11,6 +11,7 @@ import type {
   CatalogListParams,
   CatalogProductDetail,
   CatalogProductList,
+  CatalogSimilarProducts,
 } from '@bazar/types';
 import { apiRequest } from './client';
 
@@ -58,4 +59,15 @@ export async function fetchProduct(id: string): Promise<CatalogProductDetail> {
   return apiRequest<CatalogProductDetail>(`/catalog/products/${id}`, {
     auth: false,
   });
+}
+
+/** Похожие товары (Промт 14a): та же категория, затем добор. */
+export async function fetchSimilarProducts(
+  id: string,
+  limit = 10,
+): Promise<CatalogSimilarProducts> {
+  return apiRequest<CatalogSimilarProducts>(
+    `/catalog/products/similar/${id}?limit=${limit}`,
+    { auth: false },
+  );
 }

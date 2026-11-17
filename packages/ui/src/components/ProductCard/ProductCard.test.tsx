@@ -87,4 +87,65 @@ describe('ProductCard', () => {
     await fireEvent.press(screen.getByRole('button', { name: /Кефир/ }));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  describe('compact (Промт 14a)', () => {
+    it('ширина 160 и плотный padding вместо стандартных 168/lg', async () => {
+      const screen = await render(
+        <ProductCard
+          compact
+          name="Бананы"
+          priceKopecks={8_900}
+          unit="1 кг"
+          testID="compact-card"
+        />,
+      );
+      const card = screen.getByTestId('compact-card');
+      const flat = [card.props.style].flat(Infinity);
+      const width = flat.find(
+        (s: { width?: number }) => typeof s?.width === 'number',
+      ) as { width: number };
+      expect(width.width).toBe(160);
+    });
+
+    it('фото — квадрат 1:1 и скругление md', async () => {
+      const screen = await render(
+        <ProductCard compact name="Бананы" priceKopecks={8_900} />,
+      );
+      const json = JSON.stringify(screen.toJSON());
+      expect(json).toContain('"aspectRatio":1');
+    });
+
+    it('badge рендерится одним нейтральным бейджем', async () => {
+      const screen = await render(
+        <ProductCard
+          compact
+          name="Бананы"
+          priceKopecks={8_900}
+          badge="Скоропорт"
+        />,
+      );
+      expect(screen.getByText('Скоропорт')).toBeTruthy();
+      expect(screen.queryByText('Хит')).toBeNull();
+    });
+
+    it('корзинные действия не рендерятся в compact', async () => {
+      const screen = await render(
+        <ProductCard
+          compact
+          name="Бананы"
+          priceKopecks={8_900}
+          onAddToCart={() => {}}
+        />,
+      );
+      expect(screen.queryByTestId('product-quick-add')).toBeNull();
+    });
+
+    it('цена и юнит в одну строку: «89 ₽ / 1 кг»', async () => {
+      const screen = await render(
+        <ProductCard compact name="Бананы" priceKopecks={8_900} unit="1 кг" />,
+      );
+      expect(screen.getByText(`89${NARROW_NBSP}₽`)).toBeTruthy();
+      expect(screen.getByText('/ 1 кг')).toBeTruthy();
+    });
+  });
 });

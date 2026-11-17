@@ -2,20 +2,22 @@
  * Карточка товара: /customer/product/[id] (Промт 8, Часть C).
  *
  * Свой экран (без таб-бара): круглая кнопка «назад» и «избранное»,
- * галерея, ProductDetailCard с ценой и предложениями продавцов.
+ * галерея, ProductDetailCard с ценой и предложениями продавцов,
+ * карусель похожих товаров (Промт 14a).
  * Нижняя панель: количество (минимум — минимальная партия лучшего
- * предложения) и кнопка «В корзину · сумма» — корзина появится в
- * Промте 9, сейчас показываем тост.
+ * предложения) и кнопка «В корзину · сумма».
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAddToCart } from '../../../../hooks/useCart';
+import { useSimilarProducts } from '../../../../hooks/useSimilarProducts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Button,
   ErrorState,
+  HorizontalProductCarousel,
   ProductDetailCard,
   ProductGallery,
   QuantitySelector,
@@ -26,6 +28,7 @@ import {
 import { ChevronLeft, Heart } from 'lucide-react-native';
 import { fetchProduct } from '../../../../services/api/catalogApi';
 import { resolveMediaUrl } from '../../../../services/api/client';
+import type { CarouselItem } from '@bazar/ui';
 
 /** Скелетон экрана товара. */
 function ProductSkeleton() {
@@ -44,14 +47,42 @@ function ProductSkeleton() {
 function ProductBody({ id }: { id: string }) {
   const { width } = useWindowDimensions();
   const { spacing, colors } = useTheme();
+  const router = useRouter();
+  // Промт 14a: при переходе на похожий товар страница скроллится
+  // наверх — пользователь не должен оказаться в середине нового экрана.
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const productQuery = useQuery({
     queryKey: ['catalog', 'product', id],
     queryFn: () => fetchProduct(id),
   });
 
+  const similarQuery = useSimilarProducts(id);
+
   const product = productQuery.data;
   const best = useMemo(() => product?.offers[0] ?? null, [product]);
+
+  // Карусель похожих: только товары с ценой (bestOffer), фото —
+  // первое из списка, бейдж — один («Хит» или «Скоропорт»).
+  const similarItems = useMemo<CarouselItem[]>(() => {
+    const items = similarQuery.data?.items ?? [];
+    return items
+      .filter((item) => item.bestOffer !== null)
+      .map((item) => ({
+        id: item.id,
+        title: item.name,
+        subtitle: item.category.name,
+        image: item.images[0] ? resolveMediaUrl(item.images[0]) : undefined,
+        price: item.bestOffer?.priceKopecks ?? 0,
+        unit: item.unit,
+        badge:
+          item.bestOffer?.badge === 'hit'
+            ? 'Хит'
+            : item.bestOffer?.isPerishable
+              ? 'Скоропорт'
+              : undefined,
+      }));
+  }, [similarQuery.data]);
 
   const [quantity, setQuantity] = useState<number | null>(null);
   const { show } = useToast();
@@ -103,6 +134,7 @@ function ProductBody({ id }: { id: string }) {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={{
           padding: spacing.lg,
@@ -142,6 +174,26 @@ function ProductBody({ id }: { id: string }) {
           }))}
           testID="product-card"
         />
+
+        {/* Промт 14a: карусель похожих товаров — вспомогательная
+            секция после карточки, до sticky-CTA. Карусель — на всю
+            ширину экрана (свои paddingHorizontal внутри). */}
+        <View style={{ marginHorizontal: -spacing.lg }}>
+          <HorizontalProductCarousel
+            title="Похожие товары"
+            items={similarItems}
+            loading={similarQuery.isPending}
+            onItemPress={(similarId) => {
+              scrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+              router.push(`/customer/product/${similarId}`);
+            }}
+            onSeeAllPress={() => {
+              router.push(
+                `/customer/catalog?category=${product.category.slug}`,
+              );
+            }}
+          />
+        </View>
       </ScrollView>
 
       <View

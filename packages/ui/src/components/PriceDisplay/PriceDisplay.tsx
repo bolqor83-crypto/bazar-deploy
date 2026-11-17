@@ -44,7 +44,7 @@ export function discountPercent(
   return Math.round((1 - priceKopecks / oldPriceKopecks) * 100);
 }
 
-export type PriceDisplaySize = 'md' | 'lg';
+export type PriceDisplaySize = 'sm' | 'md' | 'lg';
 
 export interface PriceDisplayProps {
   /** Цена в копейках. */
@@ -70,7 +70,7 @@ export function PriceDisplay({
       }`}
     >
       <Text
-        variant={size === 'lg' ? 'h3' : 'body'}
+        variant={size === 'lg' ? 'h3' : size === 'sm' ? 'bodyStrong' : 'body'}
         mono
         style={{ color: colors.text }}
       >
