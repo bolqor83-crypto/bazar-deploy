@@ -177,8 +177,16 @@ function ProductBody({ id }: { id: string }) {
 
         {/* Промт 14a: карусель похожих товаров — вспомогательная
             секция после карточки, до sticky-CTA. Карусель — на всю
-            ширину экрана (свои paddingHorizontal внутри). */}
-        <View style={{ marginHorizontal: -spacing.lg }}>
+            ширину экрана (marginHorizontal компенсирует padding
+            экрана); отступ от карточки — spacing.xl: gap контейнера
+            (lg) + добивка (xl − lg) — формула переживает смену
+            шкалы spacing в 14b. */}
+        <View
+          style={{
+            marginHorizontal: -spacing.lg,
+            marginTop: spacing.xl - spacing.lg,
+          }}
+        >
           <HorizontalProductCarousel
             title="Похожие товары"
             items={similarItems}
