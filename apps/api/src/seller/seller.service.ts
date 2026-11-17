@@ -18,6 +18,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../common/filters/api-error';
+import { resolveProductImages } from '../catalog/product-photos';
 import {
   applyMovement,
   ensureDefaultLocation,
@@ -87,7 +88,9 @@ function productView(product: ProductWithRelations) {
     categoryId: product.categoryId,
     category: product.category,
     unit: product.unit,
-    images: parseImages(product.images),
+    // Стоковые фото каталога по имени (Промт 12, итерация 4):
+    // picsum-заглушки раннего сида не доходят до клиента.
+    images: resolveProductImages(product.name, parseImages(product.images)),
     archivedAt: product.archivedAt,
     offersCount: product._count.offers,
     createdAt: product.createdAt,
@@ -127,7 +130,16 @@ function offerView(offer: OfferWithRelations) {
   return {
     id: offer.id,
     productId: offer.productId,
-    product: offer.product,
+    // Продукт с распарсенными и замапленными фото: сырая JSON-строка
+    // images не доходила до клиента, а picsum давал рандомные фото
+    // в строках склада (Промт 12, итерация 4).
+    product: {
+      ...offer.product,
+      images: resolveProductImages(
+        offer.product.name,
+        parseImages(offer.product.images),
+      ),
+    },
     price: offer.priceKopecks,
     stock,
     minQuantity: offer.minQuantity,

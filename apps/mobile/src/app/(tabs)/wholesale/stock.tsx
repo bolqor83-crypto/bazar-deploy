@@ -28,20 +28,26 @@ import {
 } from '@bazar/ui';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useStockLocations, useStockOverview } from '../../../hooks/useStock';
+import { resolveMediaUrl } from '../../../services/api/client';
 
 type StockFilter = 'all' | 'low' | 'out';
 
-/** Первое фото товара из JSON-строки images. */
-function firstImage(rawImages: string): string | null {
-  try {
-    const parsed = JSON.parse(rawImages) as unknown;
-    if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
-      return parsed[0];
-    }
-  } catch {
-    // Битый JSON — нет фото.
+/** Первое фото товара: API отдаёт массив (после итерации 4),
+ *  старые клиенты могли получить JSON-строку — терпим обе. */
+function firstImage(rawImages: string | string[]): string | null {
+  const list = typeof rawImages === 'string' ? safeParse(rawImages) : rawImages;
+  if (Array.isArray(list) && typeof list[0] === 'string' && list[0]) {
+    return resolveMediaUrl(list[0]);
   }
   return null;
+}
+
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 export default function StockOverviewScreen() {
@@ -64,6 +70,29 @@ export default function StockOverviewScreen() {
   const overview = useStockOverview(locationId);
 
   const locations = locationsQuery.data ?? [];
+
+  // Живые счётчики для чипов фильтра: считаются по непрофильтрованным
+  // строкам поиска (VLM-аудит итерации 4: «фильтры слабее цифр панели»).
+  const counts = useMemo(() => {
+    const needle = query.toLowerCase();
+    const scoped = overview.rows.filter((row) =>
+      needle
+        ? row.offer.product.name.toLowerCase().includes(needle)
+        : true,
+    );
+    let low = 0;
+    let out = 0;
+    for (const row of scoped) {
+      if (row.availableQty <= 0) {
+        out += 1;
+      } else if (
+        stockLevelOf(row.availableQty, row.offer.minQuantity) === 'low'
+      ) {
+        low += 1;
+      }
+    }
+    return { low, out };
+  }, [overview.rows, query]);
 
   const rows = useMemo(() => {
     const needle = query.toLowerCase();
@@ -249,15 +278,17 @@ export default function StockOverviewScreen() {
               onPress={() => setFilter('all')}
               testID="stock-segment-all"
             />
+            {/* Чипы с живыми счётчиками: фильтры «Мало/Нет» — не просто
+                сегменты, а операционные числа (VLM-аудит итерации 4). */}
             <FilterChip
-              label="Мало"
+              label={`Мало${counts.low > 0 ? ` · ${counts.low}` : ''}`}
               size="sm"
               active={filter === 'low'}
               onPress={() => setFilter('low')}
               testID="stock-segment-low"
             />
             <FilterChip
-              label="Нет"
+              label={`Нет${counts.out > 0 ? ` · ${counts.out}` : ''}`}
               size="sm"
               active={filter === 'out'}
               onPress={() => setFilter('out')}

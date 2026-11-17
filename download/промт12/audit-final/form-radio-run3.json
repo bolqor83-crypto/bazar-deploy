@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":9,\"icons\":8,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":79,\"notes\":\"Плотность низкая — крупные межблочные отступы при слабом освещении на рынке лишают обзорности; чекбоксы/радио крупные, но нет табличных цифр в дате и признаков disabled/ошибок для toggle. Checkbox 'Требует сертификации' без связи с полем загрузки документа — подсказка не ведёт к действию.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937677,
+  "id": "202611180147545b8f452364844015",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180147545b8f452364844015",
+  "usage": {
+    "completion_tokens": 139,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1984
+  }
+}

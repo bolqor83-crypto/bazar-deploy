@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":74,\"notes\":\"Прайс без tabular-nums и непонятная строка «прокрутите за остальными» — лишний шум; в тёмной теме плашки «Скоропорт» и стелс-чипы снижают контраст рамок, кнопки + 48px но стелc-контрол −/+ узковат по вертикали для перчаток\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937856,
+  "id": "20261118015052b720b7baf8fb463d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118015052b720b7baf8fb463d",
+  "usage": {
+    "completion_tokens": 138,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3945
+  }
+}

@@ -39,7 +39,7 @@ describe('Text', () => {
   it('применяет цвет textSecondary из темы', async () => {
     const screen = await render(<Text color="textSecondary">Подпись</Text>);
     const node = screen.getByText('Подпись');
-    expect(node.props.style?.[0]?.color).toBe('#666D64');
+    expect(node.props.style?.[0]?.color).toBe('#565E55');
   });
 
   it('mono добавляет tabular-nums', async () => {

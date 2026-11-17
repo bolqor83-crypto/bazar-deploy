@@ -38,8 +38,10 @@ export const colorsLight = {
   infoSoft: '#E6EEF7',
 
   text: '#1A1A17',
-  textSecondary: '#666D64',
-  textMuted: '#6C716A',
+  // Итерация 4 (VLM-аудит): вторичный текст темнее на ступень —
+  // «4 утра, слабый свет» требовал запаса сверх AA.
+  textSecondary: '#565E55',
+  textMuted: '#5C625A',
   textDisabled: '#B8BDB6',
 
   // Промт 12, Часть E: не-текстовой контраст рамок ≥ 3:1 (WCAG
@@ -79,10 +81,10 @@ export const colorsDark = {
   infoSoft: '#17273A',
 
   text: '#F0EDE8',
-  textSecondary: '#A8AFA6',
-  // Промт 12 (доработка по VLM-аудиту): +1 ступень светлее — микротексты
-  // (даты журнала, подписи строк) читались как «пропавшие» в dark.
-  textMuted: '#9CA39B',
+  // Итерация 4 (VLM-аудит): +2 ступени светлее — серые подписи
+  // терялись на тёмном фоне при слабом свете.
+  textSecondary: '#C2C8BF',
+  textMuted: '#AEB5AC',
   textDisabled: '#5A605A',
 
   // Промт 12, Часть E: рамки светлее фона до ≥ 3:1 против surface

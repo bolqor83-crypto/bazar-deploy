@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":6,\"color\":7,\"grid\":8,\"components\":8,\"icons\":7,\"states\":9,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":75,\"notes\":\"Кнопка «Сохранить» в disabled-состоянии слишком низкоконтрастна (белый текст на бледно-зелёном) — плохо видно в перчатках при слабом свете; нет tabular-nums и заметного акцента на цифре количества (5 мелкая относительно её важности для 4 утра на рынке).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937503,
+  "id": "20261118014500c404c35532df4da4",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118014500c404c35532df4da4",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 131
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2229
+  }
+}

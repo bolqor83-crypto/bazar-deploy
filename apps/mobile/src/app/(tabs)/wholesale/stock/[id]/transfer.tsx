@@ -312,35 +312,38 @@ export default function StockTransferFormScreen() {
             hint="Запись в журнал движений обоих складов"
             testID="transfer-reason"
           />
-          {/* Кнопка в потоке формы (VLM-аудит: без провала пустоты
-              и без «оборванной» причины у прижатого футера). */}
-          <View
-            style={{
-              paddingTop: spacing.sm,
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
-              gap: spacing.xs,
-            }}
-          >
-            <Button
-              onPress={onSave}
-              disabled={!valid || mutation.isPending}
-              fullWidth
-              testID="transfer-save"
-            >
-              {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
-            </Button>
-            {!valid ? (
-              <Text
-                variant="caption"
-                color="textSecondary"
-                style={{ textAlign: 'center' }}
-              >
-                Укажите причину — кнопка активируется
-              </Text>
-            ) : null}
-          </View>
         </ScrollView>
+
+        {/* Кнопка-футер вне скролла: всегда видна целиком (VLM-аудит
+            итерации 4: «кнопка подтверждения обрезана внизу»). */}
+        <View
+          style={{
+            padding: spacing.md,
+            paddingTop: spacing.sm,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            backgroundColor: colors.surface,
+            gap: spacing.xs,
+          }}
+        >
+          <Button
+            onPress={onSave}
+            disabled={!valid || mutation.isPending}
+            fullWidth
+            testID="transfer-save"
+          >
+            {mutation.isPending ? 'Перемещаем…' : 'Переместить'}
+          </Button>
+          {!valid ? (
+            <Text
+              variant="caption"
+              color="textSecondary"
+              style={{ textAlign: 'center' }}
+            >
+              Укажите причину — кнопка активируется
+            </Text>
+          ) : null}
+        </View>
       </View>
     </RoleScreen>
   );

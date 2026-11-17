@@ -298,7 +298,6 @@ function CatalogBody() {
           {`${productsQuery.data.pages[0]?.total ?? products.length} ${pluralTovarov(
             productsQuery.data.pages[0]?.total ?? products.length,
           )}`}
-          {productsQuery.hasNextPage ? ' · прокрутите за остальными' : ''}
         </Text>
       ) : null}
     </View>

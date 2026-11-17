@@ -317,7 +317,7 @@ export function DatePicker({
                       : isToday
                         ? colors.primarySoft
                         : 'transparent',
-                    opacity: dayDisabled ? 0.35 : 1,
+                    opacity: dayDisabled ? 0.5 : 1,
                   }}
                 >
                   <Text

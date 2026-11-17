@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":74,\"notes\":\"Слабые состояния: toggle выглядит как disabled без подсказки, нет disabled/error-подсказок; дата без tabular-nums и без контекста времени — при 4 утра и перчатках крупный chevron/checkbox ок, но toggle 48px на грани.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937656,
+  "id": "202611180147333be904789f5e49eb",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180147333be904789f5e49eb",
+  "usage": {
+    "completion_tokens": 114,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1959
+  }
+}

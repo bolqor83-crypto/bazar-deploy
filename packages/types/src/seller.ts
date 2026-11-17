@@ -63,7 +63,8 @@ export interface SellerOffer {
     name: string;
     subtitle: string | null;
     unit: string;
-    images: string;
+    /** Массив URL (после итерации 4; ранее — JSON-строка). */
+    images: string[] | string;
     archivedAt: string | null;
   };
   price: number;

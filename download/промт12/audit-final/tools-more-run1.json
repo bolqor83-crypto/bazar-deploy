@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":7,\"grid\":8,\"components\":8,\"icons\":8,\"states\":5,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":76,\"notes\":\"Нет счётчиков/бейджей и статусов разделов — меню без операционных данных, что для рабочего инструмента обедняет иерархию; в тёмной теме подписи-секционные заголовки («Торговля», «Склад») имеют слабый контраст при перчатках/4 утра — требуется повышение contrast secondary-текста и видимые pressed-состояния строк.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937574,
+  "id": "2026111801460679a9a34c20ae44e8",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111801460679a9a34c20ae44e8",
+  "usage": {
+    "completion_tokens": 145,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3952
+  }
+}

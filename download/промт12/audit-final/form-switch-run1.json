@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":78,\"notes\":\"Пустые и неактивные состояния (unchecked чекбокс, выключенный toggle) слишком низкоконтрастны для работы в перчатках при слабом свете; цифры даты без гарантии tabular-nums, нет подсказки disabled-состояния кнопки\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937684,
+  "id": "202611180148019ce2f4116dba48dc",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180148019ce2f4116dba48dc",
+  "usage": {
+    "completion_tokens": 115,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1960
+  }
+}

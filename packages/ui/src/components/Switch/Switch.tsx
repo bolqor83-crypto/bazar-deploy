@@ -61,9 +61,10 @@ export function Switch({
         width: TRACK_WIDTH,
         height: TRACK_HEIGHT,
         borderRadius: 14,
-        // Off — нейтральная заливка: трек всегда читается как
-        // орган управления, а не пустое место (VLM-аудит, итерация 3).
-        backgroundColor: value ? colors.primary : colors.surfaceMuted,
+        // Off — заливка border: трек читается как орган управления
+        // в обеих темах (surfaceMuted на карточке был почти невидим,
+        // VLM-аудит итерации 4).
+        backgroundColor: value ? colors.primary : colors.border,
         padding: 2,
         justifyContent: 'center',
       }}

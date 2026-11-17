@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":78,\"notes\":\"Календарь: disabled-даты почти невидимы при слабом свете, неясно почему они недоступны — нужна подсказка/причина. Контраст подписи «От 2 часов по городу» и disabled-тумблера на затемнённом фоне низкий; перчаточный сценарий требует и явно крупных целей навигации по месяцам.\"}",
+        "reasoning_content": "Good quality. Dates tabular? Fine. Deduct for dimmed disabled dates low contrast at 4am, toggle small touch target maybe ok. Calendar disabled dates contrast weak.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937723,
+  "id": "20261118014838aacfba84094b4b80",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118014838aacfba84094b4b80",
+  "usage": {
+    "completion_tokens": 173,
+    "completion_tokens_details": {
+      "reasoning_tokens": 36
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3728
+  }
+}

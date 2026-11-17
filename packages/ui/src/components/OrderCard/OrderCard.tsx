@@ -14,8 +14,9 @@ import { OrderStatus } from '../OrderStatus';
 import { Text } from '../Text';
 import type { OrderStatusType } from '../OrderStatus';
 
-/** Маппинг статусов API (Промт 9) в словарь OrderStatus (Промт 6). */
-const STATUS_MAP: Record<ApiOrderStatus, OrderStatusType> = {
+/** Маппинг статусов API (Промт 9) в словарь OrderStatus (Промт 6).
+ *  Экспортируется для сводок профиля (итерация 4). */
+export const ORDER_STATUS_MAP: Record<ApiOrderStatus, OrderStatusType> = {
   PENDING: 'new',
   CONFIRMED: 'confirmed',
   PREPARING: 'assembling',
@@ -135,7 +136,7 @@ export function OrderCard({
             {party ? ` · ${party}` : ''}
           </Text>
         </View>
-        <OrderStatus status={STATUS_MAP[status]} />
+        <OrderStatus status={ORDER_STATUS_MAP[status]} />
       </View>
 
       {/* Состав заказа текстом + итог: квадраты-заглушки без

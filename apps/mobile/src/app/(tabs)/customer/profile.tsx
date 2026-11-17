@@ -1,28 +1,36 @@
 /**
  * Профиль (profile) — экран роли «покупатель».
  *
- * Карточка пользователя, сводка операций (заказы и сумма —
- * рабочая плотность вместо полупустого экрана, VLM-аудит
- * итерации 3), переход к уведомлениям о заказах и выход
- * из аккаунта с подтверждением.
+ * Сводка операций (два числа, tabular-nums), последние заказы
+ * (быстрый доступ к деталям), уведомления, карточка пользователя
+ * и выход. Рабочая плотность вместо полупустого экрана
+ * (VLM-аудит, итерации 3–4).
  */
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell, ChevronRight } from 'lucide-react-native';
-import { Badge, Card, Text, formatPrice, useTheme } from '@bazar/ui';
+import {
+  Badge,
+  Card,
+  OrderStatus,
+  ORDER_STATUS_MAP,
+  Text,
+  formatPrice,
+  useTheme,
+} from '@bazar/ui';
 import { LogoutSection } from '../../../components/auth/LogoutSection';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useUnreadNotificationsCount } from '../../../hooks/useNotifications';
 import { useOrders } from '../../../hooks/useOrders';
+import type { Order } from '@bazar/types';
 
-/** Сводка операций покупателя: два числа на одной панели. */
-function OperationsSummary() {
-  const { colors, spacing } = useTheme();
-  const ordersQuery = useOrders();
-  const orders = ordersQuery.data?.items ?? [];
-  if (orders.length === 0) {
-    return null;
-  }
+/** Сводка операций: два числа одинакового веса, подписи снизу. */
+function OperationsSummary({
+  orders,
+}: {
+  orders: Order[];
+}) {
+  const { spacing } = useTheme();
   const totalKopecks = orders.reduce((sum, order) => sum + order.total, 0);
   const inWork = orders.filter(
     (order) => order.status !== 'COMPLETED' && order.status !== 'CANCELLED',
@@ -30,30 +38,69 @@ function OperationsSummary() {
 
   return (
     <Card testID="profile-operations">
-      <Text variant="caption" color="textMuted">
-        Операции
-      </Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'baseline',
-          gap: spacing.sm,
-          marginTop: spacing.xs,
-        }}
-      >
-        <Text variant="numberL" color="primaryText">
-          {orders.length}
-        </Text>
-        <Text variant="caption" color="textSecondary" style={{ flexShrink: 1 }}>
-          {orders.length === 1 ? 'заказ' : 'заказа'}
-          {inWork > 0 ? ` · ${inWork} в работе` : ''}
-        </Text>
-        <Text variant="numberL">{formatPrice(totalKopecks)}</Text>
-        <Text variant="caption" color="textSecondary">
-          закуплено
-        </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="numberL" color="primaryText">
+            {orders.length}
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            {orders.length === 1 ? 'заказ' : 'заказа'}
+            {inWork > 0 ? `, ${inWork} в работе` : ''}
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Text variant="numberL">{formatPrice(totalKopecks)}</Text>
+          <Text variant="caption" color="textSecondary">
+            закуплено
+          </Text>
+        </View>
       </View>
     </Card>
+  );
+}
+
+/** Компактная строка последнего заказа: номер, статус, сумма. */
+function RecentOrderRow({ order }: { order: Order }) {
+  const { spacing } = useTheme();
+  const date = new Date(order.createdAt);
+  const months = [
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'мая',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
+  ];
+  const dateLabel = `${date.getDate()} ${months[date.getMonth()] ?? ''}`;
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        minHeight: 48,
+      }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text variant="bodyStrong" mono numberOfLines={1}>
+          {order.number}
+        </Text>
+        <Text variant="caption" color="textSecondary">
+          {dateLabel} · {order.items.length}{' '}
+          {order.items.length === 1 ? 'позиция' : 'позиций'}
+        </Text>
+      </View>
+      <OrderStatus status={ORDER_STATUS_MAP[order.status]} />
+      <Text variant="body" mono>
+        {formatPrice(order.total)}
+      </Text>
+    </View>
   );
 }
 
@@ -62,11 +109,47 @@ export default function ProfileScreen() {
   const { colors, spacing } = useTheme();
   const unreadQuery = useUnreadNotificationsCount();
   const unread = unreadQuery.data ?? 0;
+  const ordersQuery = useOrders();
+  const orders = ordersQuery.data?.items ?? [];
+  const recent = orders.slice(0, 2);
 
   return (
     <RoleScreen role="customer" section="profile" title="Профиль">
       <View style={{ padding: spacing.md, gap: spacing.md, width: '100%' }}>
-        <OperationsSummary />
+        {orders.length > 0 ? <OperationsSummary orders={orders} /> : null}
+
+        {recent.length > 0 ? (
+          <Card>
+            <Text
+              variant="caption"
+              color="textMuted"
+              style={{ marginBottom: spacing.xs }}
+            >
+              Последние заказы
+            </Text>
+            {recent.map((order) => (
+              <RecentOrderRow key={order.id} order={order} />
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Все заказы"
+              onPress={() => router.push('/customer/orders')}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                minHeight: 44,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text variant="body" color="primaryText">
+                Все заказы
+              </Text>
+              <ChevronRight size={18} color={colors.primaryText} />
+            </Pressable>
+          </Card>
+        ) : null}
+
         <Card>
           <Pressable
             testID="profile-notifications"

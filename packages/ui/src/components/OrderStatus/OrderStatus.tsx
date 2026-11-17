@@ -41,7 +41,10 @@ export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
 
 /** Статус → вариант Badge (янтарь и терракота, красного нет).
  *  «Подтверждён» — success: info-синий выбивался из зелёной
- *  палитры приложения (VLM-аудит доработки Промта 12). */
+ *  палитры приложения (VLM-аудит доработки Промта 12).
+ *  «Отменён» — neutral: отмена — факт, а не ошибка; терракотовый
+ *  бейдж читался как «красный» и спорил со спокойной палитрой
+ *  списка (VLM-аудит итерации 4). */
 const ORDER_STATUS_BADGE: Record<OrderStatusType, BadgeVariant> = {
   draft: 'neutral',
   new: 'warning',
@@ -51,7 +54,7 @@ const ORDER_STATUS_BADGE: Record<OrderStatusType, BadgeVariant> = {
   in_delivery: 'info',
   delivered: 'success',
   completed: 'success',
-  cancelled: 'danger',
+  cancelled: 'neutral',
   returned: 'danger',
   disputed: 'warning',
 };

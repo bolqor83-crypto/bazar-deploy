@@ -109,9 +109,11 @@ export function QuantityField({
           accessibilityLabel="Количество"
           style={{
             flex: 1,
-            fontFamily: 'Inter_600SemiBold',
-            fontSize: 20,
-            lineHeight: 28,
+            fontFamily: 'Inter_700Bold',
+            // Крупно: количество — главное число складской формы
+            // (VLM-аудит итерации 4: «5 мелкая относительно важности»).
+            fontSize: 24,
+            lineHeight: 32,
             color: colors.text,
             paddingVertical: 8,
             fontVariant: ['tabular-nums'],

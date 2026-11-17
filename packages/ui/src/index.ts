@@ -233,7 +233,7 @@ export type {
 export { CartItemCard } from './components/CartItemCard';
 export type { CartItemCardProps } from './components/CartItemCard';
 
-export { OrderCard } from './components/OrderCard';
+export { OrderCard, ORDER_STATUS_MAP } from './components/OrderCard';
 export type { OrderCardProps } from './components/OrderCard';
 
 export { OrderTimeline } from './components/OrderTimeline';

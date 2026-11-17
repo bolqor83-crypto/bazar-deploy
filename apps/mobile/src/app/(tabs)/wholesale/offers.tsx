@@ -22,18 +22,23 @@ import {
 import type { SellerOffer } from '@bazar/types';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useSellerOffers } from '../../../hooks/useSeller';
+import { resolveMediaUrl } from '../../../services/api/client';
 
-/** Первое фото товара из JSON-строки images. */
-function firstImage(rawImages: string): string | null {
-  try {
-    const parsed = JSON.parse(rawImages) as unknown;
-    if (Array.isArray(parsed) && typeof parsed[0] === 'string') {
-      return parsed[0];
-    }
-  } catch {
-    // Битый JSON — нет фото.
+/** Первое фото товара: массив (итерация 4) или JSON-строка. */
+function firstImage(rawImages: string | string[]): string | null {
+  const list = typeof rawImages === 'string' ? safeParse(rawImages) : rawImages;
+  if (Array.isArray(list) && typeof list[0] === 'string' && list[0]) {
+    return resolveMediaUrl(list[0]);
   }
   return null;
+}
+
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 export default function SellerOffersScreen() {

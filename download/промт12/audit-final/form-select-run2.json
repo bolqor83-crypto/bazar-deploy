@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":79,\"notes\":\"Нет цифр/tabular-nums и визуально слабая индикация выбранных строк в нижнем шите (только галочка/цвет, без фона) — при перчатках и слабом свете крупнее и контрастнее выделять активное состояние; toggle 'Автоприём' мелкий и с малой зоной нажатия.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937627,
+  "id": "202611180147036942d4930112451b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180147036942d4930112451b",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3687
+  }
+}
