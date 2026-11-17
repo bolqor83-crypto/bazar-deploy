@@ -76,4 +76,12 @@ export interface CatalogListParams {
   /** Цены фильтра — целые рубли (API сравнит с копейками). */
   minPrice?: number;
   maxPrice?: number;
+  /** Исключить товар из списка (Промт 14a): соседние экраны
+   * убирают «себя» из выдачи. Невалидный id игнорируется. */
+  excludeId?: string;
+}
+
+/** Похожие товары (Промт 14a): GET /catalog/products/similar/:id. */
+export interface CatalogSimilarProducts {
+  items: CatalogProduct[];
 }

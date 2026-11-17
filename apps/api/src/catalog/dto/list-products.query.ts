@@ -82,4 +82,21 @@ export class ListProductsQueryDto {
   @Min(0)
   @Max(10_000_000)
   maxPrice?: number;
+
+  /** Исключить товар из выдачи (Промт 14a): cuid/UUID; невалидное
+   * значение сервис молча игнорирует — фильтр не должен ломать листинг. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  excludeId?: string;
+}
+
+/** Query похожих товаров: ?limit=1..20, по умолчанию 10 (Промт 14a). */
+export class SimilarProductsQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  limit?: number;
 }

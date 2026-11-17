@@ -325,12 +325,17 @@ export class FakePrisma {
         categoryId?: string;
         category?: { slug: string };
         archivedAt?: null;
+        /** Промт 14a: исключение товара (similar/excludeId). */
+        id?: { not: string };
       };
       include?: { category?: boolean; offers?: boolean };
       select?: { categoryId?: boolean };
     } = {}) => {
       const result: Record<string, unknown>[] = [];
       for (const product of this.products.values()) {
+        if (where?.id && product.id === where.id.not) {
+          continue;
+        }
         if (where?.categoryId && product.categoryId !== where.categoryId) {
           continue;
         }

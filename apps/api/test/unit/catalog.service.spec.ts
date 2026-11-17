@@ -98,10 +98,32 @@ describe('CatalogService (unit)', () => {
         isPerishable: false,
       },
     });
+    // Промт 14a: бананы — другая категория с предложением (проверка
+    // добора из остальных категорий в similar).
+    const bananas = await prisma.product.create({
+      data: {
+        categoryId: fruitsId,
+        name: 'Бананы',
+        unit: '1 кг',
+        description: 'Бананы первый сорт.',
+        images: '[]',
+      },
+    });
+    const bananaSouth = await prisma.productOffer.create({
+      data: {
+        productId: bananas.id,
+        organizationId: orgSouthId,
+        priceKopecks: 8900,
+        minQuantity: 3,
+        badge: null,
+        isPerishable: true,
+      },
+    });
     // Промт 11: остатки — балансы (INITIAL).
     prisma.seedStock(tomatoSouth.id, 50);
     prisma.seedStock(tomatoHome.id, 20);
     prisma.seedStock(cucumberSouth.id, 120);
+    prisma.seedStock(bananaSouth.id, 35);
     // Яблоки: без предложений (витрина может быть пустой у товара).
     void apples;
   });
@@ -119,7 +141,8 @@ describe('CatalogService (unit)', () => {
       expect(categories[1]).toMatchObject({
         slug: 'fruits',
         name: 'Фрукты',
-        productCount: 1,
+        // Промт 14a: бананы присоединились к яблокам во фруктах.
+        productCount: 2,
       });
     });
   });
@@ -129,10 +152,11 @@ describe('CatalogService (unit)', () => {
       const list = await service.list({ sort: 'popular' });
       expect(list.items.map((p) => p.name)).toEqual([
         'Помидоры розовые',
+        'Бананы',
         'Огурцы гладкие',
         'Яблоки Гала',
       ]);
-      expect(list.total).toBe(3);
+      expect(list.total).toBe(4);
     });
 
     it('bestOffer — самое дешёвое предложение с продавцом', async () => {
@@ -178,29 +202,31 @@ describe('CatalogService (unit)', () => {
 
     it('цена «до» отсекает товары без предложений', async () => {
       const list = await service.list({ maxPrice: 500 });
-      expect(list.items).toHaveLength(2); // яблоки без офферов не прошли
+      // Яблоки без офферов не прошли; бананы (89 ₽) — прошли.
+      expect(list.items).toHaveLength(3);
     });
 
     it('сортировка price-asc / price-desc', async () => {
       const asc = await service.list({ sort: 'price-asc' });
       expect(asc.items.map((p) => p.name)).toEqual([
+        'Бананы',
         'Огурцы гладкие',
         'Помидоры розовые',
         'Яблоки Гала', // без офферов — в конце
       ]);
       const desc = await service.list({ sort: 'price-desc' });
       expect(desc.items[0].name).toBe('Помидоры розовые');
-      expect(desc.items[2].name).toBe('Яблоки Гала');
+      expect(desc.items[3].name).toBe('Яблоки Гала');
     });
 
     it('пагинация: страница, размер, hasMore', async () => {
       const page1 = await service.list({ page: 1, pageSize: 2 });
       expect(page1.items).toHaveLength(2);
-      expect(page1.total).toBe(3);
+      expect(page1.total).toBe(4);
       expect(page1.hasMore).toBe(true);
 
       const page2 = await service.list({ page: 2, pageSize: 2 });
-      expect(page2.items).toHaveLength(1);
+      expect(page2.items).toHaveLength(2);
       expect(page2.hasMore).toBe(false);
     });
 
@@ -210,6 +236,88 @@ describe('CatalogService (unit)', () => {
       expect(raw).not.toContain('createdAt');
       expect(raw).not.toContain('"type"');
       expect(raw).not.toContain('organizationId');
+    });
+  });
+
+  describe('list: excludeId (Промт 14a)', () => {
+    it('исключает товар из выдачи', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const rest = await service.list({ excludeId: tomatoes?.id });
+      expect(rest.items.map((p) => p.name)).not.toContain('Помидоры розовые');
+      expect(rest.total).toBe(3);
+    });
+
+    it('невалидный excludeId игнорируется', async () => {
+      const rest = await service.list({ excludeId: 'не-id!!!' });
+      expect(rest.total).toBe(4);
+    });
+  });
+
+  describe('similar (Промт 14a)', () => {
+    it('та же категория раньше остальных, сам товар исключён', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string);
+      const names = similar.items.map((p) => p.name);
+      expect(names).not.toContain('Помидоры розовые');
+      // Кандидаты с офферами: огурцы (овощи) и бананы (фрукты).
+      expect(names).toHaveLength(2);
+      // Овощи (огурцы) — раньше фруктов (бананы): приоритет категории.
+      expect(names.indexOf('Огурцы гладкие')).toBeLessThan(
+        names.indexOf('Бананы'),
+      );
+    });
+
+    it('товар без предложений не попадает в похожие', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string);
+      expect(similar.items.map((p) => p.name)).not.toContain('Яблоки Гала');
+    });
+
+    it('limit ограничивает выдачу', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string, 1);
+      expect(similar.items).toHaveLength(1);
+      // Единственный товар — из той же категории.
+      expect(similar.items[0].category.slug).toBe('vegetables');
+    });
+
+    it('limit = 0 — значение по умолчанию, не ломает запрос', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string, 0);
+      expect(similar.items).toHaveLength(2);
+    });
+
+    it('порядок детерминирован: два вызова дают одинаковый список', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const first = await service.similar(tomatoes?.id as string);
+      const second = await service.similar(tomatoes?.id as string);
+      expect(first.items.map((p) => p.id)).toEqual(
+        second.items.map((p) => p.id),
+      );
+    });
+
+    it('карточки похожих несут те же поля, что листинг', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string);
+      for (const item of similar.items) {
+        expect(item).toHaveProperty('id');
+        expect(item).toHaveProperty('bestOffer');
+        expect(item).toHaveProperty('offersCount');
+        expect(item).toHaveProperty('images');
+      }
+    });
+
+    it('несуществующий товар — 404 PRODUCT_NOT_FOUND', async () => {
+      await expect(service.similar('nope')).rejects.toMatchObject({
+        response: { code: 'PRODUCT_NOT_FOUND' },
+      });
     });
   });
 

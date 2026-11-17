@@ -13,6 +13,11 @@ import { ApiError } from '../common/filters/api-error';
 import { resolveProductImages } from './product-photos';
 import type { CatalogSort } from './dto/list-products.query';
 
+/** Похожие идентификаторы (cuid, UUID, короткие тестовые id) — всё
+ * остальное в excludeId игнорируется (Промт 14a): кириллица,
+ * знаки препинания и прочий мусор не должен ломать листинг. */
+const ID_PATTERN = /^[0-9a-z][0-9a-z-]{7,63}$/i;
+
 /** Товар с категорией и предложениями (внутреннее представление). */
 interface ProductWithRelations {
   id: string;
@@ -100,6 +105,22 @@ export interface ListProductsFilter {
   pageSize?: number;
   minPrice?: number;
   maxPrice?: number;
+  excludeId?: string;
+}
+
+/** FNV-1a 32 бита: детерминированный хэш строки. */
+function fnv1a(input: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+/** Является ли строка похожей на id (cuid/UUID — без дефисов и прочего). */
+function looksLikeId(value: string | undefined): value is string {
+  return typeof value === 'string' && ID_PATTERN.test(value);
 }
 
 /** Дешёвое предложение товара (минимальная цена, сырая запись). */
@@ -173,6 +194,11 @@ export class CatalogService {
       where: {
         archivedAt: null,
         ...(filter.category ? { category: { slug: filter.category } } : {}),
+        // Промт 14a: исключение «себя» из выдачи — валидный id
+        // фильтрует на уровне БД, невалидный игнорируется.
+        ...(looksLikeId(filter.excludeId)
+          ? { id: { not: filter.excludeId } }
+          : {}),
       },
       include: {
         category: true,
@@ -310,6 +336,74 @@ export class CatalogService {
       items: [...product.offers]
         .sort((a, b) => a.priceKopecks - b.priceKopecks)
         .map((offer) => this.toOfferView(offer)),
+    };
+  }
+
+  /**
+   * Похожие товары (Промт 14a): сначала та же категория, при нехватке —
+   * добор из остальных. Сам товар всегда исключён. Порядок внутри
+   * групп — детерминированное «перемешивание» (хэш FNV-1a от пары
+   * id): живая витрина без Math.random — golden-скриншоты стабильны.
+   *
+   * В выдаче только товары с доступным предложением: карточка
+   * похожих ведёт на покупку, товар без цены в карусели бесполезен.
+   */
+  async similar(
+    id: string,
+    rawLimit?: number,
+  ): Promise<{ items: ProductSummaryView[] }> {
+    const limit = Math.min(Math.max(Math.trunc(rawLimit ?? 10) || 10, 1), 20);
+
+    const product = (await this.prisma.product.findUnique({
+      where: { id },
+      select: { id: true, categoryId: true, archivedAt: true },
+    })) as { id: string; categoryId: string; archivedAt: Date | null } | null;
+
+    if (!product || product.archivedAt) {
+      throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Товар не найден');
+    }
+
+    const candidates = (await this.prisma.product.findMany({
+      where: { archivedAt: null, id: { not: id } },
+      include: {
+        category: true,
+        offers: {
+          include: {
+            organization: true,
+            stockBalances: { select: { availableQty: true } },
+          },
+        },
+      },
+    })) as ProductWithRelations[];
+
+    // Кандидат = товар с видимым предложением; сортировка по хэшу
+    // пары (id исходного, id кандидата) — стабильно между прогонами.
+    const sourceCategoryId = product.categoryId;
+    const withBest = candidates
+      .map((candidate) => ({
+        product: candidate,
+        best: bestOfferOf(candidate),
+      }))
+      .filter(({ best }) => best !== null)
+      .map(({ product: candidate, best }) => ({
+        product: candidate,
+        best,
+        rank: fnv1a(`${id}:${candidate.id}`),
+        sameCategory: candidate.categoryId === sourceCategoryId ? 1 : 0,
+      }));
+
+    withBest.sort((a, b) => {
+      // Та же категория — всегда раньше, «перемешивание» — внутри групп.
+      if (a.sameCategory !== b.sameCategory) {
+        return b.sameCategory - a.sameCategory;
+      }
+      return a.rank - b.rank;
+    });
+
+    return {
+      items: withBest
+        .slice(0, limit)
+        .map(({ product, best }) => this.toSummary(product, best)),
     };
   }
 

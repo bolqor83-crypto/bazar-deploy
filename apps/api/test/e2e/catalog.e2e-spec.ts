@@ -53,6 +53,30 @@ describe('Каталог (e2e)', () => {
       },
     });
 
+    // Промт 14a: бананы — другая категория с оффером (добор similar).
+    const fruits = await testApp.prisma.category.create({
+      data: { slug: 'fruits', name: 'Фрукты', icon: 'Apple', sortOrder: 2 },
+    });
+    const bananas = await testApp.prisma.product.create({
+      data: {
+        categoryId: fruits.id,
+        name: 'Бананы',
+        unit: '1 кг',
+        description: 'Бананы первый сорт.',
+        images: '[]',
+      },
+    });
+    const offerBananas = await testApp.prisma.productOffer.create({
+      data: {
+        productId: bananas.id,
+        organizationId: org.id,
+        priceKopecks: 8900,
+        minQuantity: 3,
+        badge: null,
+        isPerishable: true,
+      },
+    });
+
     const offerTomatoes = await testApp.prisma.productOffer.create({
       data: {
         productId: tomatoes.id,
@@ -84,12 +108,18 @@ describe('Каталог (e2e)', () => {
       organizationId: org.id,
       qty: 120,
     });
+    await seedOfferStock(testApp.prisma, {
+      offerId: offerBananas.id,
+      organizationId: org.id,
+      qty: 35,
+    });
   });
 
   it('категории доступны без авторизации', async () => {
     const res = await request(testApp.server).get('/api/catalog/categories');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
+    // Промт 14a: в фикстуре 2 категории (овощи + фрукты для similar).
+    expect(res.body).toHaveLength(2);
     expect(res.body[0]).toMatchObject({
       slug: 'vegetables',
       name: 'Овощи',
@@ -100,7 +130,7 @@ describe('Каталог (e2e)', () => {
   it('список товаров: bestOffer и счётчик предложений', async () => {
     const res = await request(testApp.server).get('/api/catalog/products');
     expect(res.status).toBe(200);
-    expect(res.body.total).toBe(2);
+    expect(res.body.total).toBe(3);
     const tomatoes = res.body.items.find(
       (p: { name: string }) => p.name === 'Помидоры розовые',
     );
@@ -120,18 +150,18 @@ describe('Каталог (e2e)', () => {
     expect(res.body.items[0].name).toBe('Огурцы гладкие');
   });
 
-  it('пагинация: pageSize=1 → две страницы, hasMore на первой', async () => {
+  it('пагинация: pageSize=1 → три страницы, hasMore на первой', async () => {
     const page1 = await request(testApp.server)
       .get('/api/catalog/products')
       .query({ pageSize: 1, page: 1 });
     expect(page1.body.items).toHaveLength(1);
     expect(page1.body.hasMore).toBe(true);
 
-    const page2 = await request(testApp.server)
+    const page3 = await request(testApp.server)
       .get('/api/catalog/products')
-      .query({ pageSize: 1, page: 2 });
-    expect(page2.body.items).toHaveLength(1);
-    expect(page2.body.hasMore).toBe(false);
+      .query({ pageSize: 1, page: 3 });
+    expect(page3.body.items).toHaveLength(1);
+    expect(page3.body.hasMore).toBe(false);
   });
 
   it('некорректная сортировка — 400 VALIDATION_ERROR', async () => {
@@ -184,5 +214,80 @@ describe('Каталог (e2e)', () => {
     expect(one.body.items).toHaveLength(1);
     expect(one.body.pageSize).toBe(1);
     expect(one.body.hasMore).toBe(true);
+  });
+
+  describe('excludeId (Промт 14a)', () => {
+    it('исключает товар из списка', async () => {
+      const res = await request(testApp.server)
+        .get('/api/catalog/products')
+        .query({ excludeId: tomatoesId });
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(2);
+      expect(res.body.items.map((p: { id: string }) => p.id)).not.toContain(
+        tomatoesId,
+      );
+    });
+
+    it('невалидный excludeId игнорируется', async () => {
+      const res = await request(testApp.server)
+        .get('/api/catalog/products')
+        .query({ excludeId: 'совсем-не-id' });
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(3);
+    });
+  });
+
+  describe('похожие товары (Промт 14a)', () => {
+    it('200: только чужие id, та же категория первым', async () => {
+      const res = await request(testApp.server).get(
+        `/api/catalog/products/similar/${tomatoesId}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(2);
+      for (const item of res.body.items) {
+        expect(item.id).not.toBe(tomatoesId);
+        expect(item).toHaveProperty('bestOffer');
+        expect(item).toHaveProperty('offersCount');
+      }
+      // Помидоры — овощи: огурцы (овощи) раньше бананов (фрукты).
+      expect(res.body.items[0].name).toBe('Огурцы гладкие');
+    });
+
+    it('limit ограничивает выдачу', async () => {
+      const res = await request(testApp.server)
+        .get(`/api/catalog/products/similar/${tomatoesId}`)
+        .query({ limit: 1 });
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body.items[0].category.slug).toBe('vegetables');
+    });
+
+    it('limit вне границ — 400 VALIDATION_ERROR', async () => {
+      const res = await request(testApp.server)
+        .get(`/api/catalog/products/similar/${tomatoesId}`)
+        .query({ limit: 25 });
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('порядок стабилен между вызовами (детерминированный рандом)', async () => {
+      const first = await request(testApp.server).get(
+        `/api/catalog/products/similar/${tomatoesId}`,
+      );
+      const second = await request(testApp.server).get(
+        `/api/catalog/products/similar/${tomatoesId}`,
+      );
+      expect(first.body.items.map((p: { id: string }) => p.id)).toEqual(
+        second.body.items.map((p: { id: string }) => p.id),
+      );
+    });
+
+    it('несуществующий товар — 404', async () => {
+      const res = await request(testApp.server).get(
+        '/api/catalog/products/similar/nope',
+      );
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('PRODUCT_NOT_FOUND');
+    });
   });
 });

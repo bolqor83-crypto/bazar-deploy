@@ -10,7 +10,10 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { CatalogService } from './catalog.service';
-import { ListProductsQueryDto } from './dto/list-products.query';
+import {
+  ListProductsQueryDto,
+  SimilarProductsQueryDto,
+} from './dto/list-products.query';
 
 @ApiTags('Каталог')
 @Controller('catalog')
@@ -41,7 +44,19 @@ export class CatalogController {
       pageSize: query.pageSize ?? query.limit,
       minPrice: query.minPrice,
       maxPrice: query.maxPrice,
+      // Промт 14a: исключить товар из выдачи (например, «себя»).
+      excludeId: query.excludeId,
     });
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 100, ttl: 60_000 } })
+  @Get('products/similar/:id')
+  @ApiOperation({
+    summary: 'Похожие товары: та же категория, затем добор (до 20)',
+  })
+  similar(@Param('id') id: string, @Query() query: SimilarProductsQueryDto) {
+    return this.catalog.similar(id, query.limit);
   }
 
   @Public()
