@@ -84,4 +84,11 @@ describe('PriceDisplay', () => {
       ),
     ).toBeTruthy();
   });
+
+  it('size sm (Промт 14a) — кегль bodyStrong 17pt', async () => {
+    const screen = await render(<PriceDisplay value={8_900} size="sm" />);
+    const json = JSON.stringify(screen.toJSON());
+    // bodyStrong — 17pt: компактная цена карусели похожих товаров.
+    expect(json).toContain('"fontSize":17');
+  });
 });

@@ -270,5 +270,16 @@ describe('(tabs)/customer/product/[id]', () => {
       });
       expect(screen.queryByText('Яблоки без офферов')).toBeNull();
     });
+
+    it('ошибка загрузки похожих — секция скрыта, экран товара работает', async () => {
+      fetchSimilarProductsMock.mockRejectedValue(new Error('network'));
+      const screen = await renderWithQuery(<ProductScreen />);
+      await waitFor(() => {
+        expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+      });
+      await waitFor(() => {
+        expect(screen.queryByText('Похожие товары')).toBeNull();
+      });
+    });
   });
 });

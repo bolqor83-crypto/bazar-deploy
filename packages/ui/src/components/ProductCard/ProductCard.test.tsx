@@ -147,5 +147,19 @@ describe('ProductCard', () => {
       expect(screen.getByText(`89${NARROW_NBSP}₽`)).toBeTruthy();
       expect(screen.getByText('/ 1 кг')).toBeTruthy();
     });
+
+    it('onPress работает и в compact (зона нажатия — вся карточка)', async () => {
+      const onPress = jest.fn();
+      const screen = await render(
+        <ProductCard
+          compact
+          name="Бананы"
+          priceKopecks={8_900}
+          onPress={onPress}
+        />,
+      );
+      await fireEvent.press(screen.getByRole('button', { name: /Бананы/ }));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
   });
 });

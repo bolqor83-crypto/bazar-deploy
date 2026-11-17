@@ -930,6 +930,23 @@ export async function captureSet(entries) {
             })
             .catch(() => {});
           await page.waitForTimeout(600);
+          // Промт 14a: карусель похожих товаров обязана быть в кадре —
+          // карточка товара с предложами выше фолда на 844px, поэтому
+          // дожидаемся карусели и центрируем её по вертикали.
+          await page
+            .waitForSelector('[data-testid="carousel-scroll"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page.evaluate(() => {
+            const el = document.querySelector(
+              '[data-testid="carousel-scroll"]',
+            );
+            if (el) {
+              el.scrollIntoView({ block: 'center', behavior: 'instant' });
+            }
+          });
+          await page.waitForTimeout(600);
         }
         if (entry.openContextSheet) {
           await openContextSheet(page);

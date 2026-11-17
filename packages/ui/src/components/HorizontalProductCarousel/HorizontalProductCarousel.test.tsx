@@ -113,4 +113,50 @@ describe('HorizontalProductCarousel', () => {
     );
     expect(screen.getByLabelText('Похожие товары: все товары')).toBeTruthy();
   });
+
+  it('snap-шаг = ширина карточки + gap (без дребезга)', async () => {
+    const screen = await render(
+      <HorizontalProductCarousel title="Похожие товары" items={ITEMS} />,
+    );
+    // На native шаг задаётся snapToInterval: 160 + spacing.md.
+    // В jest Platform.OS === 'ios' → ветка snapToInterval.
+    const scroll = screen.getByTestId('carousel-scroll');
+    expect(typeof scroll.props.snapToInterval).toBe('number');
+    expect(scroll.props.snapToInterval).toBeGreaterThan(160);
+    expect(scroll.props.decelerationRate).toBe('fast');
+  });
+
+  it('заголовок — h2 (22pt 600), subtitle карточки рендерится', async () => {
+    const screen = await render(
+      <HorizontalProductCarousel title="Похожие товары" items={ITEMS} />,
+    );
+    const json = JSON.stringify(screen.toJSON());
+    // h2 — 22pt (шкала Промта 12).
+    expect(json).toContain('"fontSize":22');
+    // subtitle → description карточки (caption).
+    expect(screen.getByText('Овощи')).toBeTruthy();
+  });
+
+  it('«Все» — зона нажатия ≥ 48 по высоте (hitSlop)', async () => {
+    const screen = await render(
+      <HorizontalProductCarousel
+        title="Похожие товары"
+        items={ITEMS}
+        onSeeAllPress={() => {}}
+      />,
+    );
+    const seeAll = screen.getByTestId('carousel-see-all');
+    const flat = [seeAll.props.style].flat(Infinity);
+    const minHeight = flat.find(
+      (s: { minHeight?: number }) => typeof s?.minHeight === 'number',
+    ) as { minHeight: number } | undefined;
+    expect(minHeight?.minHeight).toBeGreaterThanOrEqual(48);
+  });
+
+  it('badge элемента рендерится поверх фото карточки', async () => {
+    const screen = await render(
+      <HorizontalProductCarousel title="Похожие товары" items={ITEMS} />,
+    );
+    expect(screen.getByText('Скоропорт')).toBeTruthy();
+  });
 });

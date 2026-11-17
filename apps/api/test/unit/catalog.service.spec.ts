@@ -319,6 +319,43 @@ describe('CatalogService (unit)', () => {
         response: { code: 'PRODUCT_NOT_FOUND' },
       });
     });
+
+    it('архивный исходный товар — 404 (как в detail)', async () => {
+      const all = await service.list({});
+      const apples = all.items.find((p) => p.name === 'Яблоки Гала');
+      // Прямая мутация записи FakePrisma: archivedAt задан.
+      const record = prisma.products.get(apples?.id ?? '') as {
+        archivedAt?: unknown;
+      };
+      record.archivedAt = new Date();
+      await expect(service.similar(apples?.id as string)).rejects.toMatchObject(
+        {
+          response: { code: 'PRODUCT_NOT_FOUND' },
+        },
+      );
+    });
+
+    it('архивные кандидаты не попадают в выдачу', async () => {
+      const all = await service.list({});
+      const bananas = all.items.find((p) => p.name === 'Бананы');
+      const record = prisma.products.get(bananas?.id ?? '') as {
+        archivedAt?: unknown;
+      };
+      record.archivedAt = new Date();
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const similar = await service.similar(tomatoes?.id as string);
+      expect(similar.items.map((p) => p.name)).not.toContain('Бананы');
+    });
+
+    it('excludeId работает вместе с фильтром категории', async () => {
+      const all = await service.list({});
+      const tomatoes = all.items.find((p) => p.name === 'Помидоры розовые');
+      const rest = await service.list({
+        category: 'vegetables',
+        excludeId: tomatoes?.id,
+      });
+      expect(rest.items.map((p) => p.name)).toEqual(['Огурцы гладкие']);
+    });
   });
 
   describe('detail', () => {
