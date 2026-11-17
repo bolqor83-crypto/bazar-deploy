@@ -25,11 +25,7 @@ import { useOrders } from '../../../hooks/useOrders';
 import type { Order } from '@bazar/types';
 
 /** Сводка операций: два числа одинакового веса, подписи снизу. */
-function OperationsSummary({
-  orders,
-}: {
-  orders: Order[];
-}) {
+function OperationsSummary({ orders }: { orders: Order[] }) {
   const { spacing } = useTheme();
   const totalKopecks = orders.reduce((sum, order) => sum + order.total, 0);
   const inWork = orders.filter(
@@ -87,8 +83,8 @@ function RecentOrderRow({ order }: { order: Order }) {
         minHeight: 48,
       }}
     >
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="bodyStrong" mono numberOfLines={1}>
+      <View style={{ flex: 1, gap: 2, flexShrink: 1 }}>
+        <Text variant="bodyStrong" mono numberOfLines={1} adjustsFontSizeToFit>
           {order.number}
         </Text>
         <Text variant="caption" color="textSecondary">

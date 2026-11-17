@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":9,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":9,\"total\":73,\"notes\":\"1) В сводке и журнале цифры не выровнены по tabular-nums, количества «+20 кг» прижаты к краю и на светлой теме теряют связь со строкой; 2) названия складов обрезаются («Основной ск...») без раскрытия, а чипы действий имеют высоту ниже 48px для перчаток; даты во второй теме пропадают — вторичный текст слишком тусклый.\"}",
+        "reasoning_content": "Strong screens. Issues: no tabular-nums evidence, truncated \"Основной ск...\" on light, list rows touch targets fine, action chips small height (~?), light theme contrast of secondary text. Rates ~8-9.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941049,
+  "id": "202611180244040f99c6d995de459a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180244040f99c6d995de459a",
+  "usage": {
+    "completion_tokens": 200,
+    "completion_tokens_details": {
+      "reasoning_tokens": 46
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 4007
+  }
+}

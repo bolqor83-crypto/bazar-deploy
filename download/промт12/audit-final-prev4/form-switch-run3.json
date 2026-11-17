@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":6,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":72,\"notes\":\"Нет tabular-nums для даты и смешение визуальных групп: секции «Условия товара» и «Способ доставки» сливаются без разделителей; иконки разностилевые (filled checkbox, outline radio, calendar).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941243,
+  "id": "202611180247217a35ef5699cb44d3",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180247217a35ef5699cb44d3",
+  "usage": {
+    "completion_tokens": 106,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1951
+  }
+}

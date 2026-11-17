@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":78,\"notes\":\"Кнопка «Переместить» в disabled-состоянии практически нечитаема (белый текст на светло-зелёном — низкий контраст); поле «Причина» обрезается без видимого скролла/курсора, подсказка об активации кнопки дублирует очевидное.\"}",
+        "reasoning_content": "Rate reasonably high. Issues: disabled button contrast, field truncation/clipping of reason field, low contrast of disabled state hint.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941094,
+  "id": "2026111802445063192de8f55649ff",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111802445063192de8f55649ff",
+  "usage": {
+    "completion_tokens": 153,
+    "completion_tokens_details": {
+      "reasoning_tokens": 26
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2250
+  }
+}

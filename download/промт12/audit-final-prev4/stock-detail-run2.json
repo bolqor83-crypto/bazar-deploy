@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":75,\"notes\":\"1) В журнале нет фильтров/поиска и состояний пустого списка — при росте данных он не масштабируется; обрезка складов ('Основной ск…') без раскрытия. 2) Тёмная тема в перчатках при слабом свете: иконки-кнопки действий (Приход/Списание/…) мелковаты по контрасту рамок, tertiary-текст даты слабо читаем — стоит усилить контраст для 4 утра.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941040,
+  "id": "20261118024356b67a2a96352e4030",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024356b67a2a96352e4030",
+  "usage": {
+    "completion_tokens": 164,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3971
+  }
+}

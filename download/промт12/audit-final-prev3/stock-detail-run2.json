@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":9,\"grid\":9,\"components\":8,\"icons\":9,\"states\":7,\"density\":8,\"a11y\":8,\"impression\":9,\"total\":84,\"notes\":\"Нет табличного выравнивания сумм и дат справа (tabular-nums) — цифры прыгают; в тёмной теме вторичные строки сливаются, а в светлой подписи действий кнопок мелковаты для перчаток и слабого света — увеличить вес/размер и усилить контраст метаданных.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937488,
+  "id": "202611180144447ef4254f451e4eb1",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180144447ef4254f451e4eb1",
+  "usage": {
+    "completion_tokens": 128,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3935
+  }
+}

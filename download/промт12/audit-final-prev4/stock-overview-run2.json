@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":7,\"grid\":8,\"components\":7,\"icons\":6,\"states\":5,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":72,\"notes\":\"Красная точка у нулевых остатков нарушивает запрет красного — заменить на терракоту; тёмная тема: серые вторичные тексты (цены, ×100 г) на грани контраста при слабом свете, у фильтров «Мало/Нет» нет счётчиков-бейджей.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941015,
+  "id": "202611180243324d89d152d7254c6f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180243324d89d152d7254c6f",
+  "usage": {
+    "completion_tokens": 128,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3935
+  }
+}

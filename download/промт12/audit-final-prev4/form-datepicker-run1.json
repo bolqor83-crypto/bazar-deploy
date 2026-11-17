@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":75,\"notes\":\"Календарь: низкий контраст disabled-дат и подсветки «сегодня» — плохо видно в перчатках при слабом свете; в форме нет подсказок/ошибок валидации и сохранённое состояние переключателя неочевидно.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941250,
+  "id": "202611180247274e7c5aa5254146eb",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180247274e7c5aa5254146eb",
+  "usage": {
+    "completion_tokens": 114,
+    "completion_tokens_details": {
+      "reasoning_tokens": 113
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3669
+  }
+}

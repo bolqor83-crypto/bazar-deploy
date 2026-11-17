@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":7,\"density\":7,\"a11y\":7,\"impression\":7,\"total\":72,\"notes\":\"Ошибка ИНН теряет фокус: текст ошибки виден, но поле не даёт подсказки формата (маска/placeholder), цифры не в tabular-nums; на кадре 1 нижний шит обрезает карточку «Параметры поставки» без fade/градиента — контент выглядит обрезанным\"}",
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":7,\"impression\":8,\"total\":74,\"notes\":\"Нижнеселект-шит без разделителей и закрытия — третий пункт без адреса выглядит обрезанным; трогать в перчатках мелкий тумблер и чекбоксы ~40px сложно, нет подсветки нажатых состояний; tabular-nums не применён к дате\"}",
         "role": "assistant"
       }
     }
   ],
-  "created": 1794931234,
-  "id": "2026111800003096c0c64b4e6f43b5",
+  "created": 1794937634,
+  "id": "20261118014711842a0ea1ab1f4f57",
   "model": "glm-5.3-flash",
   "object": "chat.completion",
-  "request_id": "2026111800003096c0c64b4e6f43b5",
+  "request_id": "20261118014711842a0ea1ab1f4f57",
   "usage": {
-    "completion_tokens": 128,
+    "completion_tokens": 123,
     "completion_tokens_details": {
-      "reasoning_tokens": 0
+      "reasoning_tokens": 122
     },
-    "prompt_tokens": 3079,
+    "prompt_tokens": 3555,
     "prompt_tokens_details": {
       "cached_tokens": 0
     },
-    "total_tokens": 3207
+    "total_tokens": 3678
   }
 }

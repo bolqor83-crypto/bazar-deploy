@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":6,\"impression\":7,\"total\":61,\"notes\":\"Нет пустого состояния/подсказок и disabled-логики фильтров; статусные чипы низкоконтрастны (серый «Отменён», мятный «Подтверждён») — плохо читаются в перчатках при слабом свете; выравнивание цен и стрелок нестабильно между карточками.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941501,
+  "id": "202611180251388bf2eb13d4304c55",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180251388bf2eb13d4304c55",
+  "usage": {
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 129
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2227
+  }
+}

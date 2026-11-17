@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":70,\"notes\":\"Дублирование имени и описания в титуле строк («Склад/Склады», «Клиенты/Клиенты») выглядит шумно и неработяще; нет состояний: пустых подсказок поиска, бейджей количества и active-состояний — при 4 утра неясно, где пользователь и что требует внимания.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941129,
+  "id": "20261118024526b6905d933c3d45e6",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024526b6905d933c3d45e6",
+  "usage": {
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3937
+  }
+}

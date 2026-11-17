@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":7,\"impression\":7,\"total\":72,\"notes\":\"Ошибка ИНН с красной рамкой и текстом выбивается из спокойной палитры и не даёт способа исправить/подсказки формата; плотность низкая — крупные межблочные отступы на первом кадре, контент уходит под шит-с шита без явного скролла.\"}",
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":76,\"notes\":\"Слабая видимость disabled-состояний и низкий контраст неактивного переключателя/чекбоксов в тёмное время (в перчатках и при слабом свете серые рамки и off-состояния плохо различимы); в bottom sheet пункт «Склад в Петербурге» без адреса нарушает единый паттерн, а строки выбора выглядят ниже 48px по высоте.\"}",
         "role": "assistant"
       }
     }
   ],
-  "created": 1794931218,
-  "id": "20261118000014150f167d43d4452b",
+  "created": 1794937619,
+  "id": "202611180146546300d50ffef04e3f",
   "model": "glm-5.3-flash",
   "object": "chat.completion",
-  "request_id": "20261118000014150f167d43d4452b",
+  "request_id": "202611180146546300d50ffef04e3f",
   "usage": {
-    "completion_tokens": 125,
+    "completion_tokens": 145,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
-    "prompt_tokens": 3079,
+    "prompt_tokens": 3555,
     "prompt_tokens_details": {
       "cached_tokens": 0
     },
-    "total_tokens": 3204
+    "total_tokens": 3700
   }
 }

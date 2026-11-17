@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":7,\"total\":74,\"notes\":\"Карточки обрезаются по вертикали без видимой прокрутки — вторая строка названия и цена 'за 500 г' теряются; метаданные 'Опт-Юг'/'В наличии' шумят и размывают главное действие, табличные цифры для цен не гарантированы\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941494,
+  "id": "202611180251275fd32ac467c34c0f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180251275fd32ac467c34c0f",
+  "usage": {
+    "completion_tokens": 120,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3927
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":74,\"notes\":\"Мало состояний: нет disabled/hint для переключателя автоприёма и ошибки/подсказки у дат; цифры (19.11.2026, 'до 12 часов') не в tabular-nums, при слабом свете серые подписи (grey secondary) близки к порогу контраста\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941192,
+  "id": "202611180246307dbf5f5ef7c745b6",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180246307dbf5f5ef7c745b6",
+  "usage": {
+    "completion_tokens": 123,
+    "completion_tokens_details": {
+      "reasoning_tokens": 122
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1968
+  }
+}

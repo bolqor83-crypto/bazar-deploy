@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":6,\"impression\":8,\"total\":66,\"notes\":\"Селект нижней точки («Точка на Северной») не имеет состояния выбора/галочки — при тапе неясен выбор; большой межблочный воздух при слабом свете можно ужать и поднять контраст вторичных подписей.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941180,
+  "id": "20261118024618a322a88055494357",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024618a322a88055494357",
+  "usage": {
+    "completion_tokens": 108,
+    "completion_tokens_details": {
+      "reasoning_tokens": 107
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3663
+  }
+}

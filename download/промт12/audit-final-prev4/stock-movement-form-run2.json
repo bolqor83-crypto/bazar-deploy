@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":7,\"grid\":7,\"components\":7,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":64,\"notes\":\"Кнопка «Сохранить» в disabled-состоянии слишком бледная и выглядит как ошибка контраста; поля «Причина» без видимого фокуса/валидации, подсказки-хинты дублируют друг друга по смыслу\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941063,
+  "id": "202611180244209908dcc4f4cb4d9f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180244209908dcc4f4cb4d9f",
+  "usage": {
+    "completion_tokens": 111,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2208
+  }
+}

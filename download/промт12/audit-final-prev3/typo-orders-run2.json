@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":6,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":66,\"notes\":\"Дублирующиеся карточки с одинаковыми данными выглядят как заглушка, нижняя половина экрана пуста — нет скелетонов/сводки. Нижний чип «Завершён» обрезан — горизонтальный скролл фильтров без fade-подсказки.\"}",
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":7,\"grid\":7,\"components\":8,\"icons\":8,\"states\":5,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":75,\"notes\":\"Бейдж статусов спорит по весу с номером заказа — главный ключ (номер/сумма) должен доминировать; цветовая метка статуса слабо читается в перчатках при слабом свете — нужна иконка/текст вне цветовой зависимости. Отсутствует пустое состояние фильтра и нет индикатора позиции в списке фильтров (обрезка «Завершён» без подсказки скролла).\"}",
         "role": "assistant"
       }
     }
   ],
-  "created": 1794931389,
-  "id": "20261118000306984024199e4a4710",
+  "created": 1794937871,
+  "id": "2026111801510831f38306de894446",
   "model": "glm-5.3-flash",
   "object": "chat.completion",
-  "request_id": "20261118000306984024199e4a4710",
+  "request_id": "2026111801510831f38306de894446",
   "usage": {
-    "completion_tokens": 121,
+    "completion_tokens": 157,
     "completion_tokens_details": {
-      "reasoning_tokens": 0
+      "reasoning_tokens": 156
     },
     "prompt_tokens": 2097,
     "prompt_tokens_details": {
       "cached_tokens": 0
     },
-    "total_tokens": 2218
+    "total_tokens": 2254
   }
 }

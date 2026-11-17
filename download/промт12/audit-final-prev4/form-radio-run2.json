@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":75,\"notes\":\"Нет подсветки секций и разделителей между группами — на слабом свете заголовки полей сливаются; чекбоксы/радио ~40px ниже нормы 48px и toggle без видимого состояния on/off-подписи.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941215,
+  "id": "20261118024651a0c5558db53f4fd8",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024651a0c5558db53f4fd8",
+  "usage": {
+    "completion_tokens": 110,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1955
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":6,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":78,\"notes\":\"Слайдер-парометр (селектор склада): часть третьего пункта среза и контент за пределами экрана без индикатора прокрутки; галочка выбранного пункта смещена и не выровнена по базовой линии текста. Чекбоксы/радио требуют тап-зоны по всей строке — сейчас неочевидно, кликабельна ли подпись; переключатель автоприёма мелкий для перчаток в 4 утра.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941166,
+  "id": "202611180246018625eadf35e54711",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180246018625eadf35e54711",
+  "usage": {
+    "completion_tokens": 165,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3720
+  }
+}

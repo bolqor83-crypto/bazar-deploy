@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":9,\"grid\":8,\"components\":9,\"icons\":8,\"states\":6,\"density\":6,\"a11y\":8,\"impression\":8,\"total\":77,\"notes\":\"Вторичные подписи серым слишком бледные для рынка в 4 утра; форма разрежена — крупные воздушные зазоры между группами снижают рабочую плотность, нет подсказок/валидации для ошибок\"}",
+        "reasoning_content": "Clean form, good. Weak: no tabular-nums guarantee, date 2026 odd but content. Density a bit loose, low contrast secondary text, toggle small height? Toggles ~51px wide ok. Checkbox row tap areas look big. Notes: слабый контраст вторичных подписей, крупная разреженность.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941230,
+  "id": "2026111802470604ddf0ffe5ee4a8b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111802470604ddf0ffe5ee4a8b",
+  "usage": {
+    "completion_tokens": 173,
+    "completion_tokens_details": {
+      "reasoning_tokens": 68
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2018
+  }
+}

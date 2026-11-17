@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":8,\"impression\":7,\"total\":67,\"notes\":\"Отсутствует главное действие по вводу количества и крупная цифра '0 кг' получателя доминирует над логикой; поле 'Причина' обрезано кнопкой внизу — фокус ввода перекрыт, что критично при перчатках и слабом свете. Кнопка disabled слишком бледная, нет видимого поля причины целиком.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941086,
+  "id": "20261118024443981300a24abf410d",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024443981300a24abf410d",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2229
+  }
+}

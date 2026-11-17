@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":9,\"a11y\":8,\"impression\":9,\"total\":84,\"notes\":\"В журнале нет промежуточных дат/времени-разделителей и повторяющаяся обрезка 'Основной ск…' без раскрытия полного названия склада; в 4 утра при слабом свете тёмная тема читается хорошо, но вторичные подписи сероваты.\"}",
+        "reasoning_content": "Хорошая работа. Даты/обрезка «Основной ск…» повторяется, action-кнопки чуть тесные. Оценки высокие.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941032,
+  "id": "20261118024348d2860914f9d74fb2",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024348d2860914f9d74fb2",
+  "usage": {
+    "completion_tokens": 154,
+    "completion_tokens_details": {
+      "reasoning_tokens": 34
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3961
+  }
+}

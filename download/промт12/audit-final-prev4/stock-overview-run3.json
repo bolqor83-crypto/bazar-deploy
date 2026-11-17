@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":79,\"notes\":\"Числа количества крупнее цен и вырываются из базовой сетки — уменьшить до 20-22px и включить tabular-nums; чипы фильтров «Мало/Нет» и поле поиска визуально ~44px — добить до 48px для перчаток; строка статуса дублирует чипы без кликабельности и пустых состояний для фильтра «Нет»\"}",
+        "reasoning_content": "Reasonable good design. Dark variant nice for 4am. Numbers lack tabular alignment minor, status dots good. Note: oversized quantity digits, filter chips small height? Chips ~44px maybe. Give scores ~8s.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941024,
+  "id": "20261118024339476640032a71426c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024339476640032a71426c",
+  "usage": {
+    "completion_tokens": 199,
+    "completion_tokens_details": {
+      "reasoning_tokens": 47
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 4006
+  }
+}

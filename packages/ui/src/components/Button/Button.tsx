@@ -123,18 +123,15 @@ export function Button({
     height: sizeToken.height,
     paddingHorizontal: sizeToken.paddingHorizontal,
     borderRadius: radii.sm,
-    // Disabled-вариант primary остаётся видимым: primarySoft + рамка
-    // primary + primaryText (VLM-аудит: «белая кнопка с бледным
-    // текстом не видна при слабом свете»).
-    backgroundColor: disabled
-      ? variant === 'primary'
-        ? colors.primarySoft
-        : colors.surface
-      : bg,
+    // Disabled-вариант читается однозначно неактивным: приглушённая
+    // заливка + нейтральная рамка + textDisabled (VLM-аудит итерации
+    // 5: бледно-зелёная primarySoft с тёмным текстом читалась как
+    // активная).
+    backgroundColor: disabled ? colors.surfaceMuted : bg,
     ...(disabled
       ? {
           borderWidth: 1,
-          borderColor: variant === 'primary' ? colors.primary : colors.border,
+          borderColor: colors.borderStrong,
         }
       : null),
     alignItems: 'center',
@@ -164,16 +161,13 @@ export function Button({
           {Icon ? (
             <Icon
               size={size === 'sm' ? 16 : 18}
-              color={
-                disabled && variant !== 'primary' ? colors.textDisabled : fg
-              }
+              color={disabled ? colors.textDisabled : fg}
             />
           ) : null}
           <Text
             variant={size === 'sm' ? 'bodySmall' : 'bodyStrong'}
             style={{
-              color:
-                disabled && variant !== 'primary' ? colors.textDisabled : fg,
+              color: disabled ? colors.textDisabled : fg,
             }}
           >
             {children}

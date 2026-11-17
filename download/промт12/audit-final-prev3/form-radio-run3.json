@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":5,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":57,\"notes\":\"Кадр выглядит как демо-страница UI-кита («Обычная карточка», «Приподнятая карточка»), а не рабочий экран B2B-инструмента — нет операционного контекста и данных; чекбокс сверху обрезан, даты и цифры без явных tabular-nums, пустое состояние и disabled-состояния не показаны.\"}",
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":9,\"icons\":8,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":79,\"notes\":\"Плотность низкая — крупные межблочные отступы при слабом освещении на рынке лишают обзорности; чекбоксы/радио крупные, но нет табличных цифр в дате и признаков disabled/ошибок для toggle. Checkbox 'Требует сертификации' без связи с полем загрузки документа — подсказка не ведёт к действию.\"}",
         "role": "assistant"
       }
     }
   ],
-  "created": 1794931282,
-  "id": "202611180001192a66efa896ca4420",
+  "created": 1794937677,
+  "id": "202611180147545b8f452364844015",
   "model": "glm-5.3-flash",
   "object": "chat.completion",
-  "request_id": "202611180001192a66efa896ca4420",
+  "request_id": "202611180147545b8f452364844015",
   "usage": {
-    "completion_tokens": 143,
+    "completion_tokens": 139,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
-    "prompt_tokens": 1789,
+    "prompt_tokens": 1845,
     "prompt_tokens_details": {
       "cached_tokens": 0
     },
-    "total_tokens": 1932
+    "total_tokens": 1984
   }
 }

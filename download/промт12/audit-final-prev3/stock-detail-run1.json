@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":9,\"typography\":8,\"color\":9,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":8,\"a11y\":8,\"impression\":8,\"total\":82,\"notes\":\"Слабая контрастность вторичного текста (дата/точка) в тёмной теме при слабом свете и в перчатках — мелкие цели тапа: строки журнала без явной зоны нажатия ≥48px по вертикали.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794937480,
+  "id": "202611180144361f46636fee684769",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180144361f46636fee684769",
+  "usage": {
+    "completion_tokens": 112,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3919
+  }
+}

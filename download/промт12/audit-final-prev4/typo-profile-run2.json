@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":6,\"components\":7,\"icons\":8,\"states\":4,\"density\":7,\"a11y\":7,\"impression\":7,\"total\":64,\"notes\":\"Обрезка номера заказа (BZ-2026-00…) ломает монопроцессную выравнивающую сетку сумм — нужно tabular-nums и фикс-ширина ID; линия-подчёркивание под телефоном выглядит как обрезанное поле ввода. Пустые/loading состояния и бейдж непрочитанных уведомлений не показаны — неизвестно поведение в 4 утра в перчатках (мелкие chevron-цели).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941531,
+  "id": "202611180252080af200a8885e430b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180252080af200a8885e430b",
+  "usage": {
+    "completion_tokens": 158,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2255
+  }
+}

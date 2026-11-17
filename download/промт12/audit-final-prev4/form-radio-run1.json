@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":77,\"notes\":\"Нет табличных цифр в дате и полях с числами — при слабом свате сложно считывать; тумблер «Автоприём» визуально конфликтует с секцией — низкая плотность, крупный whitespace, для 4 утра перчаток кнопки/чекбоксы достаточны, но toggle мал (~44px) и его состояние off плохо видно.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941207,
+  "id": "20261118024643b400973bb0334786",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024643b400973bb0334786",
+  "usage": {
+    "completion_tokens": 138,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1845,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1983
+  }
+}

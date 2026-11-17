@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":75,\"notes\":\"Нет счётчиков/бейджей и состояний (badge с числом запросов/долгов критичен для 4 утра — не нужно открывать раздел вслепую); тёмная тема: серые заголовки секций и подписи теряют контраст при слабом свете, мониторы-иконка без явного назначения.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941122,
+  "id": "20261118024518062733f663fe405c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118024518062733f663fe405c",
+  "usage": {
+    "completion_tokens": 133,
+    "completion_tokens_details": {
+      "reasoning_tokens": 132
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3940
+  }
+}

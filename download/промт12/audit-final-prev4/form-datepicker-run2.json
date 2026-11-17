@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":9,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":8,\"a11y\":7,\"impression\":8,\"total\":77,\"notes\":\"Чекбоксы/радио без явных контурных зон 48px и текст поля ввода даты не tabular-nums; подсказка «Хранение до 12 часов» конкурирует с заголовком поля за вес, снижая ясность иерархии в перчатках.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794941257,
+  "id": "202611180247349869644297644699",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180247349869644297644699",
+  "usage": {
+    "completion_tokens": 120,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3555,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3675
+  }
+}
