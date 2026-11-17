@@ -55,6 +55,10 @@ export function seedMediaDir(): string {
   const candidates = [
     resolve(process.cwd(), 'seed-media'),
     resolve(__dirname, '..', '..', 'seed-media'),
+    // Render: cwd — корень монорепо, контроллер — apps/api/dist/src;
+    // каталог в репозитории лежит в apps/api/seed-media.
+    resolve(process.cwd(), 'apps', 'api', 'seed-media'),
+    resolve(__dirname, '..', '..', '..', '..', 'seed-media'),
   ];
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
