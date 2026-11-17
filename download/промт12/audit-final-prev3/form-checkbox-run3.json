@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":5,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":75,\"notes\":\"Нет сохранения/подсказок о несохранённых изменениях и disabled-состояний; зелёный цвет выбора близок к тёмному зелёному чекбокса — при слабом свете состояния выбранного/невыбранного можно усилить; не видно нижней части формы (радио обрезано) — нужна зона сохранения\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931258,
+  "id": "20261118000054400c383c35844a4b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000054400c383c35844a4b",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 131
+    },
+    "prompt_tokens": 1369,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1501
+  }
+}

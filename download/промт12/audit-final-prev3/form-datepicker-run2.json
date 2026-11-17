@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":6,\"states\":6,\"density\":7,\"a11y\":8,\"impression\":7,\"total\":73,\"notes\":\"Нет табличных цифр и подсказки различения «выбрано» (15 залито) vs «сегодня» (17 контуром) — на рынке в 4 утра легко спутать; календарная сетка крупная, нижняя часть экрана без CTA-заголовка контекста (что выбираем — дата чего?)\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931321,
+  "id": "20261118000155c6a34e97b6134e56",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000155c6a34e97b6134e56",
+  "usage": {
+    "completion_tokens": 131,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2228
+  }
+}

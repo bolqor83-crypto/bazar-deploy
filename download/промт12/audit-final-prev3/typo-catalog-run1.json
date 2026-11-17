@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":7,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":52,\"notes\":\"1) Нет реальных фото/разнообразия карточек — плейсхолдер-корзина во всех карточках выглядит как черновик, а не рабочий инструмент уровня Stripe/Linear; заглушки не передают товар. 2) Обрезка цен ('490 ₽ / 500 г' съедается кнопкой '+') и дублирование единиц — цена с единицей измерения должна читаться целиком при 4 утра; перчатки требуют крупнее кнопки и цену без обрезки. Также нет состояния 'уже в корзине' (qty-степпер) и пустых состояний — states провалены.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931359,
+  "id": "20261118000233c1b86620ac9f4ef9",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000233c1b86620ac9f4ef9",
+  "usage": {
+    "completion_tokens": 193,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3807,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 4000
+  }
+}

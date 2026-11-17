@@ -288,6 +288,85 @@ const FIXED_DATES = [
 ];
 
 /**
+ * Детерминированный доступный остаток предложения (Промт 11:
+ * баланс + компенсирующее ADJUSTMENT-движение, ADR 0012).
+ * Весь остаток — на первом (default) складе, прочие обнулены.
+ */
+async function ensureOfferBalance(prisma, offerView, target) {
+  const balances = await prisma.stockBalance.findMany({
+    where: { offerId: offerView.id },
+    orderBy: { location: { isDefault: 'desc' } },
+  });
+  if (balances.length === 0) {
+    const location = await prisma.stockLocation.findFirstOrThrow({
+      where: { organizationId: offerView.organization.id },
+    });
+    await prisma.stockMovement.create({
+      data: {
+        offerId: offerView.id,
+        locationId: location.id,
+        type: 'INITIAL',
+        quantityDelta: target,
+        reason: 'Детерминированный остаток для golden-скриншотов',
+        refType: 'initial',
+        refId: offerView.id,
+      },
+    });
+    await prisma.stockBalance.create({
+      data: {
+        offerId: offerView.id,
+        locationId: location.id,
+        physicalQty: target,
+        reservedQty: 0,
+        availableQty: target,
+      },
+    });
+    return;
+  }
+  const first = balances[0];
+  const current = balances.reduce((sum, b) => sum + b.availableQty, 0);
+  if (current !== target) {
+    await prisma.stockMovement.create({
+      data: {
+        offerId: offerView.id,
+        locationId: first.locationId,
+        type: 'ADJUSTMENT',
+        quantityDelta: target - current,
+        reason: 'Детерминированный остаток для golden-скриншотов',
+        refType: 'manual',
+        refId: offerView.id,
+      },
+    });
+  }
+  // Весь остаток — на первом складе, резервы сняты (заказы
+  // удалены шагом 1), прочие склады обнулены.
+  await prisma.stockBalance.update({
+    where: {
+      offerId_locationId: {
+        offerId: offerView.id,
+        locationId: first.locationId,
+      },
+    },
+    data: {
+      physicalQty: target,
+      reservedQty: 0,
+      availableQty: target,
+    },
+  });
+  for (const other of balances.slice(1)) {
+    await prisma.stockBalance.update({
+      where: {
+        offerId_locationId: {
+          offerId: offerView.id,
+          locationId: other.locationId,
+        },
+      },
+      data: { physicalQty: 0, reservedQty: 0, availableQty: 0 },
+    });
+  }
+}
+
+/**
  * Детерминированный сценарий доставок Ивана (Промт 10, Часть D).
  *
  * Пересоздаёт с нуля: 3 подтверждённых заказа (фиксированные даты,
@@ -343,77 +422,7 @@ async function prepareDemoDeliveries() {
     //    ADR 0012 — колонки ProductOffer.stock больше нет).
     const offer = await firstOffer(token);
     const target = Math.max(50, offer.minQuantity ?? 1);
-    const balances = await prisma.stockBalance.findMany({
-      where: { offerId: offer.id },
-      orderBy: { location: { isDefault: 'desc' } },
-    });
-    if (balances.length === 0) {
-      const location = await prisma.stockLocation.findFirstOrThrow({
-        where: { organizationId: offer.organization.id },
-      });
-      await prisma.stockMovement.create({
-        data: {
-          offerId: offer.id,
-          locationId: location.id,
-          type: 'INITIAL',
-          quantityDelta: target,
-          reason: 'Детерминированный остаток для golden-скриншотов',
-          refType: 'initial',
-          refId: offer.id,
-        },
-      });
-      await prisma.stockBalance.create({
-        data: {
-          offerId: offer.id,
-          locationId: location.id,
-          physicalQty: target,
-          reservedQty: 0,
-          availableQty: target,
-        },
-      });
-    } else {
-      const first = balances[0];
-      const current = balances.reduce((sum, b) => sum + b.availableQty, 0);
-      if (current !== target) {
-        await prisma.stockMovement.create({
-          data: {
-            offerId: offer.id,
-            locationId: first.locationId,
-            type: 'ADJUSTMENT',
-            quantityDelta: target - current,
-            reason: 'Детерминированный остаток для golden-скриншотов',
-            refType: 'manual',
-            refId: offer.id,
-          },
-        });
-      }
-      // Весь остаток — на первом складе, резервы сняты (заказы
-      // удалены шагом 1), прочие склады обнулены.
-      await prisma.stockBalance.update({
-        where: {
-          offerId_locationId: {
-            offerId: offer.id,
-            locationId: first.locationId,
-          },
-        },
-        data: {
-          physicalQty: target,
-          reservedQty: 0,
-          availableQty: target,
-        },
-      });
-      for (const other of balances.slice(1)) {
-        await prisma.stockBalance.update({
-          where: {
-            offerId_locationId: {
-              offerId: offer.id,
-              locationId: other.locationId,
-            },
-          },
-          data: { physicalQty: 0, reservedQty: 0, availableQty: 0 },
-        });
-      }
-    }
+    await ensureOfferBalance(prisma, offer, target);
     const quantity = Math.max(5, offer.minQuantity ?? 1);
 
     // 4. Три заказа: создать → подтвердить → доставка → статус.
@@ -494,6 +503,130 @@ async function prepareDemoDeliveries() {
       carrierHeaders,
     );
     await apiPost(token, `/deliveries/${done.delivery.id}/complete`);
+
+    // 5.5. Разнообразие списка заказов (Промт 12, итерация 3):
+    //     три заказа с разными товарами и статусами. Список из трёх
+    //     одинаковых «Бананов» с одной ценой читался как заглушка,
+    //     нижняя половина экрана была пуста (VLM-аудит). Даты
+    //     фиксированы и НОВЕЕ банановых — разнообразие видно на
+    //     первом экране без скролла; пиксели стабильны.
+    const catalogPage = await apiGet(
+      token,
+      '/catalog/products?sort=popular&page=1&pageSize=40',
+    );
+    const productByName = new Map(catalogPage.items.map((p) => [p.name, p]));
+    const offerByName = (name) => {
+      const product = productByName.get(name);
+      if (!product?.bestOffer) {
+        throw new Error(`нет предложения для сценария: ${name}`);
+      }
+      return product.bestOffer;
+    };
+    const cucumbersOffer = offerByName('Огурцы гладкие');
+    const carrotsOffer = offerByName('Морковь мытая');
+    const potatoesOffer = offerByName('Картофель мытый');
+    const tomatoesOffer = offerByName('Помидоры розовые');
+    const onionsOffer = offerByName('Лук репчатый золотистый');
+
+    // Детерминированные остатки всех товаров сценария: после
+    // прошлых прогонов и демо-заказов балансы дрейфуют, заказ
+    // «Картофель 40» падал OUT_OF_STOCK (в наличии 39).
+    for (const scenarioOffer of [
+      cucumbersOffer,
+      carrotsOffer,
+      potatoesOffer,
+      tomatoesOffer,
+      onionsOffer,
+    ]) {
+      await ensureOfferBalance(
+        prisma,
+        scenarioOffer,
+        Math.max(60, scenarioOffer.minQuantity ?? 1),
+      );
+    }
+
+    const createOrder = (items, extra) =>
+      apiPost(token, '/orders', {
+        items: items.map(([o, q]) => ({ offerId: o.id, quantity: q })),
+        deliveryMethod: extra.method,
+        address: extra.address,
+        comment: extra.comment,
+      });
+    const EXTRA_DATES = [
+      new Date('2026-11-16T08:00:00Z'),
+      new Date('2026-11-15T18:00:00Z'),
+      new Date('2026-11-15T14:00:00Z'),
+    ];
+
+    // Подтверждённый заказ на два товара.
+    const orderConfirmed = (
+      await createOrder(
+        [
+          [cucumbersOffer, 10],
+          [carrotsOffer, 15],
+        ],
+        {
+          method: 'delivery',
+          address: 'ул. Садовая, 12',
+          comment: 'До 10:00, позвонить за час',
+        },
+      )
+    )[0];
+    await apiPost(
+      token,
+      `/seller/orders/${orderConfirmed.id}/confirm`,
+      undefined,
+      wholesale.id,
+    );
+    // Завершённый заказ (самовывоз).
+    const orderCompleted = (
+      await createOrder([[potatoesOffer, 40]], {
+        method: 'pickup',
+        address: 'Основной склад, ул. Доватора, 45',
+        comment: 'Заберём своим транспортом',
+      })
+    )[0];
+    // PENDING → CONFIRMED — без confirm переход в preparing запрещён.
+    await apiPost(
+      token,
+      `/seller/orders/${orderCompleted.id}/confirm`,
+      undefined,
+      wholesale.id,
+    );
+    for (const action of ['preparing', 'ready', 'complete']) {
+      await apiPost(
+        token,
+        `/seller/orders/${orderCompleted.id}/${action}`,
+        undefined,
+        wholesale.id,
+      );
+    }
+    // Отменённый заказ (покупатель).
+    const orderCancelled = (
+      await createOrder(
+        [
+          [tomatoesOffer, 8],
+          [onionsOffer, 12],
+        ],
+        {
+          method: 'delivery',
+          address: 'ул. Садовая, 12',
+          comment: 'Ко второй половине дня',
+        },
+      )
+    )[0];
+    await apiPost(token, `/orders/${orderCancelled.id}/cancel`);
+    // Фиксированные даты для стабильного текста на карточках.
+    for (const [order, at] of [
+      [orderConfirmed, EXTRA_DATES[0]],
+      [orderCompleted, EXTRA_DATES[1]],
+      [orderCancelled, EXTRA_DATES[2]],
+    ]) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { createdAt: at, updatedAt: at },
+      });
+    }
 
     // 6. Уведомления сценария — прочитаны (badge профиля = 0).
     await prisma.notification.updateMany({

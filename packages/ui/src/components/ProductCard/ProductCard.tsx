@@ -1,10 +1,10 @@
 /**
  * ProductCard — карточка товара для витрины (список/сетка).
  *
- * Только презентация: данные приходят пропсами. Заглушка изображения
- * (иконка на пастельном тоне — тон детерминирован индексом) до
- * подключения настоящих фото (Промт 9). Цена — PriceDisplay (копейки,
- * U+202F, табличные цифры), наличие — StockIndicator.
+ * Только презентация: данные приходят пропсами. Фото товара —
+ * Image с cover-заглушкой (иконка на пастельном тоне) при отсутствии
+ * или ошибке загрузки. Цена — PriceDisplay (копейки, U+202F, табличные
+ * цифры), наличие — StockIndicator.
  *
  * Промт 8: добавлены описание, продавец, бейджи «Хит»/«Скоропорт»
  * и ширина под сетку каталога (2 колонки).
@@ -12,9 +12,22 @@
  * Промт 12 (доработка по VLM-аудиту): кнопка быстрого добавления
  * в корзину, бейджи поверх фото и цена с юнитом «/ кг» в одной
  * строке — у всех карточек одинаковая структура.
+ *
+ * Промт 12 (итерация 3): реальные фото товаров (imageUrl) вместо
+ * постоянной заглушки-корзины (VLM: «черновик, не инструмент»);
+ * юнит под ценой («за 500 г») — строка «490 ₽ / 500 г» съедалась
+ * кнопкой «+»; мини-степпер «в корзине» вместо «+» (состояние
+ * «товар уже в корзине»).
  */
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Plus, ShoppingBasket } from 'lucide-react-native';
+import { useState } from 'react';
+import {
+  Image,
+  Pressable,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+import { Minus, Plus, ShoppingBasket } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { placeholderTone } from '../../tokens/placeholder';
 import { Badge } from '../Badge';
@@ -42,8 +55,16 @@ export interface ProductCardProps {
   isPerishable?: boolean;
   /** Индекс тона заглушки (0–2, цикл). */
   toneIndex?: number;
+  /** Фото товара (URL или относительный путь API). */
+  imageUrl?: string | null;
   /** Быстрое добавление в корзину (минимальной партией). */
   onAddToCart?: () => void;
+  /** Товар уже в корзине: партий (мини-степпер вместо «+»). */
+  quantityInCart?: number;
+  /** Добавить одну партию из карточки. */
+  onIncrement?: () => void;
+  /** Убрать одну партию; при 1 — убрать позицию. */
+  onDecrement?: () => void;
   onPress?: () => void;
   testID?: string;
   /** Ширина карточки: по умолчанию 168, сетка каталога передаёт flex:1. */
@@ -61,12 +82,20 @@ export function ProductCard({
   isHit = false,
   isPerishable = false,
   toneIndex = 0,
+  imageUrl,
   onAddToCart,
+  quantityInCart = 0,
+  onIncrement,
+  onDecrement,
   onPress,
   testID,
   style,
 }: ProductCardProps) {
   const { colors, radii, spacing } = useTheme();
+
+  // Ошибка загрузки фото → заглушка (тон по индексу).
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(imageUrl) && !imageFailed;
 
   const hasBadges = isHit || isPerishable;
 
@@ -80,6 +109,7 @@ export function ProductCard({
           height: 96,
           borderRadius: radii.sm,
           backgroundColor: placeholderTone(toneIndex),
+          overflow: 'hidden',
         }}
       >
         {hasBadges ? (
@@ -90,6 +120,7 @@ export function ProductCard({
               left: spacing.xs,
               flexDirection: 'row',
               gap: spacing.xs,
+              zIndex: 1,
             }}
           >
             {isHit ? (
@@ -104,15 +135,25 @@ export function ProductCard({
             ) : null}
           </View>
         ) : null}
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ShoppingBasket size={32} color={colors.textMuted} />
-        </View>
+        {showImage ? (
+          <Image
+            source={{ uri: imageUrl as string }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+            accessibilityLabel={`Фото: ${name}`}
+          />
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ShoppingBasket size={32} color={colors.textMuted} />
+          </View>
+        )}
       </View>
 
       <Text variant="bodyStrong" numberOfLines={2}>
@@ -125,8 +166,10 @@ export function ProductCard({
         </Text>
       ) : null}
 
-      {/* Цена с юнитом «/ кг» и кнопкой быстрого добавления:
-          отдельная строка юнита над ценой дублировала информацию. */}
+      {/* Цена и юнит в два этажа: «490 ₽ / 500 г» в одну строку
+          съедалась кнопкой «+» (VLM-аудит итерации 3) — юнит теперь
+          под ценой («за 500 г»). Справа — «+» или мини-степпер,
+          когда товар уже в корзине. */}
       <View
         style={{
           flexDirection: 'row',
@@ -135,27 +178,74 @@ export function ProductCard({
           gap: spacing.xs,
         }}
       >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'baseline',
-            gap: 3,
-            flexShrink: 1,
-          }}
-        >
+        <View style={{ flexShrink: 1 }}>
           <PriceDisplay value={priceKopecks} oldPrice={oldPriceKopecks} />
           {unit ? (
             <Text
-              variant="caption"
-              color="textSecondary"
+              variant="micro"
+              color="textMuted"
               numberOfLines={1}
-              style={{ flexShrink: 0 }}
+              style={{ marginTop: 1 }}
             >
-              {`/ ${unit}`}
+              {`за ${unit}`}
             </Text>
           ) : null}
         </View>
-        {onAddToCart ? (
+        {quantityInCart > 0 && onIncrement && onDecrement ? (
+          <View
+            testID="product-in-cart-stepper"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 40,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.borderStrong,
+              backgroundColor: colors.primarySoft,
+              overflow: 'hidden',
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Убрать партию: ${name}`}
+              onPress={onDecrement}
+              hitSlop={8}
+              testID="product-decrement"
+              style={({ pressed }) => ({
+                width: 36,
+                height: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Minus size={16} color={colors.primaryText} />
+            </Pressable>
+            <Text
+              variant="bodyStrong"
+              mono
+              style={{ minWidth: 22, textAlign: 'center' }}
+            >
+              {quantityInCart}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Добавить партию: ${name}`}
+              onPress={onIncrement}
+              hitSlop={8}
+              testID="product-increment"
+              style={({ pressed }) => ({
+                width: 36,
+                height: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Plus size={16} color={colors.primaryText} />
+            </Pressable>
+          </View>
+        ) : onAddToCart ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Добавить в корзину: ${name}`}

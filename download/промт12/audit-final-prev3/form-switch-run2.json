@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":6,\"states\":6,\"density\":6,\"a11y\":7,\"impression\":6,\"total\":60,\"notes\":\"Экран выглядит как демо-стенд дизайн-системы (заголовки 'Обычная карточка', 'Приподнятая карточка') — не рабочий инструмент; переключатель автоприёма визуально конфликтует с двухстрочным disabled-текстом, нет явного состояния переключателя (серый контур выглядит disabled без лейбла).\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931297,
+  "id": "202611180001335fc1a5fa04504e4c",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180001335fc1a5fa04504e4c",
+  "usage": {
+    "completion_tokens": 132,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1789,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1921
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":8,\"density\":6,\"a11y\":7,\"impression\":7,\"total\":72,\"notes\":\"Ошибка ИНН с красной рамкой и текстом выбивается из спокойной палитры и не даёт способа исправить/подсказки формата; плотность низкая — крупные межблочные отступы на первом кадре, контент уходит под шит-с шита без явного скролла.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931218,
+  "id": "20261118000014150f167d43d4452b",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000014150f167d43d4452b",
+  "usage": {
+    "completion_tokens": 125,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3079,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3204
+  }
+}

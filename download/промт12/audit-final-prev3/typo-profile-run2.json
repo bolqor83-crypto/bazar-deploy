@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":6,\"color\":8,\"grid\":6,\"components\":7,\"icons\":7,\"states\":5,\"density\":4,\"a11y\":7,\"impression\":6,\"total\":63,\"notes\":\"Огромная пустота в нижних 2/3 экрана — плотность не соответствует рабочему инструменту (нет заказов, настроек, статусов); подчёркивание под телефоном выглядит как обрезанное поле ввода, а не дизайнерский элемент.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931413,
+  "id": "202611180003305dbc404bd3d94ba0",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180003305dbc404bd3d94ba0",
+  "usage": {
+    "completion_tokens": 114,
+    "completion_tokens_details": {
+      "reasoning_tokens": 113
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2211
+  }
+}

@@ -42,14 +42,19 @@ const GROUPS = {
     ],
   },
   forms: {
+    // Итерация 3: полный кадр карточки «Параметры поставки» (clip
+    // по границам) + открытые состояния Select и DatePicker.
     'form-select': [
-      `${FORMS}/forms-3-select-open.png`,
-      `${FORMS}/forms-1-select-checkbox.png`,
+      `${FORMS}/forms-1-full.png`,
+      `${FORMS}/forms-2-select-open.png`,
     ],
-    'form-checkbox': [`${FORMS}/forms-1-select-checkbox.png`],
-    'form-radio': [`${FORMS}/forms-2-radio-switch.png`],
-    'form-switch': [`${FORMS}/forms-2-radio-switch.png`],
-    'form-datepicker': [`${FORMS}/forms-4-datepicker-open.png`],
+    'form-checkbox': [`${FORMS}/forms-1-full.png`],
+    'form-radio': [`${FORMS}/forms-1-full.png`],
+    'form-switch': [`${FORMS}/forms-1-full.png`],
+    'form-datepicker': [
+      `${FORMS}/forms-1-full.png`,
+      `${FORMS}/forms-3-datepicker-open.png`,
+    ],
   },
   typo: {
     'typo-catalog': [
@@ -152,9 +157,7 @@ for (const [name, images] of Object.entries(items)) {
   const totals = [];
   const notes = [];
   for (let run = 1; run <= 3; run += 1) {
-    const cached = fs.existsSync(
-      path.join(OUT_DIR, `${name}-run${run}.json`),
-    );
+    const cached = fs.existsSync(path.join(OUT_DIR, `${name}-run${run}.json`));
     const raw = await auditOnce(name, run, images);
     const verdict = parseVerdict(raw);
     if (!verdict || typeof verdict.total !== 'number') {

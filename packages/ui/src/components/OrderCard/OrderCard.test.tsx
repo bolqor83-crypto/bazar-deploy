@@ -50,7 +50,9 @@ describe('OrderCard', () => {
       />,
     );
     expect(
-      screen.getByText('Огурцы гладкие 12 кг · Помидоры розовые 5 кг · ещё 3'),
+      screen.getByText(
+        'Огурцы гладкие 12 × кг · Помидоры розовые 5 × кг · ещё 3',
+      ),
     ).toBeTruthy();
   });
 

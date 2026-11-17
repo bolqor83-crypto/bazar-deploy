@@ -1,16 +1,61 @@
 /**
  * Профиль (profile) — экран роли «покупатель».
  *
- * Карточка пользователя, переход к уведомлениям о заказах
- * (Промт 10, Часть C) и выход из аккаунта с подтверждением.
+ * Карточка пользователя, сводка операций (заказы и сумма —
+ * рабочая плотность вместо полупустого экрана, VLM-аудит
+ * итерации 3), переход к уведомлениям о заказах и выход
+ * из аккаунта с подтверждением.
  */
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell, ChevronRight } from 'lucide-react-native';
-import { Badge, Card, Text, useTheme } from '@bazar/ui';
+import { Badge, Card, Text, formatPrice, useTheme } from '@bazar/ui';
 import { LogoutSection } from '../../../components/auth/LogoutSection';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useUnreadNotificationsCount } from '../../../hooks/useNotifications';
+import { useOrders } from '../../../hooks/useOrders';
+
+/** Сводка операций покупателя: два числа на одной панели. */
+function OperationsSummary() {
+  const { colors, spacing } = useTheme();
+  const ordersQuery = useOrders();
+  const orders = ordersQuery.data?.items ?? [];
+  if (orders.length === 0) {
+    return null;
+  }
+  const totalKopecks = orders.reduce((sum, order) => sum + order.total, 0);
+  const inWork = orders.filter(
+    (order) => order.status !== 'COMPLETED' && order.status !== 'CANCELLED',
+  ).length;
+
+  return (
+    <Card testID="profile-operations">
+      <Text variant="caption" color="textMuted">
+        Операции
+      </Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'baseline',
+          gap: spacing.sm,
+          marginTop: spacing.xs,
+        }}
+      >
+        <Text variant="numberL" color="primaryText">
+          {orders.length}
+        </Text>
+        <Text variant="caption" color="textSecondary" style={{ flexShrink: 1 }}>
+          {orders.length === 1 ? 'заказ' : 'заказа'}
+          {inWork > 0 ? ` · ${inWork} в работе` : ''}
+        </Text>
+        <Text variant="numberL">{formatPrice(totalKopecks)}</Text>
+        <Text variant="caption" color="textSecondary">
+          закуплено
+        </Text>
+      </View>
+    </Card>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -21,6 +66,7 @@ export default function ProfileScreen() {
   return (
     <RoleScreen role="customer" section="profile" title="Профиль">
       <View style={{ padding: spacing.md, gap: spacing.md, width: '100%' }}>
+        <OperationsSummary />
         <Card>
           <Pressable
             testID="profile-notifications"

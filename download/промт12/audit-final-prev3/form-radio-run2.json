@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":6,\"states\":5,\"density\":7,\"a11y\":7,\"impression\":6,\"total\":60,\"notes\":\"Дата 15.11.2026 выглядит как ошибка/заглушка без подсказки; переключатель автоприёма слишком тонкий и низкий (<48px по высоте), состояние Off читается слабо в перчатках. Также дата не в tabular-nums и секция «Карточки» выглядит как dev-показ компонентoв, а не рабочий контент.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931274,
+  "id": "202611180001104abec01bda1e423a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180001104abec01bda1e423a",
+  "usage": {
+    "completion_tokens": 139,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1789,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1928
+  }
+}

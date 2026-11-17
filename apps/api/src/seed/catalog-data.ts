@@ -3,8 +3,9 @@
  *
  * 6 категорий, 30 товаров аграрного ассортимента, у каждого
  * 2–4 предложения от демо-организаций (Опт-Юг, Сеть «У дома»,
- * Магазин «Ромашка»). Картинки — picsum с детерминированными
- * seed-URL: одна и та же картинка при каждом пересоздании.
+ * Магазин «Ромашка»). Фото — стоковые из apps/api/seed-media
+ * (раздаются через GET /api/media/seed/products/<слаг>.png,
+ * Промт 12); у товаров без фото карточка показывает заглушку.
  */
 
 export interface SeedCategory {
@@ -78,11 +79,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Помидоры розовые',
     unit: '1 кг',
     description: 'Розовые томаты грунтовые, калибр 5+, мясистые, сладкие.',
-    images: [
-      'https://picsum.photos/seed/%D0%BF%D0%BE%D0%BC%D0%B8%D0%B4%D0%BE%D1%80%D1%8B-%D1%80%D0%BE%D0%B7%D0%BE%D0%B2%D1%8B%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%BE%D0%BC%D0%B8%D0%B4%D0%BE%D1%80%D1%8B-%D1%80%D0%BE%D0%B7%D0%BE%D0%B2%D1%8B%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%BE%D0%BC%D0%B8%D0%B4%D0%BE%D1%80%D1%8B-%D1%80%D0%BE%D0%B7%D0%BE%D0%B2%D1%8B%D0%B5-3/800/600',
-    ],
+    images: ['/api/media/seed/products/tomatoes.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -115,11 +112,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Огурцы гладкие',
     unit: '1 кг',
     description: 'Гладкие огурцы первого сорта, длина 10–12 см.',
-    images: [
-      'https://picsum.photos/seed/%D0%BE%D0%B3%D1%83%D1%80%D1%86%D1%8B-%D0%B3%D0%BB%D0%B0%D0%B4%D0%BA%D0%B8%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D0%BE%D0%B3%D1%83%D1%80%D1%86%D1%8B-%D0%B3%D0%BB%D0%B0%D0%B4%D0%BA%D0%B8%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D0%BE%D0%B3%D1%83%D1%80%D1%86%D1%8B-%D0%B3%D0%BB%D0%B0%D0%B4%D0%BA%D0%B8%D0%B5-3/800/600',
-    ],
+    images: ['/api/media/seed/products/cucumbers.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -160,11 +153,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Картофель мытый',
     unit: '1 кг',
     description: 'Мытый картофель продовольственный, калибр 40–70.',
-    images: [
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D0%BC%D1%8B%D1%82%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D0%BC%D1%8B%D1%82%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D0%BC%D1%8B%D1%82%D1%8B%D0%B9-3/800/600',
-    ],
+    images: ['/api/media/seed/products/potatoes.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -189,11 +178,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Лук репчатый золотистый',
     unit: '1 кг',
     description: 'Лук золотистый сухой, фракция отборная.',
-    images: [
-      'https://picsum.photos/seed/%D0%BB%D1%83%D0%BA-%D1%80%D0%B5%D0%BF%D1%87%D0%B0%D1%82%D1%8B%D0%B9-%D0%B7%D0%BE%D0%BB%D0%BE%D1%82%D0%B8%D1%81%D1%82%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%BB%D1%83%D0%BA-%D1%80%D0%B5%D0%BF%D1%87%D0%B0%D1%82%D1%8B%D0%B9-%D0%B7%D0%BE%D0%BB%D0%BE%D1%82%D0%B8%D1%81%D1%82%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%BB%D1%83%D0%BA-%D1%80%D0%B5%D0%BF%D1%87%D0%B0%D1%82%D1%8B%D0%B9-%D0%B7%D0%BE%D0%BB%D0%BE%D1%82%D0%B8%D1%81%D1%82%D1%8B%D0%B9-3/800/600',
-    ],
+    images: ['/api/media/seed/products/onions.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -226,11 +211,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Морковь мытая',
     unit: '1 кг',
     description: 'Морковь мытая, ровная, сладкая, сорт Нантская.',
-    images: [
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D1%80%D0%BA%D0%BE%D0%B2%D1%8C-%D0%BC%D1%8B%D1%82%D0%B0%D1%8F-1/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D1%80%D0%BA%D0%BE%D0%B2%D1%8C-%D0%BC%D1%8B%D1%82%D0%B0%D1%8F-2/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D1%80%D0%BA%D0%BE%D0%B2%D1%8C-%D0%BC%D1%8B%D1%82%D0%B0%D1%8F-3/800/600',
-    ],
+    images: ['/api/media/seed/products/carrots.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -271,11 +252,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Капуста белокочанная',
     unit: '1 кг',
     description: 'Капуста поздняя, плотная, лёжкая.',
-    images: [
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%BF%D1%83%D1%81%D1%82%D0%B0-%D0%B1%D0%B5%D0%BB%D0%BE%D0%BA%D0%BE%D1%87%D0%B0%D0%BD%D0%BD%D0%B0%D1%8F-1/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%BF%D1%83%D1%81%D1%82%D0%B0-%D0%B1%D0%B5%D0%BB%D0%BE%D0%BA%D0%BE%D1%87%D0%B0%D0%BD%D0%BD%D0%B0%D1%8F-2/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%BF%D1%83%D1%81%D1%82%D0%B0-%D0%B1%D0%B5%D0%BB%D0%BE%D0%BA%D0%BE%D1%87%D0%B0%D0%BD%D0%BD%D0%B0%D1%8F-3/800/600',
-    ],
+    images: ['/api/media/seed/products/cabbage.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -300,11 +277,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Свёкла столовая',
     unit: '1 кг',
     description: 'Свёкла тёмная, без колец, идеально для борща.',
-    images: [
-      'https://picsum.photos/seed/%D1%81%D0%B2-%D0%BA%D0%BB%D0%B0-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F-1/800/600',
-      'https://picsum.photos/seed/%D1%81%D0%B2-%D0%BA%D0%BB%D0%B0-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F-2/800/600',
-      'https://picsum.photos/seed/%D1%81%D0%B2-%D0%BA%D0%BB%D0%B0-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D0%B0%D1%8F-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -337,11 +310,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Кабачки молодые',
     unit: '1 кг',
     description: 'Молодые кабачки с нежной кожицей.',
-    images: [
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%B1%D0%B0%D1%87%D0%BA%D0%B8-%D0%BC%D0%BE%D0%BB%D0%BE%D0%B4%D1%8B%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%B1%D0%B0%D1%87%D0%BA%D0%B8-%D0%BC%D0%BE%D0%BB%D0%BE%D0%B4%D1%8B%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D0%BA%D0%B0%D0%B1%D0%B0%D1%87%D0%BA%D0%B8-%D0%BC%D0%BE%D0%BB%D0%BE%D0%B4%D1%8B%D0%B5-3/800/600',
-    ],
+    images: ['/api/media/seed/products/zucchini.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -382,11 +351,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Баклажаны',
     unit: '1 кг',
     description: 'Баклажаны глянцевые, тёмные, без горечи.',
-    images: [
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%8B-1/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%8B-2/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%8B-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -411,11 +376,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Перец болгарский красный',
     unit: '1 кг',
     description: 'Красный болгарский перец, толстостенный.',
-    images: [
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%80%D0%B5%D1%86-%D0%B1%D0%BE%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8%D0%B9-%D0%BA%D1%80%D0%B0%D1%81%D0%BD%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%80%D0%B5%D1%86-%D0%B1%D0%BE%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8%D0%B9-%D0%BA%D1%80%D0%B0%D1%81%D0%BD%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%80%D0%B5%D1%86-%D0%B1%D0%BE%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8%D0%B9-%D0%BA%D1%80%D0%B0%D1%81%D0%BD%D1%8B%D0%B9-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -448,11 +409,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Томаты черри на ветке',
     unit: '250 г',
     description: 'Черри на ветке, сладкие, транспортабельные.',
-    images: [
-      'https://picsum.photos/seed/%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D1%8B-%D1%87%D0%B5%D1%80%D1%80%D0%B8-%D0%BD%D0%B0-%D0%B2%D0%B5%D1%82%D0%BA%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D1%8B-%D1%87%D0%B5%D1%80%D1%80%D0%B8-%D0%BD%D0%B0-%D0%B2%D0%B5%D1%82%D0%BA%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D1%8B-%D1%87%D0%B5%D1%80%D1%80%D0%B8-%D0%BD%D0%B0-%D0%B2%D0%B5%D1%82%D0%BA%D0%B5-3/800/600',
-    ],
+    images: ['/api/media/seed/products/cherry.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -493,11 +450,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Яблоки Гала',
     unit: '1 кг',
     description: 'Яблоки Гала, калибр 70+, сладкие, хрустящие.',
-    images: [
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D0%B0%D0%BB%D0%B0-1/800/600',
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D0%B0%D0%BB%D0%B0-2/800/600',
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D0%B0%D0%BB%D0%B0-3/800/600',
-    ],
+    images: ['/api/media/seed/products/apples.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -522,11 +475,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Яблоки Гренни Смит',
     unit: '1 кг',
     description: 'Зелёные яблоки, кислые, плотные.',
-    images: [
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D1%80%D0%B5%D0%BD%D0%BD%D0%B8-%D1%81%D0%BC%D0%B8%D1%82-1/800/600',
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D1%80%D0%B5%D0%BD%D0%BD%D0%B8-%D1%81%D0%BC%D0%B8%D1%82-2/800/600',
-      'https://picsum.photos/seed/%D1%8F%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-%D0%B3%D1%80%D0%B5%D0%BD%D0%BD%D0%B8-%D1%81%D0%BC%D0%B8%D1%82-3/800/600',
-    ],
+    images: ['/api/media/seed/products/apples.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -559,11 +508,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Бананы',
     unit: '1 кг',
     description: 'Бананы первый сорт, калибр 46+.',
-    images: [
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BD%D0%B0%D0%BD%D1%8B-1/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BD%D0%B0%D0%BD%D1%8B-2/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%BD%D0%B0%D0%BD%D1%8B-3/800/600',
-    ],
+    images: ['/api/media/seed/products/bananas.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -604,11 +549,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Апельсины столовые',
     unit: '1 кг',
     description: 'Апельсины сочные, тонкокорые.',
-    images: [
-      'https://picsum.photos/seed/%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%D1%81%D0%B8%D0%BD%D1%8B-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D1%8B%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%D1%81%D0%B8%D0%BD%D1%8B-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D1%8B%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%D1%81%D0%B8%D0%BD%D1%8B-%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%B2%D1%8B%D0%B5-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -633,11 +574,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Мандарины без косточек',
     unit: '1 кг',
     description: 'Мандарины сладкие, без косточек.',
-    images: [
-      'https://picsum.photos/seed/%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0%D1%80%D0%B8%D0%BD%D1%8B-%D0%B1%D0%B5%D0%B7-%D0%BA%D0%BE%D1%81%D1%82%D0%BE%D1%87%D0%B5%D0%BA-1/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0%D1%80%D0%B8%D0%BD%D1%8B-%D0%B1%D0%B5%D0%B7-%D0%BA%D0%BE%D1%81%D1%82%D0%BE%D1%87%D0%B5%D0%BA-2/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0%D1%80%D0%B8%D0%BD%D1%8B-%D0%B1%D0%B5%D0%B7-%D0%BA%D0%BE%D1%81%D1%82%D0%BE%D1%87%D0%B5%D0%BA-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -670,11 +607,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Груши Конференц',
     unit: '1 кг',
     description: 'Груши Конференц, сочные, с медовым вкусом.',
-    images: [
-      'https://picsum.photos/seed/%D0%B3%D1%80%D1%83%D1%88%D0%B8-%D0%BA%D0%BE%D0%BD%D1%84%D0%B5%D1%80%D0%B5%D0%BD%D1%86-1/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D1%83%D1%88%D0%B8-%D0%BA%D0%BE%D0%BD%D1%84%D0%B5%D1%80%D0%B5%D0%BD%D1%86-2/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D1%83%D1%88%D0%B8-%D0%BA%D0%BE%D0%BD%D1%84%D0%B5%D1%80%D0%B5%D0%BD%D1%86-3/800/600',
-    ],
+    images: ['/api/media/seed/products/pears.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -715,11 +648,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Виноград кишмиш белый',
     unit: '500 г',
     description: 'Кишмиш без косточек, крупная гроздь.',
-    images: [
-      'https://picsum.photos/seed/%D0%B2%D0%B8%D0%BD%D0%BE%D0%B3%D1%80%D0%B0%D0%B4-%D0%BA%D0%B8%D1%88%D0%BC%D0%B8%D1%88-%D0%B1%D0%B5%D0%BB%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%B2%D0%B8%D0%BD%D0%BE%D0%B3%D1%80%D0%B0%D0%B4-%D0%BA%D0%B8%D1%88%D0%BC%D0%B8%D1%88-%D0%B1%D0%B5%D0%BB%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%B2%D0%B8%D0%BD%D0%BE%D0%B3%D1%80%D0%B0%D0%B4-%D0%BA%D0%B8%D1%88%D0%BC%D0%B8%D1%88-%D0%B1%D0%B5%D0%BB%D1%8B%D0%B9-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -744,11 +673,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Укроп',
     unit: '100 г',
     description: 'Укроп свежий, пучки по 100 г.',
-    images: [
-      'https://picsum.photos/seed/%D1%83%D0%BA%D1%80%D0%BE%D0%BF-1/800/600',
-      'https://picsum.photos/seed/%D1%83%D0%BA%D1%80%D0%BE%D0%BF-2/800/600',
-      'https://picsum.photos/seed/%D1%83%D0%BA%D1%80%D0%BE%D0%BF-3/800/600',
-    ],
+    images: ['/api/media/seed/products/dill.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -781,11 +706,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Петрушка',
     unit: '100 г',
     description: 'Петрушка листовая, свежая.',
-    images: [
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%82%D1%80%D1%83%D1%88%D0%BA%D0%B0-1/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%82%D1%80%D1%83%D1%88%D0%BA%D0%B0-2/800/600',
-      'https://picsum.photos/seed/%D0%BF%D0%B5%D1%82%D1%80%D1%83%D1%88%D0%BA%D0%B0-3/800/600',
-    ],
+    images: ['/api/media/seed/products/parsley.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -826,11 +747,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Салат листовой микс',
     unit: '150 г',
     description: 'Микс листовых салатов в лотке.',
-    images: [
-      'https://picsum.photos/seed/%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D0%BB%D0%B8%D1%81%D1%82%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BC%D0%B8%D0%BA%D1%81-1/800/600',
-      'https://picsum.photos/seed/%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D0%BB%D0%B8%D1%81%D1%82%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BC%D0%B8%D0%BA%D1%81-2/800/600',
-      'https://picsum.photos/seed/%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D0%BB%D0%B8%D1%81%D1%82%D0%BE%D0%B2%D0%BE%D0%B9-%D0%BC%D0%B8%D0%BA%D1%81-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -855,11 +772,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Базилик свежий',
     unit: '100 г',
     description: 'Базилик зелёный, ароматный.',
-    images: [
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%B7%D0%B8%D0%BB%D0%B8%D0%BA-%D1%81%D0%B2%D0%B5%D0%B6%D0%B8%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%B7%D0%B8%D0%BB%D0%B8%D0%BA-%D1%81%D0%B2%D0%B5%D0%B6%D0%B8%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%B1%D0%B0%D0%B7%D0%B8%D0%BB%D0%B8%D0%BA-%D1%81%D0%B2%D0%B5%D0%B6%D0%B8%D0%B9-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -892,11 +805,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Рис круглозёрный',
     unit: '1 кг',
     description: 'Рис круглозёрный, шлифованный, первый сорт.',
-    images: [
-      'https://picsum.photos/seed/%D1%80%D0%B8%D1%81-%D0%BA%D1%80%D1%83%D0%B3%D0%BB%D0%BE%D0%B7-%D1%80%D0%BD%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D1%80%D0%B8%D1%81-%D0%BA%D1%80%D1%83%D0%B3%D0%BB%D0%BE%D0%B7-%D1%80%D0%BD%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D1%80%D0%B8%D1%81-%D0%BA%D1%80%D1%83%D0%B3%D0%BB%D0%BE%D0%B7-%D1%80%D0%BD%D1%8B%D0%B9-3/800/600',
-    ],
+    images: ['/api/media/seed/products/rice.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -937,11 +846,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Гречка ядрица',
     unit: '1 кг',
     description: 'Гречиха ядрица первого сорта, отборная.',
-    images: [
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%87%D0%BA%D0%B0-%D1%8F%D0%B4%D1%80%D0%B8%D1%86%D0%B0-1/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%87%D0%BA%D0%B0-%D1%8F%D0%B4%D1%80%D0%B8%D1%86%D0%B0-2/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%87%D0%BA%D0%B0-%D1%8F%D0%B4%D1%80%D0%B8%D1%86%D0%B0-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -966,11 +871,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Молоко 3,2%',
     unit: '1 л',
     description: 'Молоко пастеризованное 3,2%, срок 10 суток.',
-    images: [
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE-3-2--1/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE-3-2--2/800/600',
-      'https://picsum.photos/seed/%D0%BC%D0%BE%D0%BB%D0%BE%D0%BA%D0%BE-3-2--3/800/600',
-    ],
+    images: ['/api/media/seed/products/milk.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -1003,11 +904,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Сыр «Гауда»',
     unit: '300 г',
     description: 'Полутвёрдый сыр Гауда, нарезка слайсами.',
-    images: [
-      'https://picsum.photos/seed/%D1%81%D1%8B%D1%80-%D0%B3%D0%B0%D1%83%D0%B4%D0%B0--1/800/600',
-      'https://picsum.photos/seed/%D1%81%D1%8B%D1%80-%D0%B3%D0%B0%D1%83%D0%B4%D0%B0--2/800/600',
-      'https://picsum.photos/seed/%D1%81%D1%8B%D1%80-%D0%B3%D0%B0%D1%83%D0%B4%D0%B0--3/800/600',
-    ],
+    images: ['/api/media/seed/products/gouda.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -1048,11 +945,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Творог 9%',
     unit: '500 г',
     description: 'Творог 9%, мягкий, ГОСТ.',
-    images: [
-      'https://picsum.photos/seed/%D1%82%D0%B2%D0%BE%D1%80%D0%BE%D0%B3-9--1/800/600',
-      'https://picsum.photos/seed/%D1%82%D0%B2%D0%BE%D1%80%D0%BE%D0%B3-9--2/800/600',
-      'https://picsum.photos/seed/%D1%82%D0%B2%D0%BE%D1%80%D0%BE%D0%B3-9--3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -1077,11 +970,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Мёд разнотравье',
     unit: '1 кг',
     description: 'Мёд натуральный, разнотравье, юг России.',
-    images: [
-      'https://picsum.photos/seed/%D0%BC-%D0%B4-%D1%80%D0%B0%D0%B7%D0%BD%D0%BE%D1%82%D1%80%D0%B0%D0%B2%D1%8C%D0%B5-1/800/600',
-      'https://picsum.photos/seed/%D0%BC-%D0%B4-%D1%80%D0%B0%D0%B7%D0%BD%D0%BE%D1%82%D1%80%D0%B0%D0%B2%D1%8C%D0%B5-2/800/600',
-      'https://picsum.photos/seed/%D0%BC-%D0%B4-%D1%80%D0%B0%D0%B7%D0%BD%D0%BE%D1%82%D1%80%D0%B0%D0%B2%D1%8C%D0%B5-3/800/600',
-    ],
+    images: ['/api/media/seed/products/honey.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -1114,11 +1003,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Грецкий орех',
     unit: '500 г',
     description: 'Орех грецкий, ядро светлое, калибр крупный.',
-    images: [
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%86%D0%BA%D0%B8%D0%B9-%D0%BE%D1%80%D0%B5%D1%85-1/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%86%D0%BA%D0%B8%D0%B9-%D0%BE%D1%80%D0%B5%D1%85-2/800/600',
-      'https://picsum.photos/seed/%D0%B3%D1%80%D0%B5%D1%86%D0%BA%D0%B8%D0%B9-%D0%BE%D1%80%D0%B5%D1%85-3/800/600',
-    ],
+    images: ['/api/media/seed/products/walnuts.png'],
     offers: [
       {
         organization: 'Опт-Юг',
@@ -1159,11 +1044,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     name: 'Изюм тёмный',
     unit: '500 г',
     description: 'Изюм тёмный бессемянный, калибр крупный.',
-    images: [
-      'https://picsum.photos/seed/%D0%B8%D0%B7%D1%8E%D0%BC-%D1%82-%D0%BC%D0%BD%D1%8B%D0%B9-1/800/600',
-      'https://picsum.photos/seed/%D0%B8%D0%B7%D1%8E%D0%BC-%D1%82-%D0%BC%D0%BD%D1%8B%D0%B9-2/800/600',
-      'https://picsum.photos/seed/%D0%B8%D0%B7%D1%8E%D0%BC-%D1%82-%D0%BC%D0%BD%D1%8B%D0%B9-3/800/600',
-    ],
+    images: [],
     offers: [
       {
         organization: 'Опт-Юг',

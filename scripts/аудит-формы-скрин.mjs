@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
  * Съёмка секции «Формы» витрины /dev/design для VLM-аудита
- * (Промт 12, Часть E; доработка — кадры строго по карточке
- * «Параметры поставки», без утечек соседних секций-стендов).
- * Требует dev-экспорт (dist-dev) на :3000:
+ * (Промт 12, итерация 3). Три кадра:
+ *   forms-1-full.png            — карточка «Параметры поставки» целиком
+ *                                  (точный clip по границам карточки:
+ *                                  соседние секции-стенды не попадают
+ *                                  в кадр — VLM читал их как UI-кит);
+ *   forms-2-select-open.png     — открытый Select (нижний шит);
+ *   forms-3-datepicker-open.png — открытый календарь DatePicker.
+ * Требует dev-экспорт (dist-dev) на :3002:
  * pnpm --filter mobile exec expo export --platform web --dev --output-dir dist-dev
- *
- * Запуск: node scripts/аудит-формы-скрин.mjs
+ * Запуск: VISUAL_BASE_URL=http://localhost:3002 node scripts/аудит-формы-скрин.mjs
  */
 import { chromium } from 'playwright';
 import fs from 'node:fs';
@@ -39,92 +43,63 @@ await page.addInitScript(() => {
   });
 });
 
-// Витрина — гостевая зона (AuthGuard requireAuth:false
-// редиректит залогиненных): заходим без сессии.
 console.log('шаг: витрина (гость)');
-await page.goto(`${BASE_URL}/dev/design`, { waitUntil: 'networkidle' });
-await page.waitForSelector('text=Дизайн-система', { timeout: 15_000 });
-console.log('шаг: витрина открыта');
-await page.waitForTimeout(1200);
-
-// Кадры 1–2: строго по границам карточки «Параметры поставки» —
-// соседние секции-стенды («Поле ввода», «Карточки», «Бейджи»)
-// не должны попадать в кадр: VLM читал их как служебный UI-кит
-// в рабочем экране (VLM-аудит доработки).
-console.log('шаг: скролл к карточке формы');
-const formCard = page.locator('text=Параметры поставки').first();
-await formCard.waitFor({ timeout: 10_000 });
-await formCard.scrollIntoViewIfNeeded();
-await page.waitForTimeout(600);
-const cardBox = await formCard.boundingBox();
-if (!cardBox) {
-  throw new Error('карточка формы не найдена');
-}
-// cardBox — по заголовку внутри карточки; поднимаемся к её верху.
-const cardTop = Math.max(0, cardBox.y - 52);
-const FRAME_H = 700;
-await page.screenshot({
-  path: path.join(OUT_DIR, 'forms-1-select-checkbox.png'),
-  clip: { x: 0, y: cardTop, width: 390, height: Math.min(FRAME_H, 844) },
+await page.goto(`${BASE_URL}/dev/design`, {
+  waitUntil: 'domcontentloaded',
+  timeout: 60_000,
 });
+await page.waitForSelector('text=Дизайн-система', { timeout: 30_000 });
+await page.waitForTimeout(1500);
+console.log('шаг: витрина открыта');
 
-// Кадр 2: низ карточки — Radio, Switch, DatePicker, «Сохранить».
-console.log('шаг: низ формы');
+// Кадр 1: карточка целиком — скролл к началу карточки и clip по
+// её фактическим границам (заголовок → кнопка «Сохранить»).
+const formTitle = page.locator('text=Параметры поставки').first();
+await formTitle.waitFor({ timeout: 15_000 });
+await formTitle.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+await page.waitForTimeout(700);
+const titleBox = await formTitle.boundingBox();
+if (!titleBox) throw new Error('карточка формы не найдена');
 const saveButton = page.getByRole('button', { name: /Сохранить параметры/ });
 await saveButton.scrollIntoViewIfNeeded();
-await page.waitForTimeout(500);
+await page.waitForTimeout(400);
 const saveBox = await saveButton.boundingBox();
-if (saveBox) {
-  const bottom = saveBox.y + saveBox.height + 16;
-  await page.screenshot({
-    path: path.join(OUT_DIR, 'forms-2-radio-switch.png'),
-    clip: {
-      x: 0,
-      y: Math.max(0, bottom - FRAME_H),
-      width: 390,
-      height: Math.min(FRAME_H, 844),
-    },
-  });
-} else {
-  await page.screenshot({
-    path: path.join(OUT_DIR, 'forms-2-radio-switch.png'),
-  });
-}
+if (!saveBox) throw new Error('кнопка сохранения не найдена');
+// Карточка: padding md (12) + граница; берём запас 14 сверху/снизу.
+const top = Math.max(0, titleBox.y - 14);
+const bottom = saveBox.y + saveBox.height + 14;
+await page.screenshot({
+  path: path.join(OUT_DIR, 'forms-1-full.png'),
+  clip: { x: 0, y: top, width: 390, height: bottom - top },
+});
+console.log(`кадр 1: карточка ${Math.round(bottom - top)}px`);
 
-// Кадр 3: открытый Select (combobox-шит) поверх формы.
-console.log('шаг: открытый Select');
-await formCard.scrollIntoViewIfNeeded();
+// Кадр 2: открытый Select (нижний шит поверх формы).
+await formTitle.scrollIntoViewIfNeeded();
 await page.waitForTimeout(400);
 await page.getByRole('combobox').first().click();
-await page.waitForTimeout(800);
-await page.screenshot({
-  path: path.join(OUT_DIR, 'forms-3-select-open.png'),
-});
-await page.keyboard.press('Escape');
-await page.waitForTimeout(400);
-// Закрытие шита тапом по подложке.
-await page.mouse.click(195, 100);
-await page.waitForTimeout(500);
+await page.waitForTimeout(900);
+await page.screenshot({ path: path.join(OUT_DIR, 'forms-2-select-open.png') });
+console.log('кадр 2: select открыт');
 
-// Кадр 4: открытый календарь DatePicker (сетка 7×6).
-console.log('шаг: открытый DatePicker');
+// Кадр 3: перезагрузка — чистое состояние без шита Select
+// (Escape шит не закрывает, оверлей перехватывал клики).
+await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 });
+await page.waitForSelector('text=Дизайн-система', { timeout: 30_000 });
+await page.waitForTimeout(1500);
+
+// Кадр 3: открытый календарь DatePicker (сетка 7×6).
 const dateTrigger = page.getByRole('button', {
   name: /Ближайшая дата поставки/,
 });
 await dateTrigger.scrollIntoViewIfNeeded();
 await page.waitForTimeout(300);
 await dateTrigger.click();
-await page.waitForTimeout(800);
+await page.waitForTimeout(900);
 await page.screenshot({
-  path: path.join(OUT_DIR, 'forms-4-datepicker-open.png'),
+  path: path.join(OUT_DIR, 'forms-3-datepicker-open.png'),
 });
-await page.mouse.click(195, 100);
-await page.waitForTimeout(400);
-
-// Кадр 5 (бонус): секция типографики витрины.
-await page.locator('text=Текст').first().scrollIntoViewIfNeeded();
-await page.waitForTimeout(500);
-await page.screenshot({ path: path.join(OUT_DIR, 'forms-5-typography.png') });
+console.log('кадр 3: datepicker открыт');
 
 await browser.close();
 console.log('снято в', OUT_DIR);

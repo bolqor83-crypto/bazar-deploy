@@ -129,39 +129,6 @@ const storeNav: RoleNavConfig = {
   ],
   more: [
     {
-      title: 'Торговля',
-      items: [
-        {
-          key: 'purchase',
-          label: 'Закупка',
-          icon: ShoppingCart,
-          route: '/store/purchase',
-          subtitle: 'Каталог оптовиков',
-        },
-        {
-          key: 'feed',
-          label: 'Лента',
-          icon: Newspaper,
-          route: '/store/feed',
-          subtitle: 'Обновления поставщиков',
-        },
-        {
-          key: 'storefront',
-          label: 'Витрина',
-          icon: Store,
-          route: '/store/storefront',
-          subtitle: 'Как вас видят покупатели',
-        },
-        {
-          key: 'orders',
-          label: 'Заказы',
-          icon: Package,
-          route: '/store/orders',
-          subtitle: 'Закупки и статусы',
-        },
-      ],
-    },
-    {
       title: 'Финансы',
       items: [
         // Заглушки — функциональность Промта 13+.
@@ -230,27 +197,8 @@ const wholesaleNav: RoleNavConfig = {
     {
       title: 'Торговля',
       items: [
-        {
-          key: 'products',
-          label: 'Товары',
-          icon: Package,
-          route: '/wholesale/products',
-          subtitle: 'Карточки и фото',
-        },
-        {
-          key: 'offers',
-          label: 'Предложения',
-          icon: Layers,
-          route: '/wholesale/offers',
-          subtitle: 'Цены и склады отгрузки',
-        },
-        {
-          key: 'orders',
-          label: 'Заказы',
-          icon: ClipboardList,
-          route: '/wholesale/orders',
-          subtitle: 'Корзины покупателей',
-        },
+        // Товары / Предложения / Заказы — уже таб-бар: в «Инструментах"
+        // не дублируем (VLM-аудит, итерация 3: дубли путали навигацию).
         {
           key: 'requests',
           label: 'Запросы',

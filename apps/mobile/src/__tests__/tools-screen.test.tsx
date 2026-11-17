@@ -84,10 +84,11 @@ describe('ToolsScreen (Все инструменты, оптовик)', () => {
     expect(screen.getAllByText('Клиенты').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Финансы').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Аккаунт')).toBeTruthy();
-    // Разделы — по уникальным testID.
-    expect(screen.getByTestId('tools-item-products')).toBeTruthy();
-    expect(screen.getByTestId('tools-item-offers')).toBeTruthy();
-    expect(screen.getByTestId('tools-item-orders')).toBeTruthy();
+    // Разделы — по уникальным testID. Товары/Предложения/Заказы —
+    // таб-бар, в «Инструментах» не дублируются (VLM-аудит, итерация 3).
+    expect(screen.queryByTestId('tools-item-products')).toBeNull();
+    expect(screen.queryByTestId('tools-item-offers')).toBeNull();
+    expect(screen.queryByTestId('tools-item-orders')).toBeNull();
     expect(screen.getByTestId('tools-item-requests')).toBeTruthy();
     expect(screen.getByTestId('tools-item-stock')).toBeTruthy();
     expect(screen.getByTestId('tools-item-stock-locations')).toBeTruthy();
@@ -156,8 +157,9 @@ describe('ToolsScreen (Все инструменты, оптовик)', () => {
       <ToolsScreen role="store_owner" />,
     );
     expect(await screen.findAllByText('Рабочие записи')).toBeTruthy();
-    // «Витрина» — и вкладка таб-бара, и раздел «Инструментов».
-    expect(screen.getAllByText('Витрина').length).toBeGreaterThanOrEqual(2);
+    // «Витрина» — только вкладка таб-бара: в «Инструментах" не
+    // дублируется (VLM-аудит, итерация 3).
+    expect(screen.getAllByText('Витрина').length).toBe(1);
     expect(screen.getByText('Долги')).toBeTruthy();
     expect(screen.getByText('Заметки')).toBeTruthy();
   });

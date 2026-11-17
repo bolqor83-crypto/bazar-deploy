@@ -45,7 +45,13 @@ import {
   fetchCategories,
   fetchProducts,
 } from '../../../services/api/catalogApi';
-import { useAddToCart } from '../../../hooks/useCart';
+import { resolveMediaUrl } from '../../../services/api/client';
+import {
+  useAddToCart,
+  useCart,
+  useRemoveCartItem,
+  useUpdateCartItem,
+} from '../../../hooks/useCart';
 
 /** slug категории → иконка Lucide (fallback — Package). */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -98,6 +104,20 @@ function CatalogBody() {
   const { colors, spacing } = useTheme();
   const toast = useToast();
   const addToCartMutation = useAddToCart();
+  const updateItemMutation = useUpdateCartItem();
+  const removeItemMutation = useRemoveCartItem();
+
+  // Корзина контура: карта offerId → {itemId, quantity} — карточка
+  // показывает состояние «уже в корзине» мини-степпером (VLM-аудит
+  // итерации 3: карточка без состояния корзины читалась как пассивная).
+  const cartQuery = useCart();
+  const cartByOffer = useMemo(() => {
+    const map = new Map<string, { itemId: string; quantity: number }>();
+    for (const item of cartQuery.data?.items ?? []) {
+      map.set(item.offer.id, { itemId: item.id, quantity: item.quantity });
+    }
+    return map;
+  }, [cartQuery.data]);
 
   // Ввод поиска применяется с дебаунсом; onSubmit — сразу.
   const [searchInput, setSearchInput] = useState('');
@@ -166,6 +186,26 @@ function CatalogBody() {
 
   const openProduct = (id: string) => {
     router.push(`/customer/product/${id}`);
+  };
+
+  /** +1 партия из карточки. */
+  const increment = (entry: { itemId: string; quantity: number }) => {
+    updateItemMutation.mutate({
+      itemId: entry.itemId,
+      quantity: entry.quantity + 1,
+    });
+  };
+
+  /** −1 партия; последняя — позиция убирается. */
+  const decrement = (entry: { itemId: string; quantity: number }) => {
+    if (entry.quantity > 1) {
+      updateItemMutation.mutate({
+        itemId: entry.itemId,
+        quantity: entry.quantity - 1,
+      });
+    } else {
+      removeItemMutation.mutate(entry.itemId);
+    }
   };
 
   /** Быстрое добавление из карточки — минимальной партией
@@ -285,35 +325,43 @@ function CatalogBody() {
       contentContainerStyle={{ paddingBottom: spacing.lg, gap: spacing.md }}
       data={products}
       keyExtractor={(item: CatalogProduct) => item.id}
-      renderItem={({ item, index }) => (
-        <ProductCard
-          name={item.name}
-          description={item.description}
-          unit={item.unit}
-          priceKopecks={item.bestOffer?.priceKopecks ?? 0}
-          stock={
-            item.bestOffer
-              ? item.bestOffer.stock > 0
-                ? item.bestOffer.stock < 20
-                  ? 'low'
-                  : 'in'
-                : 'out'
-              : undefined
-          }
-          organizationName={item.bestOffer?.organization.name}
-          isHit={item.bestOffer?.badge === 'hit'}
-          isPerishable={item.bestOffer?.isPerishable}
-          toneIndex={index}
-          testID="catalog-product"
-          onPress={() => openProduct(item.id)}
-          onAddToCart={
-            item.bestOffer && item.bestOffer.stock > 0
-              ? () => quickAdd(item)
-              : undefined
-          }
-          style={{ flex: 1 }}
-        />
-      )}
+      renderItem={({ item, index }) => {
+        const offerId = item.bestOffer?.id;
+        const inCart = offerId ? cartByOffer.get(offerId) : undefined;
+        return (
+          <ProductCard
+            name={item.name}
+            description={item.description}
+            unit={item.unit}
+            priceKopecks={item.bestOffer?.priceKopecks ?? 0}
+            stock={
+              item.bestOffer
+                ? item.bestOffer.stock > 0
+                  ? item.bestOffer.stock < 20
+                    ? 'low'
+                    : 'in'
+                  : 'out'
+                : undefined
+            }
+            organizationName={item.bestOffer?.organization.name}
+            isHit={item.bestOffer?.badge === 'hit'}
+            isPerishable={item.bestOffer?.isPerishable}
+            toneIndex={index}
+            imageUrl={item.images[0] ? resolveMediaUrl(item.images[0]) : null}
+            quantityInCart={inCart?.quantity}
+            onIncrement={inCart ? () => increment(inCart) : undefined}
+            onDecrement={inCart ? () => decrement(inCart) : undefined}
+            testID="catalog-product"
+            onPress={() => openProduct(item.id)}
+            onAddToCart={
+              item.bestOffer && item.bestOffer.stock > 0
+                ? () => quickAdd(item)
+                : undefined
+            }
+            style={{ flex: 1 }}
+          />
+        );
+      }}
       numColumns={2}
       columnWrapperStyle={{ gap: spacing.md, paddingHorizontal: spacing.lg }}
       ListHeaderComponent={header}

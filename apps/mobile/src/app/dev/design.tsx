@@ -96,9 +96,16 @@ function ShowcaseBody() {
   const [checkboxChecked, setCheckboxChecked] = useState(true);
   const [radioValue, setRadioValue] = useState('courier');
   const [switchOn, setSwitchOn] = useState(false);
+  // Динамическая дата (сегодня + 2): статичная «15.11.2026» в
+  // прошлом читалась VLM-аудитом как заглушка/ошибка. Границы
+  // календаря — один раз за монтирование, не в каждом рендере.
   const [pickedDate, setPickedDate] = useState<Date | null>(
-    new Date(2026, 10, 15),
+    () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
   );
+  const [dateBounds] = useState(() => ({
+    min: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    max: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+  }));
 
   return (
     <ToastProvider>
@@ -298,16 +305,16 @@ function ShowcaseBody() {
               label="Автоприём заказов"
               hint={
                 switchOn
-                  ? 'Включен: новые заказы подтверждаются сами'
-                  : 'Выключен: заказы ждут вашего подтверждения'
+                  ? 'Заказы до 20 000 ₽ подтверждаются сами'
+                  : 'Каждый заказ ждёт вашего подтверждения'
               }
             />
             <DatePicker
               label="Ближайшая дата поставки"
               value={pickedDate}
               onChange={setPickedDate}
-              min={new Date(2026, 10, 1)}
-              max={new Date(2026, 11, 31)}
+              min={dateBounds.min}
+              max={dateBounds.max}
             />
             <Button size="lg" fullWidth>
               Сохранить параметры

@@ -1,10 +1,11 @@
 /**
  * Switch — переключатель (Промт 12, Часть C).
  *
- * Трек 48×28, бегунок 24 (шаг 20). Off — рамка на surface; on —
- * заливка primary. Бегунок двигается таймингом 150 мс (быстрый
- * отклик, дозированная анимация). Haptic selection на переключение.
- * A11y: role="switch" + accessibilityState.
+ * Трек 48×28, бегунок 24 (шаг 20). Off — заливка surfaceMuted
+ * (VLM-аудит: пустой трек с одной рамкой читался как «не
+ * переключатель»); on — заливка primary. Бегунок двигается таймингом
+ * 150 мс (быстрый отклик, дозированная анимация). Haptic selection
+ * на переключение. A11y: role="switch" + accessibilityState.
  */
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
@@ -60,9 +61,9 @@ export function Switch({
         width: TRACK_WIDTH,
         height: TRACK_HEIGHT,
         borderRadius: 14,
-        borderWidth: value ? 0 : 2,
-        borderColor: colors.borderStrong,
-        backgroundColor: value ? colors.primary : colors.surface,
+        // Off — нейтральная заливка: трек всегда читается как
+        // орган управления, а не пустое место (VLM-аудит, итерация 3).
+        backgroundColor: value ? colors.primary : colors.surfaceMuted,
         padding: 2,
         justifyContent: 'center',
       }}

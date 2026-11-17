@@ -10,6 +10,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../common/filters/api-error';
+import { resolveProductImages } from './product-photos';
 import type { CatalogSort } from './dto/list-products.query';
 
 /** Товар с категорией и предложениями (внутреннее представление). */
@@ -280,7 +281,7 @@ export class CatalogService {
         slug: product.category.slug,
         name: product.category.name,
       },
-      images: parseImages(product.images),
+      images: resolveProductImages(product.name, parseImages(product.images)),
       offers: visibleOffers(product)
         .sort((a, b) => a.priceKopecks - b.priceKopecks)
         .map((offer) => this.toOfferView(offer)),
@@ -342,7 +343,7 @@ export class CatalogService {
         slug: product.category.slug,
         name: product.category.name,
       },
-      images: parseImages(product.images),
+      images: resolveProductImages(product.name, parseImages(product.images)),
       bestOffer: best ? this.toOfferView(best) : null,
       offersCount: product.offers.length,
     };

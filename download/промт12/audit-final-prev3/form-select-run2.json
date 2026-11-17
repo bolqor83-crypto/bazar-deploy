@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":7,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":7,\"states\":6,\"density\":7,\"a11y\":7,\"impression\":7,\"total\":70,\"notes\":\"Контраст выбранных зелёных опций (Доставка перевозчиком, Основной склад) и лейблов низкий — плохо читается в перчатках при слабом свете; у нижней опции чекбокса текст обрезан без видимого скролла/подсказки продолжения.\"}",
+        "reasoning_content": "Evaluate, output JSON one line.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931226,
+  "id": "20261118000022dda9f9f30d584614",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000022dda9f9f30d584614",
+  "usage": {
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 7
+    },
+    "prompt_tokens": 3079,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3209
+  }
+}

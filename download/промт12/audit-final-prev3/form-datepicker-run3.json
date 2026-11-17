@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":8,\"components\":8,\"icons\":7,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":76,\"notes\":\"Конфликт состояний: выбранная дата (15, заливка) и «сегодня» (17, рамка) различаются слабо — при слабом свете легко перепутать; нижняя часть кнопок «Сегодня/Отмена/Применить» прижата к edge, нет учёта safe-area, тачбар календаря для перчаток впритык (клетки ~50px — ок, но нет disabled/прошедших дат).\"}",
+        "reasoning_content": "Calendar bottom sheet, clean. Deduct: calendar cells tap targets look ok (~50px), dimmed background, today's ring vs selected distinguishable. Numbers not tabular? Fine.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931329,
+  "id": "20261118000205c493b79e6eb44572",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000205c493b79e6eb44572",
+  "usage": {
+    "completion_tokens": 196,
+    "completion_tokens_details": {
+      "reasoning_tokens": 38
+    },
+    "prompt_tokens": 2097,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2293
+  }
+}

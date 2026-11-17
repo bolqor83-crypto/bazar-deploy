@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":7,\"color\":8,\"grid\":7,\"components\":7,\"icons\":6,\"states\":6,\"density\":6,\"a11y\":7,\"impression\":6,\"total\":60,\"notes\":\"Это выглядит как страница дизайн-системы/демо, а не рабочий экран: заголовки «Обычная карточка», «Приподнятая карточка», «Фон surface, граница border» — тестовый контент не заменён на операционные данные. Отсутствует контекст для пользователя «в 4 утра»: нет sticky-CTA, нет hint-стейтов и незаполненных состояний, форма включена по умолчанию, состояние автоприёма не выделено.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931266,
+  "id": "2026111800010201077676a0ec46b6",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111800010201077676a0ec46b6",
+  "usage": {
+    "completion_tokens": 166,
+    "completion_tokens_details": {
+      "reasoning_tokens": 165
+    },
+    "prompt_tokens": 1789,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1955
+  }
+}

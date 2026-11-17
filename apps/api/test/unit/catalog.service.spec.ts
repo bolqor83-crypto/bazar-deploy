@@ -220,7 +220,9 @@ describe('CatalogService (unit)', () => {
       const detail = await service.detail(tomatoes?.id as string);
       expect(detail.name).toBe('Помидоры розовые');
       expect(detail.category).toEqual({ slug: 'vegetables', name: 'Овощи' });
-      expect(detail.images).toEqual(['https://picsum.photos/seed/a/800/600']);
+      // Стоковое фото из маппинга по имени (Промт 12): picsum из
+      // сида заменяется на /api/media/seed/products/tomatoes.png.
+      expect(detail.images).toEqual(['/api/media/seed/products/tomatoes.png']);
       expect(detail.offers).toHaveLength(2);
       expect(detail.offers[0].priceKopecks).toBe(18900);
       expect(detail.offers[1].priceKopecks).toBe(23700);

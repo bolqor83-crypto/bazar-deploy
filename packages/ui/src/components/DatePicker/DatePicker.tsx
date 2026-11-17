@@ -204,7 +204,11 @@ export function DatePicker({
         </Text>
       ) : null}
 
-      <Dialog visible={open} onClose={() => setOpen(false)} title="Выбор даты">
+      <Dialog
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={label ?? 'Выбор даты'}
+      >
         <View style={{ gap: spacing.md }}>
           {/* Месяц и навигация. */}
           <View
@@ -305,22 +309,28 @@ export function DatePicker({
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 20,
-                    borderWidth: isToday && !isSelected ? 2 : 0,
-                    borderColor: colors.primary,
+                    // Выбранный день — сплошная заливка primary;
+                    // «сегодня» — мягкая плашка primarySoft (VLM-аудит:
+                    // кольцо у «сегодня» путалось с выбранным днём).
                     backgroundColor: isSelected
                       ? colors.primary
-                      : 'transparent',
+                      : isToday
+                        ? colors.primarySoft
+                        : 'transparent',
                     opacity: dayDisabled ? 0.35 : 1,
                   }}
                 >
                   <Text
                     variant="body"
+                    mono
                     style={{
                       color: isSelected
                         ? colors.onPrimary
-                        : dayDisabled
-                          ? colors.textDisabled
-                          : colors.text,
+                        : isToday
+                          ? colors.primaryText
+                          : dayDisabled
+                            ? colors.textDisabled
+                            : colors.text,
                     }}
                   >
                     {day.getDate()}

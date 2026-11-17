@@ -15,6 +15,7 @@ import {
   FilterChip,
   OrderCard,
   Skeleton,
+  Text,
   useTheme,
 } from '@bazar/ui';
 import { useOrders } from '../../hooks/useOrders';
@@ -141,6 +142,19 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
                 testID={`order-card-${index}`}
               />
             ))}
+            {/* Замыкающая подпись: пустота под списком читалась как
+                недогруженный экран (VLM-аудит, итерация 3). */}
+            <Text
+              variant="caption"
+              color="textMuted"
+              style={{
+                textAlign: 'center',
+                paddingTop: spacing.xs,
+                paddingBottom: spacing.xs,
+              }}
+            >
+              Это все заказы
+            </Text>
           </View>
         )}
       </ScrollView>

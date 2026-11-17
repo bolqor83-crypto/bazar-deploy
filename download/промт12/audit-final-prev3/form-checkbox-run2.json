@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":8,\"color\":8,\"grid\":8,\"components\":8,\"icons\":8,\"states\":7,\"density\":7,\"a11y\":8,\"impression\":8,\"total\":78,\"notes\":\"1) Контент обрезан снизу — описание «Самовывоза» не видно, нет признака прокрутки/сохранения. 2) Нет числовых данных с tabular-nums и вторичных состояний (disabled/ошибок); для рынка в 4 утра десcriptions серым мелким текстом хуже читаются.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931250,
+  "id": "20261118000046dbf6f70292294757",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000046dbf6f70292294757",
+  "usage": {
+    "completion_tokens": 129,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1369,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1498
+  }
+}

@@ -25,6 +25,7 @@ import {
 } from '@bazar/ui';
 import { ChevronLeft, Heart } from 'lucide-react-native';
 import { fetchProduct } from '../../../../services/api/catalogApi';
+import { resolveMediaUrl } from '../../../../services/api/client';
 
 /** Скелетон экрана товара. */
 function ProductSkeleton() {
@@ -110,7 +111,7 @@ function ProductBody({ id }: { id: string }) {
         }}
       >
         <ProductGallery
-          images={product.images}
+          images={product.images.map(resolveMediaUrl)}
           slideWidth={Math.floor(width - spacing.lg * 2)}
         />
 

@@ -23,7 +23,7 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -49,6 +49,23 @@ const CONTENT_TYPES: Record<string, string> = {
   png: 'image/png',
   webp: 'image/webp',
 };
+
+/** Каталог стоковых фото каталога (в репозитории, только чтение). */
+export function seedMediaDir(): string {
+  const candidates = [
+    resolve(process.cwd(), 'seed-media'),
+    resolve(__dirname, '..', '..', 'seed-media'),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+/** Ключи стоковых фото: seed/products/<имя>.<расширение>. */
+const SEED_KEY_PATTERN = /^seed\/products\/[a-z0-9-]+\.(jpg|png|webp)$/;
 
 @ApiTags('Загрузки')
 @Controller()
@@ -153,6 +170,12 @@ export class UploadsController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const key = Array.isArray(splat) ? splat.join('/') : splat;
+    // Стоковые фото каталога — из репозитория (apps/api/seed-media),
+    // не из медиа-каталога загрузок (Промт 12: реальные фото товаров
+    // вместо заглушки-корзины на витрине каталога).
+    if (SEED_KEY_PATTERN.test(key)) {
+      return this.serveSeedFile(key, res);
+    }
     if (!KEY_PATTERN.test(`uploads/${key.replace(/^uploads\//, '')}`)) {
       throw new ApiError(404, 'NOT_FOUND', 'Файл не найден');
     }
@@ -168,7 +191,41 @@ export class UploadsController {
       throw new ApiError(404, 'NOT_FOUND', 'Файл не найден');
     }
     const ext = filePath.split('.').pop() ?? '';
-    res.setHeader('Content-Type', CONTENT_TYPES[ext] ?? 'application/octet-stream');
+    res.setHeader(
+      'Content-Type',
+      CONTENT_TYPES[ext] ?? 'application/octet-stream',
+    );
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return new StreamableFile(createReadStream(filePath), {
+      type: CONTENT_TYPES[ext],
+      length: fileStat.size,
+    });
+  }
+
+  /** Раздача стокового фото из seed-media (путь проверен регексом). */
+  private async serveSeedFile(
+    key: string,
+    res: Response,
+  ): Promise<StreamableFile> {
+    // Ключ «seed/products/<файл>» → seed-media/products/<файл>:
+    // префикс seed/ — пространство имён маршрута, не каталог.
+    const relative = key.replace(/^seed\//, '');
+    const root = resolve(seedMediaDir());
+    const filePath = resolve(root, relative);
+    if (!filePath.startsWith(root)) {
+      throw new ApiError(404, 'NOT_FOUND', 'Файл не найден');
+    }
+    let fileStat;
+    try {
+      fileStat = await stat(filePath);
+    } catch {
+      throw new ApiError(404, 'NOT_FOUND', 'Файл не найден');
+    }
+    const ext = filePath.split('.').pop() ?? '';
+    res.setHeader(
+      'Content-Type',
+      CONTENT_TYPES[ext] ?? 'application/octet-stream',
+    );
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return new StreamableFile(createReadStream(filePath), {
       type: CONTENT_TYPES[ext],

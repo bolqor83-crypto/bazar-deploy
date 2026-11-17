@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":6,\"typography\":6,\"color\":7,\"grid\":6,\"components\":6,\"icons\":5,\"states\":4,\"density\":5,\"a11y\":7,\"impression\":5,\"total\":57,\"notes\":\"Кадр выглядит как демо-страница UI-кита («Обычная карточка», «Приподнятая карточка»), а не рабочий экран B2B-инструмента — нет операционного контекста и данных; чекбокс сверху обрезан, даты и цифры без явных tabular-nums, пустое состояние и disabled-состояния не показаны.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931282,
+  "id": "202611180001192a66efa896ca4420",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611180001192a66efa896ca4420",
+  "usage": {
+    "completion_tokens": 143,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1789,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1932
+  }
+}

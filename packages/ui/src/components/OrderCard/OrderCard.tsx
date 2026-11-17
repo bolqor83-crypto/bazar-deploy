@@ -84,9 +84,11 @@ export function OrderCard({
   const party = partyName ?? sellerName;
 
   // Сводка состава: до двух позиций с количеством, дальше «ещё N».
+  // Формат «Бананы 5 × 1 кг»: «5 1 кг» слитно читалось как опечатка
+  // (VLM-аудит итерации 3).
   const summaryParts = (items ?? [])
     .slice(0, 2)
-    .map((item) => `${item.title} ${item.quantity} ${item.unit}`.trim());
+    .map((item) => `${item.title} ${item.quantity} × ${item.unit}`.trim());
   if (summaryParts.length > 0) {
     const restCount = itemCount - summaryParts.length;
     if (restCount > 0) {
@@ -123,7 +125,9 @@ export function OrderCard({
         }}
       >
         <View style={{ gap: 2 }}>
-          <Text variant="bodySmall" mono>
+          {/* Номер — главный идентификатор в B2B (VLM-аудит, итерация 3:
+              цена доминировала над номером). */}
+          <Text variant="bodyStrong" mono>
             {number}
           </Text>
           <Text variant="caption" color="textSecondary">
@@ -152,7 +156,7 @@ export function OrderCard({
         >
           {summary}
         </Text>
-        <Text variant="bodyStrong" mono>
+        <Text variant="body" mono>
           {formatPrice(totalKopecks)}
         </Text>
         {/* Шеврон — аффорданс перехода (VLM-аудит: «карточки без

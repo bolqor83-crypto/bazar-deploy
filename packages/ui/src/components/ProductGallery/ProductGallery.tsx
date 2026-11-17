@@ -1,14 +1,16 @@
 /**
  * ProductGallery — галерея товара.
  *
- * Горизонтальная постраничная карусель плашек-заглушек (тон
- * детерминирован индексом), точки-индикаторы снизу. Листается
- * свайпом; активный кадр вычисляется по смещению скролла.
- * URL настоящих фото придут с Промтом 9 — интерфейс уже готов:
- * пропс images определяет количество кадров.
+ * Горизонтальная постраничная карусель: реальные фото (Image,
+ * cover) с фолбэком на плашку-заглушку (тон детерминирован
+ * индексом), точки-индикаторы снизу. Листается свайпом; активный
+ * кадр вычисляется по смещению скролла. URL приходят готовыми
+ * (абсолютными) — экран вызывает resolveMediaUrl (Промт 12,
+ * итерация 3: реальные фото вместо заглушек-иконок).
  */
 import { useMemo, useState } from 'react';
 import {
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -39,8 +41,19 @@ export function ProductGallery({
 }: ProductGalleryProps) {
   const { colors, radii, spacing } = useTheme();
   const [activeIndex, setActiveIndex] = useState(0);
+  // Индексы кадров, чьё фото не загрузилось, — показываем заглушку.
+  const [failed, setFailed] = useState<Set<number>>(new Set());
 
   const slides = useMemo(() => (images.length > 0 ? images : [null]), [images]);
+  const markFailed = (index: number) =>
+    setFailed((prev) => {
+      if (prev.has(index)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
 
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
@@ -60,7 +73,7 @@ export function ProductGallery({
         style={{ borderRadius: radii.lg }}
         contentContainerStyle={{ gap: spacing.sm }}
       >
-        {slides.map((_, index) => (
+        {slides.map((url, index) => (
           <View
             key={index}
             style={{
@@ -70,11 +83,21 @@ export function ProductGallery({
               backgroundColor: placeholderTone(index),
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}
             accessible
             accessibilityLabel={`Фото ${index + 1} из ${slides.length}`}
           >
-            <ImagePlus size={40} color={colors.textMuted} />
+            {url && !failed.has(index) ? (
+              <Image
+                source={{ uri: url }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+                onError={() => markFailed(index)}
+              />
+            ) : (
+              <ImagePlus size={40} color={colors.textMuted} />
+            )}
           </View>
         ))}
       </ScrollView>

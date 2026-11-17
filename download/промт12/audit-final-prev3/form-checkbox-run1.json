@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "{\"hierarchy\":8,\"typography\":7,\"color\":8,\"grid\":7,\"components\":8,\"icons\":7,\"states\":5,\"density\":6,\"a11y\":6,\"impression\":7,\"total\":63,\"notes\":\"1) Обрезка контента внизу: элемент 'Самовывоз' с подсказкой срезан — экран не помещает все опции без скролла, при этом карточка выглядит незавершённой. 2) Чекбоксы/радио ~30-34px — меньше 48px зоны нажатия, критично для перчаток в 4 утра; spacing между группами делает форму растянутой, плотность ниже рабочей.\"}",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794931242,
+  "id": "20261118000038c0c9a14073c943c0",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118000038c0c9a14073c943c0",
+  "usage": {
+    "completion_tokens": 157,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1369,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1526
+  }
+}

@@ -164,8 +164,11 @@ export function LogoutSection() {
         ) : null}
       </Card>
 
+      {/* Переключение контекста: продавцу — primary (частое
+          действие), покупателю — спокойная secondary (VLM-аудит
+          итерации 3: насыщенная CTA спорила с палитрой профиля). */}
       <Button
-        variant="primary"
+        variant={showContext ? 'primary' : 'secondary'}
         size="lg"
         fullWidth
         onPress={openSheet}

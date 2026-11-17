@@ -29,6 +29,22 @@ const TIMEOUT_MS = 15_000;
 /** База API: относительный /api для web-сборки с тем же origin. */
 export const API_BASE_URL: string = process.env.EXPO_PUBLIC_API_URL || '/api';
 
+/**
+ * Абсолютный URL медиа-файла из относительного пути API
+ * (например, /api/media/seed/products/tomatoes.png).
+ *
+ * В web-сборке база — относительный /api (тот же origin), поэтому
+ * относительный путь работает как есть; в native-сборке база
+ * абсолютная (https://host/api) — путь получает origin хоста.
+ */
+export function resolveMediaUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  const origin = API_BASE_URL.replace(/\/api\/?$/, '');
+  return `${origin}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
 /** Access-токен — только в памяти. */
 let accessToken: string | null = null;
 
