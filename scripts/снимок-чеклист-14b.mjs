@@ -20,7 +20,9 @@ import {
   switchRole,
 } from './visual/screenshot.mjs';
 
-const OUT_DIR = path.resolve('download/промт14b/чек-лист');
+const OUT_DIR = path.resolve(
+  process.env.SHOTS_DIR ?? 'download/промт14b/чек-лист',
+);
 const BASE_URL = process.env.VISUAL_BASE_URL ?? 'http://localhost:3000';
 
 const VIEWPORTS = {

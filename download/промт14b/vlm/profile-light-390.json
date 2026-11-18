@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "дефектов нет",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794972864,
+  "id": "202611181134220a1e48c8c4d54500",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611181134220a1e48c8c4d54500",
+  "usage": {
+    "completion_tokens": 6,
+    "completion_tokens_details": {
+      "reasoning_tokens": 5
+    },
+    "prompt_tokens": 1952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1958
+  }
+}

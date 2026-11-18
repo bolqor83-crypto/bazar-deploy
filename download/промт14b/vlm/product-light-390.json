@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "- Блок карточки товара (секция «Продавец», плашка «Опт-Юг») обрезан низом экрана и перекрыт нижней панелью с кнопкой «В корзину · 267 ₽» — контент карточки не помещается и выходит за границы видимой области.\n- Нижняя панель («−», «3», «+», кнопка) наложена на карточку товара, перекрывая её содержимое.",
+        "reasoning_content": "Card is cut off at bottom by bottom bar — seller card overlapped/clipped.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794972858,
+  "id": "2026111811341369c365e253994389",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111811341369c365e253994389",
+  "usage": {
+    "completion_tokens": 121,
+    "completion_tokens_details": {
+      "reasoning_tokens": 17
+    },
+    "prompt_tokens": 1952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2073
+  }
+}

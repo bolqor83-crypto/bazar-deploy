@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. Блок карточки товара (секция «Продавец») обрезан нижней панелью: строка «Опт-Юг» частично скрыта под панелью «В корзину».\n2. Фото бананов выходит за правый край экрана (обрезано справа, не соответствует отступу слева).\n3. Строка «Минимальная партия — 3 × кг» — слишком бледный серый текст, плохо читается на тёмном фоне карточки.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794972862,
+  "id": "202611181134184ea4c09cd3f44757",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611181134184ea4c09cd3f44757",
+  "usage": {
+    "completion_tokens": 115,
+    "completion_tokens_details": {
+      "reasoning_tokens": 114
+    },
+    "prompt_tokens": 1952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2067
+  }
+}

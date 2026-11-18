@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. Последняя карточка-фильтр в строке категорий («З...» с иконкой листа) обрезана правым краем экрана.\n2. Описания товаров в карточках («Бананы первый ...», «Орех грецкий, я...») обрезаны многоточием — текст не читается полностью.\n3. Нижний ряд карточек («Груши», «Огурцы») обрезается нижней навигационной панелью — фото и бейдж «Скоропорт» уходят под неё.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794972853,
+  "id": "20261118113408d5ecec49dc5c4046",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118113408d5ecec49dc5c4046",
+  "usage": {
+    "completion_tokens": 126,
+    "completion_tokens_details": {
+      "reasoning_tokens": 125
+    },
+    "prompt_tokens": 1952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2078
+  }
+}

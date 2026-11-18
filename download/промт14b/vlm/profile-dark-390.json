@@ -1,0 +1,29 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. Номера заказов в блоке «Последние заказы» обрезаны многоточием: «BZ-2026…» и «BZ-2026-0…» — текст не читается полностью.\n2. Во второй строке заказов обрезанный номер «BZ-2026-0…» почти налезает на бейдж «Завершён» — межэлементный отступ нарушен.\n3. Экран выполнен в тёмной теме, тогда как по редизайну 14b должен быть тёплый светлый фон — весь макет не соответствует заданной теме.",
+        "reasoning_content": "Dark theme contradicts described redesign — but defects: order numbers truncated \"BZ-2026…\", \"BZ-2026-0…\" overlapping badge? First row price \"1 965 ₽\" close. Truncated text is a defect.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794972869,
+  "id": "20261118113424026250a0649549c3",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261118113424026250a0649549c3",
+  "usage": {
+    "completion_tokens": 191,
+    "completion_tokens_details": {
+      "reasoning_tokens": 53
+    },
+    "prompt_tokens": 1952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2143
+  }
+}
