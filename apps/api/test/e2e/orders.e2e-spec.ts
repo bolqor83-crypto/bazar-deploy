@@ -121,6 +121,9 @@ describe('Заказы (e2e)', () => {
     expect(order.subtotal).toBe(189000);
     expect(order.total).toBe(189000);
     expect(order.seller.name).toBe('Опт-Юг');
+    // Промт 15, E: группировка на клиенте — по seller.id.
+    expect(typeof order.seller.id).toBe('string');
+    expect(order.seller.id.length).toBeGreaterThan(0);
     expect(order.items[0].title).toBe('Помидоры розовые');
     expect(order.items[0].quantity).toBe(10);
     expect(order.events[0].type).toBe('CREATED');
@@ -128,9 +131,9 @@ describe('Заказы (e2e)', () => {
     // Остаток зарезервирован (RESERVED: reservedQty += 10).
     const reserved = await offerAvailable(testApp.prisma, offerA);
     expect(reserved).toBe(stockBefore - 10);
-    const reservedBalance = await testApp.prisma.stockBalance.findFirstOrThrow(
-      { where: { offerId: offerA } },
-    );
+    const reservedBalance = await testApp.prisma.stockBalance.findFirstOrThrow({
+      where: { offerId: offerA },
+    });
     expect(reservedBalance.reservedQty).toBe(10);
     expect(reservedBalance.physicalQty).toBe(50);
 

@@ -1,11 +1,17 @@
 /**
- * Заказы покупателя (Промт 9, Часть E).
+ * Заказы покупателя (Промт 9, Часть E; Промт 15, Часть E).
  *
  * Скролл-чипы статусов (Все · Ожидают · В работе · Завершённые ·
  * Отменённые), список OrderCard, пустое состояние с переходом в
  * каталог, загрузка — Skeleton, ошибка — ErrorState.
+ *
+ * Промт 15: режим списка — «По продавцам» (группировка, по
+ * умолчанию) или «По дате» (плоская хронология). Режим
+ * персистится в AsyncStorage (bazar.orders.viewMode) и меняется
+ * сразу при переключении. Фильтрация статусов — ДО группировки:
+ * группы и суммы строятся по отфильтрованному набору.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Package } from 'lucide-react-native';
@@ -14,11 +20,15 @@ import {
   ErrorState,
   FilterChip,
   OrderCard,
+  SegmentedControl,
   Skeleton,
   Text,
   useTheme,
 } from '@bazar/ui';
+import type { Order } from '@bazar/types';
 import { useOrders } from '../../hooks/useOrders';
+import { useOrdersViewMode } from '../../hooks/useOrdersViewMode';
+import { OrdersGroupedList } from './OrdersGroupedList';
 
 /** Фильтры-чипы: человекочитаемые группы статусов. Подписи
  *  короткие (глагольная форма): длинные «Завершённые» обрезались
@@ -42,11 +52,19 @@ const FILTER_TO_STATUS: Record<FilterKey, string | undefined> = {
   cancelled: 'CANCELLED',
 };
 
+const VIEW_MODE_OPTIONS = [
+  { value: 'grouped', label: 'По продавцам' },
+  { value: 'chronological', label: 'По дате' },
+] as const;
+
+/** Скелетон списка: 2 заголовка групп + 3 карточки (Промт 15). */
 function OrdersSkeleton() {
   const { spacing } = useTheme();
   return (
     <View style={{ padding: spacing.lg, gap: spacing.md }}>
+      <Skeleton height={64} />
       <Skeleton height={104} />
+      <Skeleton height={64} />
       <Skeleton height={104} />
       <Skeleton height={104} />
     </View>
@@ -61,9 +79,14 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
   const router = useRouter();
   const { spacing } = useTheme();
   const [filter, setFilter] = useState<FilterKey>('all');
+  const { viewMode, changeViewMode } = useOrdersViewMode();
   const ordersQuery = useOrders(FILTER_TO_STATUS[filter]);
 
-  const orders = ordersQuery.data?.items ?? [];
+  const orders: Order[] = ordersQuery.data?.items ?? [];
+
+  // Группировка — чистая функция от контрагента: у покупателя
+  // и точки контрагент — продавец заказа.
+  const getSellerParty = useMemo(() => (order: Order) => order.seller, []);
 
   const header = (
     <View
@@ -89,74 +112,110 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
           />
         ))}
       </ScrollView>
+      {/* Режим списка: персист в AsyncStorage, запись сразу
+          при переключении (Промт 15, E). */}
+      <SegmentedControl
+        options={VIEW_MODE_OPTIONS}
+        value={viewMode}
+        onChange={changeViewMode}
+        testID="orders-view-mode"
+      />
     </View>
   );
+
+  let content: React.ReactNode;
+  if (ordersQuery.isError) {
+    content = (
+      <ErrorState
+        title="Заказы не загрузились"
+        description="Проверьте соединение и попробуйте снова"
+        onRetry={() => void ordersQuery.refetch()}
+      />
+    );
+  } else if (ordersQuery.isPending) {
+    content = <OrdersSkeleton />;
+  } else if (orders.length === 0) {
+    content = (
+      <EmptyState
+        icon={Package}
+        title="Пока нет заказов"
+        description="Соберите корзину и оформите первый заказ"
+        action={{
+          label: 'Перейти в каталог',
+          onPress: () => router.push('/' + basePath + '/catalog'),
+        }}
+      />
+    );
+  } else if (viewMode === 'grouped') {
+    content = (
+      <View
+        style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
+      >
+        <OrdersGroupedList
+          orders={orders}
+          getParty={getSellerParty}
+          onOpenOrder={(orderId) =>
+            router.push(`/${basePath}/orders/${orderId}` as const)
+          }
+          testIDPrefix="orders"
+        />
+        <View style={{ paddingTop: spacing.lg }} />
+      </View>
+    );
+  } else {
+    content = (
+      <View
+        style={{
+          paddingHorizontal: spacing.lg,
+          paddingBottom: spacing.lg,
+          gap: spacing.md,
+        }}
+      >
+        {orders.map((order, index) => (
+          <OrderCard
+            key={order.id}
+            number={order.number}
+            status={order.status}
+            createdAt={order.createdAt}
+            itemCount={order.items.length}
+            items={order.items.map((item) => ({
+              title: item.title,
+              quantity: item.quantity,
+              unit: item.unit,
+            }))}
+            totalKopecks={order.total}
+            sellerName={order.seller.name}
+            onPress={() =>
+              router.push(`/${basePath}/orders/${order.id}` as const)
+            }
+            testID={`order-card-${index}`}
+          />
+        ))}
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         {header}
-        {ordersQuery.isError ? (
-          <ErrorState
-            title="Заказы не загрузились"
-            description="Проверьте соединение и попробуйте снова"
-            onRetry={() => void ordersQuery.refetch()}
-          />
-        ) : ordersQuery.isPending ? (
-          <OrdersSkeleton />
-        ) : orders.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title="Пока нет заказов"
-            description="Соберите корзину и оформите первый заказ"
-            action={{
-              label: 'Перейти в каталог',
-              onPress: () => router.push('/' + basePath + '/catalog'),
-            }}
-          />
-        ) : (
+        {content}
+        {orders.length > 0 ? (
           <View
-            style={{
-              paddingHorizontal: spacing.lg,
-              paddingBottom: spacing.lg,
-              gap: spacing.md,
-            }}
+            style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
           >
-            {orders.map((order, index) => (
-              <OrderCard
-                key={order.id}
-                number={order.number}
-                status={order.status}
-                createdAt={order.createdAt}
-                itemCount={order.items.length}
-                items={order.items.map((item) => ({
-                  title: item.title,
-                  quantity: item.quantity,
-                  unit: item.unit,
-                }))}
-                totalKopecks={order.total}
-                sellerName={order.seller.name}
-                onPress={() =>
-                  router.push(`/${basePath}/orders/${order.id}` as const)
-                }
-                testID={`order-card-${index}`}
-              />
-            ))}
             {/* Замыкающая подпись: пустота под списком читалась как
                 недогруженный экран (VLM-аудит, итерация 3). */}
+            <View style={{ height: spacing.md }} />
             <Text
               variant="caption"
               color="textMuted"
-              style={{
-                textAlign: 'center',
-                paddingTop: spacing.xs,
-                paddingBottom: spacing.xs,
-              }}
+              style={{ textAlign: 'center' }}
             >
               Это все заказы
             </Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );

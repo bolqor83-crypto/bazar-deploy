@@ -282,3 +282,14 @@ export type { ColoredIcon, ColoredIconProps, IconPaletteKey } from './icons';
 // Точка наличия (Промт 15, Часть B)
 export { StockDot } from './components/StockDot';
 export type { StockDotProps } from './components/StockDot';
+
+// Группа заказов контрагента (Промт 15, Часть E)
+export { OrderPartyGroup } from './components/OrderPartyGroup';
+export type { OrderPartyGroupProps } from './components/OrderPartyGroup';
+
+// Сегментированный переключатель (Промт 15, Часть E)
+export { SegmentedControl } from './components/SegmentedControl';
+export type {
+  SegmentedControlProps,
+  SegmentedOption,
+} from './components/SegmentedControl';

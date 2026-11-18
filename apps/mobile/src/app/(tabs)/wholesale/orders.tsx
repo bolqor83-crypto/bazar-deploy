@@ -6,7 +6,7 @@
  * и имени покупателя. Карточка — номер, покупатель, статус, итог.
  * Загрузка — Skeleton, пусто — EmptyState, ошибка — ErrorState.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ClipboardList } from 'lucide-react-native';
@@ -16,11 +16,15 @@ import {
   FilterChip,
   OrderCard,
   SearchBar,
+  SegmentedControl,
   Skeleton,
   useTheme,
 } from '@bazar/ui';
+import type { SellerOrder } from '@bazar/types';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import { useSellerOrders } from '../../../hooks/useSellerOrders';
+import { useOrdersViewMode } from '../../../hooks/useOrdersViewMode';
+import { OrdersGroupedList } from '../../../components/screens/OrdersGroupedList';
 
 /** Фильтры-чипы: группы статусов для продавца. */
 const STATUS_FILTERS = [
@@ -44,16 +48,25 @@ const FILTER_TO_STATUSES: Record<FilterKey, string[] | undefined> = {
   all: undefined,
 };
 
+/** Скелетон: 2 заголовка групп + 3 карточки (Промт 15, E). */
 function OrdersSkeleton() {
   const { spacing } = useTheme();
   return (
     <View style={{ padding: spacing.lg, gap: spacing.md }}>
+      <Skeleton height={64} />
       <Skeleton height={104} />
+      <Skeleton height={64} />
       <Skeleton height={104} />
       <Skeleton height={104} />
     </View>
   );
 }
+
+/** Режим списка продавца: по покупателям или по дате (Промт 15, E). */
+const VIEW_MODE_OPTIONS = [
+  { value: 'grouped', label: 'По покупателям' },
+  { value: 'chronological', label: 'По дате' },
+] as const;
 
 export default function SellerOrdersScreen() {
   const router = useRouter();
@@ -61,6 +74,7 @@ export default function SellerOrdersScreen() {
   const [filter, setFilter] = useState<FilterKey>('new');
   const [searchInput, setSearchInput] = useState('');
   const [query, setQuery] = useState('');
+  const { viewMode, changeViewMode } = useOrdersViewMode();
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(searchInput.trim()), 400);
@@ -72,7 +86,10 @@ export default function SellerOrdersScreen() {
     search: query.length > 0 ? query : undefined,
   });
 
-  const orders = ordersQuery.data?.items ?? [];
+  const orders: SellerOrder[] = ordersQuery.data?.items ?? [];
+
+  // Контрагент продавца — покупатель заказа (Промт 15, E).
+  const getBuyerParty = useMemo(() => (order: SellerOrder) => order.buyer, []);
 
   const header = (
     <View
@@ -88,6 +105,12 @@ export default function SellerOrdersScreen() {
         onChangeText={setSearchInput}
         placeholder="Номер заказа или покупатель"
         testID="seller-orders-search"
+      />
+      <SegmentedControl
+        options={VIEW_MODE_OPTIONS}
+        value={viewMode}
+        onChange={changeViewMode}
+        testID="seller-orders-view-mode"
       />
       <ScrollView
         horizontal
@@ -130,6 +153,23 @@ export default function SellerOrdersScreen() {
         }
         testID="seller-orders-empty"
       />
+    );
+  } else if (viewMode === 'grouped') {
+    // Промт 15, E: заказы одного покупателя — в одной группе.
+    content = (
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: spacing.lg,
+          paddingBottom: spacing.xl,
+        }}
+      >
+        <OrdersGroupedList
+          orders={orders}
+          getParty={getBuyerParty}
+          onOpenOrder={(orderId) => router.push(`/wholesale/orders/${orderId}`)}
+          testIDPrefix="seller-order"
+        />
+      </ScrollView>
     );
   } else {
     content = (

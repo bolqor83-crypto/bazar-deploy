@@ -357,7 +357,8 @@ describe('OrdersScreen', () => {
     await waitFor(() =>
       expect(screen.getByText('BZ-2026-000001')).toBeTruthy(),
     );
-    expect(screen.getByText(/Опт-Юг/)).toBeTruthy();
+    // Промт 15, E: «Опт-Юг» и в заголовке группы, и в карточке.
+    expect(screen.getAllByText(/Опт-Юг/).length).toBeGreaterThan(0);
     expect(screen.getByText(/12 ноя/)).toBeTruthy();
   });
 

@@ -172,7 +172,8 @@ describe('SellerOrdersScreen', () => {
     });
     await renderWithQuery(<SellerOrdersScreen />);
     expect(await screen.findByText('BZ-2026-000001')).toBeTruthy();
-    expect(screen.getByText(/Мария Петрова/)).toBeTruthy();
+    // Промт 15, E: имя покупателя и в заголовке группы, и в карточке.
+    expect(screen.getAllByText(/Мария Петрова/).length).toBeGreaterThan(0);
     expect(screen.getByText('1 890 ₽')).toBeTruthy();
   });
 

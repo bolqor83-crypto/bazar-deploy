@@ -185,6 +185,9 @@ describe('Seller orders & notifications (e2e)', () => {
     expect(order.status).toBe('PENDING');
     expect(order.buyer).toMatchObject({ name: 'Мария' });
     expect(order.buyer.phone).toBe('+79002110003');
+    // Промт 15, E: группировка на клиенте — по buyer.id.
+    expect(typeof order.buyer.id).toBe('string');
+    expect(order.buyer.id.length).toBeGreaterThan(0);
     expect(order.items[0].title).toBe('Помидоры розовые');
   });
 
