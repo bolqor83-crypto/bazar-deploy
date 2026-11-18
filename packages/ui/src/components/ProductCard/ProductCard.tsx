@@ -225,17 +225,20 @@ export function ProductCard({
 
           {/* Цена и юнит в два этажа: «490 ₽ / 500 г» в одну строку
               съедалась кнопкой «+» (VLM-аудит итерации 3) — юнит теперь
-              под ценой («за 500 г»). Справа — «+» или мини-степпер,
-              когда товар уже в корзине. */}
+              под ценой («за 500 г»). Промт 14b (VLM): в узкой карточке
+              сетки мини-степпер наезжал на цену — flexWrap переносит
+              степпер/«+» на новую строку, цена не режется. Справа —
+              «+» или мини-степпер, когда товар уже в корзине. */}
           <View
             style={{
               flexDirection: 'row',
+              flexWrap: 'wrap',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: spacing.xs,
             }}
           >
-            <View style={{ flexShrink: 1 }}>
+            <View style={{ flexShrink: 0 }}>
               <PriceDisplay value={priceKopecks} oldPrice={oldPriceKopecks} />
               {unit ? (
                 <Text
@@ -262,14 +265,18 @@ export function ProductCard({
                   overflow: 'hidden',
                 }}
               >
+                {/* Промт 14b (VLM, раунд 2): компактные кнопки 28 —
+                    степпер влезает в одну строку с ценой карточки
+                    сетки 390/430 (перенос остаётся страховкой на 360);
+                    зоны нажатия добираются hitSlop до 48×48. */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Убрать партию: ${name}`}
                   onPress={onDecrement}
-                  hitSlop={8}
+                  hitSlop={{ top: 4, bottom: 4, left: 10, right: 10 }}
                   testID="product-decrement"
                   style={({ pressed }) => ({
-                    width: 36,
+                    width: 28,
                     height: 40,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -281,7 +288,7 @@ export function ProductCard({
                 <Text
                   variant="bodyStrong"
                   mono
-                  style={{ minWidth: 22, textAlign: 'center' }}
+                  style={{ minWidth: 20, textAlign: 'center' }}
                 >
                   {quantityInCart}
                 </Text>
@@ -289,10 +296,10 @@ export function ProductCard({
                   accessibilityRole="button"
                   accessibilityLabel={`Добавить партию: ${name}`}
                   onPress={onIncrement}
-                  hitSlop={8}
+                  hitSlop={{ top: 4, bottom: 4, left: 10, right: 10 }}
                   testID="product-increment"
                   style={({ pressed }) => ({
-                    width: 36,
+                    width: 28,
                     height: 40,
                     alignItems: 'center',
                     justifyContent: 'center',

@@ -132,7 +132,10 @@ export function LogoutSection() {
           </View>
         </View>
 
-        <Divider inset="sm" />
+        {/* Divider нужен только перед блоком «Контекст работы»:
+            у покупателя секции нет, линия внизу карточки читалась
+            как артефакт (VLM 14b, раунд 2). */}
+        {showContext ? <Divider inset="sm" /> : null}
 
         {showContext ? (
           <View style={{ gap: spacing.xs, paddingTop: spacing.sm }}>

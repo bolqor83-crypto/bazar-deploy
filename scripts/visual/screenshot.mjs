@@ -15,6 +15,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fetchWithRetry, retryReport } from './fetch-retry.mjs';
 
 export const GOLDEN_DIR = path.resolve('docs/visual-golden');
 export const BASE_URL = process.env.VISUAL_BASE_URL ?? 'http://localhost:3000';
@@ -142,9 +143,11 @@ async function openContextSheet(page) {
 /** Телефон демо-аккаунта в формате хранения (E.164 без пробелов). */
 const DEMO_PHONE_RAW = '+79001234567';
 
-/** POST /auth/login из Node — токен для подготовки состояния. */
+/** POST /auth/login из Node — токен для подготовки состояния.
+ *  Промт 14b: через fetchWithRetry — транзиентные 500 от Neon
+ *  больше не роняют прогон на этапе логина. */
 async function apiLogin() {
-  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+  const res = await fetchWithRetry(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone: DEMO_PHONE_RAW, password: DEMO_PASSWORD }),
@@ -159,7 +162,7 @@ async function apiLogin() {
 /** Первое предложение первого товара каталога (стабильный выбор seed). */
 async function firstOffer(token) {
   const auth = { Authorization: `Bearer ${token}` };
-  const productsRes = await fetch(
+  const productsRes = await fetchWithRetry(
     `${BASE_URL}/api/catalog/products?pageSize=1`,
     { headers: auth },
   );
@@ -168,7 +171,7 @@ async function firstOffer(token) {
   }
   const products = await productsRes.json();
   const product = products.items[0];
-  const offersRes = await fetch(
+  const offersRes = await fetchWithRetry(
     `${BASE_URL}/api/catalog/products/${product.id}/offers`,
     { headers: auth },
   );
@@ -191,7 +194,7 @@ async function resetDemoCart(token, offer) {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  const clear = await fetch(`${BASE_URL}/api/cart`, {
+  const clear = await fetchWithRetry(`${BASE_URL}/api/cart`, {
     method: 'DELETE',
     headers: auth,
   });
@@ -199,7 +202,7 @@ async function resetDemoCart(token, offer) {
     throw new Error(`clear cart: ${clear.status}`);
   }
   const quantity = Math.max(2, offer.minQuantity ?? 1);
-  const add = await fetch(`${BASE_URL}/api/cart/items`, {
+  const add = await fetchWithRetry(`${BASE_URL}/api/cart/items`, {
     method: 'POST',
     headers: auth,
     body: JSON.stringify({ offerId: offer.id, quantity }),
@@ -219,9 +222,9 @@ const prepared = {
   stockOfferId: '',
 };
 
-/** GET-запрос к API с токеном Ивана. */
+/** GET-запрос к API с токеном Ивана (с ретраями, Промт 14b). */
 async function apiGet(token, path, orgId) {
-  const res = await fetch(`${BASE_URL}/api${path}`, {
+  const res = await fetchWithRetry(`${BASE_URL}/api${path}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       ...(orgId ? { 'X-Organization-Id': orgId } : {}),
@@ -233,9 +236,9 @@ async function apiGet(token, path, orgId) {
   return res.json();
 }
 
-/** POST-запрос к API с токеном Ивана. */
+/** POST-запрос к API с токеном Ивана (с ретраями, Промт 14b). */
 async function apiPost(token, path, body, orgId) {
-  const res = await fetch(`${BASE_URL}/api${path}`, {
+  const res = await fetchWithRetry(`${BASE_URL}/api${path}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -703,7 +706,7 @@ async function prepareStockGolden(token, sellerOrgId) {
     sellerOrgId,
   );
   for (const old of offers.items.filter((o) => o.productId === product.id)) {
-    await fetch(`${BASE_URL}/api/seller/offers/${old.id}`, {
+    await fetchWithRetry(`${BASE_URL}/api/seller/offers/${old.id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -792,11 +795,18 @@ async function prepareStockGolden(token, sellerOrgId) {
 }
 
 /**
- * Снять набор записей манифеста. Возвращает Map<name, Buffer PNG>.
+ * Снять набор записей манифеста. Возвращает { shots, prepFailed }:
+ * - shots — Map<name, Buffer PNG>;
+ * - prepFailed — Set<name>: кадры, зависящие от подготовки
+ *   (заказы/доставки/склад сценария), когда prepare-фаза не
+ *   удалась даже после ретраев. Такие кадры пропускаются —
+ *   прогон не роняется, остальные кадры снимаются и сверяются
+ *   (Промт 14b, закрытие долга о транзиентных 500).
  * Группировка: guest-контекст и user-контекст (один логин на всех).
  */
 export async function captureSet(entries) {
   const shots = new Map();
+  const prepFailed = new Set();
   const browser = await chromium.launch();
   try {
     // --- Гостевые экраны: чистый контекст. ---
@@ -832,8 +842,8 @@ export async function captureSet(entries) {
       }
       // Детерминированный сценарий доставок (Промт 10, Часть D):
       // заказы с фиксированными датами и номера DL с нуля.
-      // Подготовка обязательна для записей с openPrepared*: тихий
-      // провал даёт золотые 404 — падаем громко.
+      // Промт 14b: при неудаче (после ретраев) — не ронять прогон,
+      // а пометить зависимые кадры как prep_failed.
       const needsPrepared = userEntries.some(
         (e) => e.openPreparedOrder || e.openPreparedDelivery,
       );
@@ -841,16 +851,23 @@ export async function captureSet(entries) {
         await prepareDemoDeliveries();
       } catch (e) {
         if (needsPrepared) {
-          throw new Error(`подготовка доставок не удалась: ${e.message}`);
+          for (const entry of userEntries) {
+            if (entry.openPreparedOrder || entry.openPreparedDelivery) {
+              prepFailed.add(entry.name);
+            }
+          }
+          console.warn(
+            `подготовка доставок не удалась (после ретраев): ${e.message} — ` +
+              `кадры ${[...prepFailed].join(', ')} помечены prep_failed`,
+          );
+        } else {
+          console.warn(`подготовка доставок не удалась: ${e.message}`);
         }
-        console.warn(`подготовка доставок не удалась: ${e.message}`);
-      }
-      if (needsPrepared && prepared.deliveryId === '') {
-        throw new Error('подготовка доставок не заполнила prepared-ids');
       }
 
       // Детерминированный склад golden (Промт 11b): фиксированная
-      // позиция с ровно известными остатками и журналом.
+      // позиция с ровно известными остатками и журналом. При неудаче
+      // (после ретраев) — зависимые кадры в prep_failed (Промт 14b).
       const needsStock = userEntries.some(
         (e) =>
           e.openStockDetail ||
@@ -859,15 +876,32 @@ export async function captureSet(entries) {
           e.stockSearch,
       );
       if (needsStock) {
-        const token = await apiLogin();
-        const me = await apiGet(token, '/auth/me');
-        const sellerOrg = me.memberships.find(
-          (m) => String(m.role).toUpperCase() === 'WHOLESALE_SELLER',
-        );
-        if (!sellerOrg) {
-          throw new Error('у демо-пользователя нет роли WHOLESALE_SELLER');
+        try {
+          const token = await apiLogin();
+          const me = await apiGet(token, '/auth/me');
+          const sellerOrg = me.memberships.find(
+            (m) => String(m.role).toUpperCase() === 'WHOLESALE_SELLER',
+          );
+          if (!sellerOrg) {
+            throw new Error('у демо-пользователя нет роли WHOLESALE_SELLER');
+          }
+          await prepareStockGolden(token, sellerOrg.organizationId);
+        } catch (e) {
+          for (const entry of userEntries) {
+            if (
+              entry.openStockDetail ||
+              entry.openStockMovementForm ||
+              entry.openStockTransferForm ||
+              entry.stockSearch
+            ) {
+              prepFailed.add(entry.name);
+            }
+          }
+          console.warn(
+            `подготовка склада не удалась (после ретраев): ${e.message} — ` +
+              `кадры помечены prep_failed`,
+          );
         }
-        await prepareStockGolden(token, sellerOrg.organizationId);
       }
 
       const userContext = await browser.newContext({
@@ -884,6 +918,14 @@ export async function captureSet(entries) {
 
       let activeRole = 'wholesale_seller';
       for (const entry of userEntries) {
+        // prep_failed: подготовка сценария не удалась — кадр не
+        // снимается (снимок был бы 404-заглушкой), остальные идут.
+        if (prepFailed.has(entry.name)) {
+          console.log(
+            `PREP_FAILED ${entry.name}: подготовка не удалась, кадр пропущен`,
+          );
+          continue;
+        }
         await setupPage(page, entry);
         const targetRole = entry.role ?? 'customer';
         if (targetRole !== activeRole) {
@@ -1034,7 +1076,10 @@ export async function captureSet(entries) {
   } finally {
     await browser.close();
   }
-  return shots;
+  // Сводка ретраев — в лог прогона (Промт 14b: наблюдение за
+  // частотой 500 в prepare-фазе).
+  console.log(retryReport());
+  return { shots, prepFailed };
 }
 
 /** Прочитать манифест golden-набора. */

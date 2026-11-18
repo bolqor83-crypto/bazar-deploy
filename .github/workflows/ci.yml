@@ -91,6 +91,9 @@ jobs:
       - name: Установить Chromium для Playwright
         run: pnpm exec playwright install chromium --with-deps
 
+      - name: Тесты fetch-retry (Промт 14b — ретраи prepare-фазы)
+        run: node --test scripts/visual/fetch-retry.test.mjs
+
       - name: Собрать статику mobile
         run: pnpm --filter mobile exec expo export --platform web
         env:

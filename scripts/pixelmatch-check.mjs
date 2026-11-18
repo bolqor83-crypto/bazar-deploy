@@ -6,7 +6,11 @@
  * Tolerance: diffPixels / totalPixels <= 0.5% — pass, иначе fail.
  * Diff-картинки — в download/pixelmatch-diff/<name>-diff.png.
  *
- * Выход: 0 — все прошли; 1 — есть расхождения.
+ * Промт 14b: кадры, чья prepare-фаза упала после ретраев,
+ * помечаются prep_failed — прогон продолжается, остальные кадры
+ * сверяются (закрытие долга о транзиентных 500 от Neon).
+ *
+ * Выход: 0 — все прошли; 1 — есть расхождения или prep_failed.
  * Запуск: pnpm test:visual (сервер на :3000 должен быть поднят).
  */
 import fs from 'node:fs';
@@ -34,9 +38,20 @@ async function main() {
 
   let passed = 0;
   const failed = [];
+  let prepFailedCount = 0;
 
-  const shots = await captureSet(manifest);
+  const { shots, prepFailed } = await captureSet(manifest);
   for (const entry of manifest) {
+    if (prepFailed.has(entry.name)) {
+      prepFailedCount += 1;
+      failed.push({
+        name: entry.name,
+        reason: 'prep_failed: подготовка не удалась после ретраев',
+        pct: 100,
+      });
+      console.log(`PREP_FAILED ${entry.name}: подготовка не удалась`);
+      continue;
+    }
     const goldenPath = path.join(GOLDEN_DIR, entry.file);
     if (!fs.existsSync(goldenPath)) {
       failed.push({ name: entry.name, reason: 'golden отсутствует', pct: 100 });
@@ -95,7 +110,9 @@ async function main() {
   const total = manifest.length;
   console.log('');
   console.log(
-    `Итог: ${passed}/${total} passed, ${failed.length} failed (tolerance ${TOLERANCE_PCT}%)`,
+    `Итог: ${passed}/${total} passed, ${failed.length} failed` +
+      `${prepFailedCount > 0 ? ` (из них prep_failed: ${prepFailedCount})` : ''}` +
+      ` (tolerance ${TOLERANCE_PCT}%)`,
   );
   if (failed.length > 0) {
     process.exitCode = 1;

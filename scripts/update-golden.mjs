@@ -18,9 +18,16 @@ async function main() {
     manifest = manifest.filter((e) => wanted.has(e.name));
   }
   fs.mkdirSync(GOLDEN_DIR, { recursive: true });
-  const shots = await captureSet(manifest);
+  const { shots, prepFailed } = await captureSet(manifest);
   let updated = 0;
   for (const entry of manifest) {
+    if (prepFailed.has(entry.name)) {
+      console.log(
+        `ПРОПУСК ${entry.name}: prep_failed — подготовка не удалась, ` +
+          `golden не перезаписывается`,
+      );
+      continue;
+    }
     const png = shots.get(entry.name);
     if (!png) {
       console.log(`ПРОПУСК ${entry.name}: снимок не получен`);

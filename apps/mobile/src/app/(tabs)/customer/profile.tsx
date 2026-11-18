@@ -83,13 +83,24 @@ function RecentOrderRow({ order }: { order: Order }) {
         minHeight: 48,
       }}
     >
-      <View style={{ flex: 1, gap: 2, flexShrink: 1 }}>
-        <Text variant="bodyStrong" mono numberOfLines={1} adjustsFontSizeToFit>
+      <View
+        style={{
+          flex: 1,
+          gap: 2,
+          flexShrink: 1,
+          paddingRight: spacing.sm,
+        }}
+      >
+        <Text
+          variant="bodyStrong"
+          mono
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
           {order.number}
         </Text>
-        <Text variant="caption" color="textSecondary">
-          {dateLabel} · {order.items.length}{' '}
-          {order.items.length === 1 ? 'позиция' : 'позиций'}
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
+          {`${dateLabel} · ${order.items.length} поз.`}
         </Text>
       </View>
       <OrderStatus status={ORDER_STATUS_MAP[order.status]} />
@@ -166,10 +177,14 @@ export default function ProfileScreen() {
             <Text variant="body" style={{ flex: 1 }}>
               Уведомления
             </Text>
+            {/* Бейдж с alignSelf:flex-start прижимается к верху
+                высокой строки (VLM 14b) — центрируем обёрткой. */}
             {unread > 0 ? (
-              <Badge variant="info" size="sm">
-                {unread > 99 ? '99+' : String(unread)}
-              </Badge>
+              <View style={{ alignSelf: 'center' }}>
+                <Badge variant="info" size="sm">
+                  {unread > 99 ? '99+' : String(unread)}
+                </Badge>
+              </View>
             ) : null}
             <ChevronRight size={20} color={colors.textSecondary} />
           </Pressable>
