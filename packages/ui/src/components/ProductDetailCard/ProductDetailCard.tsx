@@ -75,7 +75,9 @@ export function ProductDetailCard({
   const hasBadges = isHit || isPerishable;
 
   return (
-    <Card testID={testID}>
+    // Промт 14b: контент-блок, не карточка — flat (без border и
+    // тени), «часть страницы» рядом с галереей 1:1.
+    <Card testID={testID} variant="flat">
       <View style={{ gap: spacing.sm }}>
         {hasBadges ? (
           <View style={{ flexDirection: 'row', gap: spacing.xs + 2 }}>

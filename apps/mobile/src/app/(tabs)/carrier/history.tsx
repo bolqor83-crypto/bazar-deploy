@@ -64,7 +64,7 @@ export default function CarrierHistoryScreen() {
         <ScrollView
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
         >
-          <Card testID="carrier-earnings">
+          <Card variant="outlined" testID="carrier-earnings">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Заработано по завершённым рейсам
             </Text>

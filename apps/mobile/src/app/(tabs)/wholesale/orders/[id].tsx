@@ -191,7 +191,7 @@ export default function SellerOrderDetailScreen() {
             <OrderStatus status={STATUS_MAP[order.status] ?? 'new'} />
           </View>
 
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.md }}>
               Жизненный цикл
             </Text>
@@ -209,7 +209,7 @@ export default function SellerOrderDetailScreen() {
             basePath="wholesale"
           />
 
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Покупатель
             </Text>
@@ -231,7 +231,7 @@ export default function SellerOrderDetailScreen() {
             </View>
           </Card>
 
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Позиции
             </Text>
@@ -280,7 +280,7 @@ export default function SellerOrderDetailScreen() {
             </View>
           </Card>
 
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Получение
             </Text>
@@ -290,7 +290,7 @@ export default function SellerOrderDetailScreen() {
           </Card>
 
           {order.comment ? (
-            <Card>
+            <Card variant="outlined">
               <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
                 Комментарий покупателя
               </Text>

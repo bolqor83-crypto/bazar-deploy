@@ -158,7 +158,11 @@ export default function SellerProductNewScreen() {
           setImageUrls((urls) => [...urls, publicUrl].slice(0, 6));
         })
         .catch(() => {
-          toast.show({ variant: 'error', message: 'Не удалось загрузить фото. Файл должен быть JPEG, PNG или WebP до 5 МБ' });
+          toast.show({
+            variant: 'error',
+            message:
+              'Не удалось загрузить фото. Файл должен быть JPEG, PNG или WebP до 5 МБ',
+          });
         })
         .finally(() => setUploading(false));
     };
@@ -205,14 +209,22 @@ export default function SellerProductNewScreen() {
               onError: () => {
                 // Товар создан, оффер нет: переходим в карточку —
                 // предложение можно добавить там.
-                toast.show({ variant: 'error', message: 'Товар создан без предложения. Добавьте партию в карточке товара' });
+                toast.show({
+                  variant: 'error',
+                  message:
+                    'Товар создан без предложения. Добавьте партию в карточке товара',
+                });
                 router.replace(`/wholesale/products/${product.id}`);
               },
             },
           );
         },
         onError: () => {
-          toast.show({ variant: 'error', message: 'Не удалось создать товар. Проверьте связь и попробуйте ещё раз' });
+          toast.show({
+            variant: 'error',
+            message:
+              'Не удалось создать товар. Проверьте связь и попробуйте ещё раз',
+          });
         },
       },
     );
@@ -324,7 +336,7 @@ export default function SellerProductNewScreen() {
     if (step === 1) {
       return (
         <View style={{ gap: spacing.md }}>
-          <Card>
+          <Card variant="outlined">
             <View style={{ gap: spacing.sm }}>
               <Text variant="body">
                 {imageUrls.length > 0
@@ -345,7 +357,7 @@ export default function SellerProductNewScreen() {
             </View>
           </Card>
           {imageUrls.map((url) => (
-            <Card key={url}>
+            <Card variant="outlined" key={url}>
               <View
                 style={{
                   flexDirection: 'row',
@@ -407,7 +419,7 @@ export default function SellerProductNewScreen() {
           keyboardType="numeric"
           testID="offer-min-input"
         />
-        <Card>
+        <Card variant="outlined">
           <Text variant="caption" color="textSecondary">
             {selectedCategory
               ? `Категория: ${selectedCategory.name}`

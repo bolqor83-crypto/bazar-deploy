@@ -119,7 +119,11 @@ export default function SellerOfferEditScreen() {
           });
         },
         onError: () => {
-          toast.show({ variant: 'error', message: 'Не удалось сохранить. Проверьте связь и попробуйте ещё раз' });
+          toast.show({
+            variant: 'error',
+            message:
+              'Не удалось сохранить. Проверьте связь и попробуйте ещё раз',
+          });
         },
       },
     );
@@ -183,7 +187,7 @@ export default function SellerOfferEditScreen() {
           </Button>
 
           {/* История цены — свёрнута, раскрывается тапом */}
-          <Card>
+          <Card variant="outlined">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="История цены"
@@ -246,17 +250,19 @@ export default function SellerOfferEditScreen() {
           </Card>
 
           {offer.archivedAt ? (
-            <Card>
+            <Card variant="outlined">
               <Text variant="bodySmall" color="textSecondary">
                 Предложение в архиве. Восстановление — Промт 11.
               </Text>
             </Card>
           ) : (
             <Button
-    variant="ghost"
-    onPress={() => setConfirmDelete(true)}
-    testID="offer-edit-delete"
-    >Удалить предложение</Button>
+              variant="ghost"
+              onPress={() => setConfirmDelete(true)}
+              testID="offer-edit-delete"
+            >
+              Удалить предложение
+            </Button>
           )}
         </ScrollView>
 
@@ -271,7 +277,11 @@ export default function SellerOfferEditScreen() {
             }Если по предложению есть заказы — оно уйдёт в архив.`}
           </Text>
           <View
-            style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}
+            style={{
+              flexDirection: 'row',
+              gap: spacing.sm,
+              marginTop: spacing.md,
+            }}
           >
             <View style={{ flex: 1 }}>
               <Button

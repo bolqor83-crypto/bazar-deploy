@@ -273,7 +273,10 @@ export default function StockMovementFormScreen() {
             ))}
           </View>
 
-          <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+          <Card
+            variant="outlined"
+            style={{ padding: spacing.md, gap: spacing.sm }}
+          >
             {/* Позиция и доступный остаток — одна строка (VLM-аудит:
                 трёхуровневая карточка съедала вертикаль без пользы). */}
             <View

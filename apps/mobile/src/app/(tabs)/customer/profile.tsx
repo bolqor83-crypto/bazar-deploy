@@ -33,7 +33,7 @@ function OperationsSummary({ orders }: { orders: Order[] }) {
   ).length;
 
   return (
-    <Card testID="profile-operations">
+    <Card variant="outlined" testID="profile-operations">
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
           <Text variant="numberL" color="primaryText">
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
         {orders.length > 0 ? <OperationsSummary orders={orders} /> : null}
 
         {recent.length > 0 ? (
-          <Card>
+          <Card variant="outlined">
             <Text
               variant="caption"
               color="textMuted"
@@ -146,7 +146,7 @@ export default function ProfileScreen() {
           </Card>
         ) : null}
 
-        <Card>
+        <Card variant="outlined">
           <Pressable
             testID="profile-notifications"
             accessibilityRole="button"

@@ -95,7 +95,9 @@ export function DeliveryCard({
     <Card
       onPress={onPress}
       selected={selected}
-      variant={selected ? 'outlined' : 'default'}
+      // Промт 14b: выбор способа доставки — форма: чёткая граница,
+      // selected — изумрудная рамка 2px.
+      variant="outlined"
       style={selected ? { borderColor: colors.primary, borderWidth: 2 } : null}
     >
       {body}

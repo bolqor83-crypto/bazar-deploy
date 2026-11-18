@@ -153,7 +153,7 @@ export default function StockTransferFormScreen() {
   if (locations.length < 2) {
     return (
       <RoleScreen role="wholesale_seller" section="stock" title="Перемещение">
-        <Card style={{ padding: spacing.md }}>
+        <Card variant="outlined" style={{ padding: spacing.md }}>
           <Text variant="bodySmall" color="textSecondary">
             Для перемещения нужно минимум два склада. Создайте второй склад на
             экране «Склады», затем вернитесь к перемещению.
@@ -214,7 +214,10 @@ export default function StockTransferFormScreen() {
             gap: spacing.md,
           }}
         >
-          <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+          <Card
+            variant="outlined"
+            style={{ padding: spacing.md, gap: spacing.sm }}
+          >
             <View style={{ gap: 2, paddingBottom: spacing.xs }}>
               <Text variant="caption" color="textSecondary">
                 Позиция
@@ -247,7 +250,10 @@ export default function StockTransferFormScreen() {
             </View>
           </Card>
 
-          <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+          <Card
+            variant="outlined"
+            style={{ padding: spacing.md, gap: spacing.sm }}
+          >
             <LocationSelector
               locations={locations.map((l) => ({
                 id: l.id,

@@ -207,7 +207,7 @@ export default function StockLocationsScreen() {
           gap: spacing.sm,
         }}
         renderItem={({ item }) => (
-          <Card>
+          <Card variant="outlined">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`${item.name}. Редактировать`}

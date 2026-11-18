@@ -100,7 +100,7 @@ export function LogoutSection() {
 
   return (
     <View style={{ gap: spacing.md }}>
-      <Card>
+      <Card variant="outlined">
         <View
           style={{
             flexDirection: 'row',

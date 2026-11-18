@@ -170,7 +170,7 @@ function OfferCard({
 }) {
   const { colors } = useTheme();
   return (
-    <Card>
+    <Card variant="outlined">
       <View style={{ paddingHorizontal: 12 }}>
         <OfferRow
           title={offer.product.name}

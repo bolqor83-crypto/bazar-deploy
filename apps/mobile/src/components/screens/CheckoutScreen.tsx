@@ -218,7 +218,7 @@ export default function CheckoutScreen({ basePath }: CheckoutScreenProps) {
         {/* Шапка подэкрана: назад + заголовок (как в карточке заказа). */}
         {header}
         {/* Сводка корзины: компактно. */}
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
             {`Позиции (${items.length})`}
           </Text>
@@ -264,7 +264,7 @@ export default function CheckoutScreen({ basePath }: CheckoutScreenProps) {
         </Card>
 
         {/* Адрес: readonly + «Изменить» → профиль. */}
-        <Card>
+        <Card variant="outlined">
           <View
             style={{
               flexDirection: 'row',
@@ -289,7 +289,7 @@ export default function CheckoutScreen({ basePath }: CheckoutScreenProps) {
         </Card>
 
         {/* Комментарий. */}
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
             Комментарий продавцу
           </Text>

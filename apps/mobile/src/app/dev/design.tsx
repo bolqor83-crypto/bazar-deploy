@@ -240,7 +240,10 @@ function ShowcaseBody() {
             разрозненными контролами — так она читается рабочим
             экраном, а не UI-китом. */}
         <Section title="Формы">
-          <Card style={{ padding: spacing.md, gap: spacing.md }}>
+          <Card
+            variant="outlined"
+            style={{ padding: spacing.md, gap: spacing.md }}
+          >
             <View style={{ gap: 2 }}>
               <Text variant="h3">Параметры поставки</Text>
               <Text variant="caption" color="textSecondary">
@@ -326,15 +329,27 @@ function ShowcaseBody() {
         <Section title="Карточки">
           <View style={{ gap: spacing.md }}>
             <Card>
-              <Text variant="bodyStrong">Обычная карточка</Text>
+              <Text variant="bodyStrong">Карточка товара (default)</Text>
               <Text variant="bodySmall" color="textSecondary">
-                Фон surface, граница border
+                Тень sm, без границы — витрина, каталог, карусель
               </Text>
             </Card>
             <Card variant="elevated">
-              <Text variant="bodyStrong">Приподнятая карточка</Text>
+              <Text variant="bodyStrong">Приподнятая (elevated)</Text>
               <Text variant="bodySmall" color="textSecondary">
-                Тень md в светлой теме, граница в тёмной
+                Тень md — акцентные блоки, модальные подсказки
+              </Text>
+            </Card>
+            <Card variant="outlined">
+              <Text variant="bodyStrong">Контурная (outlined)</Text>
+              <Text variant="bodySmall" color="textSecondary">
+                Граница — формы, сводки, профиль
+              </Text>
+            </Card>
+            <Card variant="flat">
+              <Text variant="bodyStrong">Плоская (flat)</Text>
+              <Text variant="bodySmall" color="textSecondary">
+                Без границы и тени — контент-блок «часть страницы»
               </Text>
             </Card>
             <Card variant="outlined" onPress={() => {}}>
@@ -539,7 +554,7 @@ function ShowcaseBody() {
           />
 
           <Text variant="h3">ProductRow и OrderSummary</Text>
-          <Card>
+          <Card variant="outlined">
             <OrderSummary
               items={[
                 {

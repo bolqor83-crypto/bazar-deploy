@@ -251,7 +251,7 @@ export default function DeliveryDetailScreen({
           </Text>
         </View>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.md }}>
             Жизненный цикл
           </Text>
@@ -261,7 +261,7 @@ export default function DeliveryDetailScreen({
           />
         </Card>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
             Маршрут
           </Text>
@@ -281,7 +281,7 @@ export default function DeliveryDetailScreen({
           </View>
         </Card>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
             Груз и ставка
           </Text>
@@ -317,7 +317,7 @@ export default function DeliveryDetailScreen({
           </View>
         </Card>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
             Заказ и участники
           </Text>
@@ -369,7 +369,7 @@ export default function DeliveryDetailScreen({
         </Card>
 
         {delivery.status === 'DELIVERED' && role === 'carrier' ? (
-          <Card>
+          <Card variant="outlined">
             <Text variant="body" color="textSecondary">
               Груз доставлен. Дождитесь подтверждения получателя — после него
               рейс считается завершённым.
@@ -378,7 +378,7 @@ export default function DeliveryDetailScreen({
         ) : null}
 
         {delivery.status === 'CANCELLED' && delivery.cancelReason ? (
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Причина отмены
             </Text>

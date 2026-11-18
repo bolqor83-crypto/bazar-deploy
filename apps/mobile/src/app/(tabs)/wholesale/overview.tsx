@@ -31,7 +31,10 @@ export default function OverviewScreen() {
         }}
       >
         {/* Виджет «Склад» (Промт 11b): живые остатки организации. */}
-        <Card style={{ padding: spacing.md, gap: spacing.sm }}>
+        <Card
+          variant="outlined"
+          style={{ padding: spacing.md, gap: spacing.sm }}
+        >
           <Text variant="h3">Склад</Text>
           {overview.isLoading ? (
             <Skeleton height={28} />

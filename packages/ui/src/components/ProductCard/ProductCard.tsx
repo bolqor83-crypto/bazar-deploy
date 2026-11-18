@@ -19,9 +19,9 @@
  * кнопкой «+»; мини-степпер «в корзине» вместо «+» (состояние
  * «товар уже в корзине»).
  *
- * Промт 14a: режим compact — компактная карточка для горизонтальной
- * карусели похожих товаров: ширина 160, квадратное фото 1:1, один
- * бейдж, без корзинных действий (карусель — навигация, не покупка).
+ * Промт 14b: фото 1:1 во всех режимах (квадрат, как в compact),
+ * радиус фото md (16), бейджи с отступом sm от края фото. Обёртка —
+ * Card default (shadow sm, без border) — «карточка товара = тень».
  */
 import { useState } from 'react';
 import {
@@ -119,24 +119,22 @@ export function ProductCard({
     <View style={{ gap: compact ? spacing.xs : spacing.sm }}>
       {/* Бейджи — поверх фото в левом верхнем углу: у всех карточек
           одинаковая структура и высота (VLM-аудит: «разнобой —
-          бейдж/цена/наличие на разных уровнях»). */}
+          бейдж/цена/наличие на разных уровнях»). Промт 14b: отступ
+          от края фото — spacing.sm. */}
       <View
-        style={[
-          {
-            backgroundColor: placeholderTone(toneIndex),
-            overflow: 'hidden',
-          },
-          compact
-            ? { aspectRatio: 1, borderRadius: radii.md }
-            : { height: 96, borderRadius: radii.sm },
-        ]}
+        style={{
+          backgroundColor: placeholderTone(toneIndex),
+          overflow: 'hidden',
+          aspectRatio: 1,
+          borderRadius: radii.md,
+        }}
       >
         {hasBadges ? (
           <View
             style={{
               position: 'absolute',
-              top: spacing.xs,
-              left: spacing.xs,
+              top: spacing.sm,
+              left: spacing.sm,
               flexDirection: 'row',
               gap: spacing.xs,
               zIndex: 1,
@@ -343,7 +341,9 @@ export function ProductCard({
   const width = compact ? PRODUCT_CARD_COMPACT_WIDTH : 168;
   const cardStyle: StyleProp<ViewStyle> = [
     { width },
-    // Compact (Промт 14a): плотнее внутренние отступы.
+    // Compact (Промт 14a): плотнее внутренние отступы. Промт 14b:
+    // при новой шкале md = 16 — фото 128×128, заголовок влезает
+    // в 2 строки; оставляем md (решение в отчёте 14b).
     ...(compact ? [{ padding: spacing.md }] : []),
     style,
   ];

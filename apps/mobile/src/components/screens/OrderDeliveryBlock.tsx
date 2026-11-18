@@ -83,7 +83,7 @@ export function OrderDeliveryBlock({
   // Есть доставка — карточка со ссылкой на детали.
   if (delivery) {
     return (
-      <Card>
+      <Card variant="outlined">
         <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
           Доставка
         </Text>
@@ -133,7 +133,7 @@ export function OrderDeliveryBlock({
   if (!ORDER_STATUSES_ALLOWED.has(orderStatus)) {
     if (orderStatus === 'PENDING') {
       return (
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
             Доставка
           </Text>
@@ -194,7 +194,7 @@ export function OrderDeliveryBlock({
     dropoffContact.trim().length > 0;
 
   return (
-    <Card>
+    <Card variant="outlined">
       <Text variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
         Доставка
       </Text>

@@ -1,5 +1,6 @@
 /**
  * Тесты ProductCard: название, цена, наличие, единица, нажатие.
+ * Промт 14b: фото 1:1 и shadow sm (Card default) во всех режимах.
  */
 import { fireEvent, render } from '@testing-library/react-native';
 import { NARROW_NBSP } from '../PriceDisplay';
@@ -79,6 +80,50 @@ describe('ProductCard', () => {
     expect(screen.getByText('−15%')).toBeTruthy();
   });
 
+  it('фото — квадрат 1:1 в обычном режиме (Промт 14b)', async () => {
+    const screen = await render(
+      <ProductCard name="Молоко 3,2%" priceKopecks={8_900} />,
+    );
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain('"aspectRatio":1');
+    expect(json).not.toContain('"height":96');
+  });
+
+  it('обёртка — Card default: shadow sm, без border (Промт 14b)', async () => {
+    const screen = await render(
+      <ProductCard name="Молоко 3,2%" priceKopecks={8_900} testID="pc" />,
+    );
+    const style = Object.assign(
+      {},
+      ...[screen.getByTestId('pc').props.style].flat(Infinity),
+    ) as Record<string, unknown>;
+    expect(style.elevation).toBe(2); // shadows.sm
+    expect(style.borderWidth).toBeUndefined();
+  });
+
+  it('бейдж поверх фото с отступом sm (Промт 14b)', async () => {
+    const screen = await render(
+      <ProductCard name="Молоко 3,2%" priceKopecks={8_900} isPerishable />,
+    );
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain('"top":8'); // spacing.sm
+    expect(screen.getByText('Скоропорт')).toBeTruthy();
+  });
+
+  it('цена и юнит — двумя этажами, не обрезаются (Промт 14b)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Манго"
+        priceKopecks={1_234_00}
+        unit="кг"
+        onAddToCart={() => {}}
+      />,
+    );
+    // Цена и «за кг» — отдельные узлы: перенос вместо обрезки.
+    expect(screen.getByText(`1\u202F234${NARROW_NBSP}₽`)).toBeTruthy();
+    expect(screen.getByText('за кг')).toBeTruthy();
+  });
+
   it('onPress делает карточку кнопкой и вызывается', async () => {
     const onPress = jest.fn();
     const screen = await render(
@@ -89,7 +134,7 @@ describe('ProductCard', () => {
   });
 
   describe('compact (Промт 14a)', () => {
-    it('ширина 160 и плотный padding вместо стандартных 168/lg', async () => {
+    it('ширина 160 и плотный padding md=16 вместо стандартных 168/lg', async () => {
       const screen = await render(
         <ProductCard
           compact
@@ -101,10 +146,9 @@ describe('ProductCard', () => {
       );
       const card = screen.getByTestId('compact-card');
       const flat = [card.props.style].flat(Infinity);
-      const width = flat.find(
-        (s: { width?: number }) => typeof s?.width === 'number',
-      ) as { width: number };
-      expect(width.width).toBe(160);
+      const style = Object.assign({}, ...flat) as Record<string, unknown>;
+      expect(style.width).toBe(160);
+      expect(style.padding).toBe(16); // spacing.md — решение 14b
     });
 
     it('фото — квадрат 1:1 и скругление md', async () => {

@@ -169,7 +169,7 @@ export default function OrderDetailScreen({
           <OrderStatus status={STATUS_MAP[order.status] ?? 'new'} />
         </View>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.md }}>
             Статус
           </Text>
@@ -190,7 +190,7 @@ export default function OrderDetailScreen({
           onPress={undefined}
         />
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
             Позиции
           </Text>
@@ -253,7 +253,7 @@ export default function OrderDetailScreen({
           </View>
         </Card>
 
-        <Card>
+        <Card variant="outlined">
           <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
             Получение
           </Text>
@@ -263,7 +263,7 @@ export default function OrderDetailScreen({
         </Card>
 
         {order.comment ? (
-          <Card>
+          <Card variant="outlined">
             <Text variant="bodyStrong" style={{ marginBottom: spacing.xs }}>
               Комментарий
             </Text>

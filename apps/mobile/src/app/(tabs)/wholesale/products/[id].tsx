@@ -211,7 +211,7 @@ export default function SellerProductEditScreen() {
             <Text variant="h3">Предложения</Text>
             {/* Промт 11b: сводка остатков по всем предложениям
                 (offer.stock = сумма availableQty по складам). */}
-            <Card style={{ padding: spacing.md }}>
+            <Card variant="outlined" style={{ padding: spacing.md }}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Остатки склада. Открыть список складов"
@@ -240,7 +240,7 @@ export default function SellerProductEditScreen() {
               </Pressable>
             </Card>
             {offers.length === 0 ? (
-              <Card>
+              <Card variant="outlined">
                 <EmptyState
                   icon={Package}
                   title="Предложений нет"
@@ -252,7 +252,7 @@ export default function SellerProductEditScreen() {
                 />
               </Card>
             ) : (
-              <Card>
+              <Card variant="outlined">
                 <View style={{ paddingHorizontal: spacing.md }}>
                   {offers.map((offer) => (
                     <OfferRow
@@ -275,7 +275,7 @@ export default function SellerProductEditScreen() {
           </View>
 
           {product.archivedAt ? (
-            <Card>
+            <Card variant="outlined">
               <Text variant="bodySmall" color="textSecondary">
                 Товар в архиве с{' '}
                 {new Date(product.archivedAt).toLocaleDateString('ru-RU')}.
