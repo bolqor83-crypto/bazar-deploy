@@ -108,6 +108,53 @@ describe('ProductCard', () => {
     expect(screen.getByText('−15%')).toBeTruthy();
   });
 
+  it('без фото — силуэт продукции, без камера-бейджа покупателя (Промт 16, A)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Апельсины столовые"
+        priceKopecks={10_700}
+        silhouette="citrus"
+      />,
+    );
+    expect(screen.getByTestId('product-placeholder')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Апельсины столовые, фото отсутствует'),
+    ).toBeTruthy();
+    // Камера-бейдж — только в кабинете продавца.
+    expect(screen.queryByLabelText('Нет фото — добавьте')).toBeNull();
+  });
+
+  it('с фото — Image без заглушки (Промт 16, A)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Бананы"
+        priceKopecks={8_900}
+        imageUrl="https://cdn.example/bananas.png"
+      />,
+    );
+    expect(screen.getByLabelText('Фото: Бананы').props.source.uri).toBe(
+      'https://cdn.example/bananas.png',
+    );
+    expect(screen.queryByTestId('product-placeholder')).toBeNull();
+  });
+
+  it('compact без фото — тоже силуэт (карусель похожих, Промт 16, A)', async () => {
+    const screen = await render(
+      <ProductCard compact name="Свёкла столовая" priceKopecks={4_500} />,
+    );
+    expect(screen.getByTestId('product-placeholder')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Свёкла столовая, фото отсутствует'),
+    ).toBeTruthy();
+  });
+
+  it('умолчание силуэта — crate (fallback), не зависит от названия', async () => {
+    const screen = await render(
+      <ProductCard name="Изюм тёмный" priceKopecks={21_800} />,
+    );
+    expect(screen.getByTestId('product-placeholder')).toBeTruthy();
+  });
+
   it('фото — квадрат 1:1 в обычном режиме (Промт 14b)', async () => {
     const screen = await render(
       <ProductCard name="Молоко 3,2%" priceKopecks={8_900} />,

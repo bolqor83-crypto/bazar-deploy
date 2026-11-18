@@ -21,11 +21,25 @@ describe('OfferRow', () => {
     expect(screen.getByText(/Склад: 120 кг · мин. 10 кг/)).toBeTruthy();
   });
 
-  it('без фото — плейсхолдер с иконкой', async () => {
+  it('без фото — силуэт с камера-бейджем продавца (Промт 16, A)', async () => {
     const screen = await render(
       <OfferRow title="Тест" priceKopecks={100} stock={5} />,
     );
-    expect(screen.getByLabelText('Фото не загружено')).toBeTruthy();
+    expect(screen.getByLabelText('Тест, фото отсутствует')).toBeTruthy();
+    expect(screen.getByLabelText('Нет фото — добавьте')).toBeTruthy();
+  });
+
+  it('без фото и без бейджа — showCameraBadge={false}', async () => {
+    const screen = await render(
+      <OfferRow
+        title="Тест"
+        priceKopecks={100}
+        stock={5}
+        showCameraBadge={false}
+      />,
+    );
+    expect(screen.getByLabelText('Тест, фото отсутствует')).toBeTruthy();
+    expect(screen.queryByLabelText('Нет фото — добавьте')).toBeNull();
   });
 
   it('с фото — Image с этим URL', async () => {

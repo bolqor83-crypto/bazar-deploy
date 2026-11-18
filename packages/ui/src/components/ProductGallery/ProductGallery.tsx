@@ -2,11 +2,10 @@
  * ProductGallery — галерея товара.
  *
  * Горизонтальная постраничная карусель: реальные фото (Image,
- * cover) с фолбэком на плашку-заглушку (тон детерминирован
- * индексом), точки-индикаторы снизу. Листается свайпом; активный
- * кадр вычисляется по смещению скролла. URL приходят готовыми
- * (абсолютными) — экран вызывает resolveMediaUrl (Промт 12,
- * итерация 3: реальные фото вместо заглушек-иконок).
+ * cover) с фолбэком на силуэт продукции (Промт 16, A: ключ
+ * приходит из бизнес-слоя, UI не мапит). Точки-индикаторы снизу;
+ * если кадров нет вовсе — один слот-заглушка БЕЗ точек. URL
+ * приходят готовыми (абсолютными) — экран вызывает resolveMediaUrl.
  */
 import { useMemo, useState } from 'react';
 import {
@@ -18,9 +17,10 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { ImagePlus } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { placeholderTone } from '../../tokens/placeholder';
+import type { SilhouetteKey } from '../../icons/silhouettes';
+import { ProductPlaceholder } from '../ProductPlaceholder/ProductPlaceholder';
 
 export interface ProductGalleryProps {
   /** URL картинок; длина задаёт число кадров. */
@@ -28,6 +28,8 @@ export interface ProductGalleryProps {
   /** Ширина кадра, обязательна для постраничного скролла. */
   slideWidth: number;
   height?: number;
+  /** Силуэт заглушки без фото (Промт 16, A). */
+  silhouette?: SilhouetteKey;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -36,6 +38,7 @@ export function ProductGallery({
   images,
   slideWidth,
   height = 220,
+  silhouette = 'crate',
   style,
   testID,
 }: ProductGalleryProps) {
@@ -96,7 +99,15 @@ export function ProductGallery({
                 onError={() => markFailed(index)}
               />
             ) : (
-              <ImagePlus size={40} color={colors.textMuted} />
+              <ProductPlaceholder
+                silhouette={silhouette}
+                size="fill"
+                accessibilityLabel={
+                  images.length > 0
+                    ? `Фото ${index + 1} не загрузилось`
+                    : 'Фото товара отсутствует'
+                }
+              />
             )}
           </View>
         ))}

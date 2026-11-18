@@ -21,6 +21,7 @@ import {
 } from '@bazar/ui';
 import type { SellerOffer } from '@bazar/types';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
+import { resolveSilhouette } from '../../../utils/silhouette';
 import { useSellerOffers } from '../../../hooks/useSeller';
 import { resolveMediaUrl } from '../../../services/api/client';
 
@@ -180,6 +181,7 @@ function OfferCard({
           minQuantity={offer.minQuantity}
           badge={offer.badge}
           imageUrl={firstImage(offer.product.images)}
+          silhouette={resolveSilhouette(offer.product.name)}
           archived={Boolean(offer.archivedAt)}
           onPress={onPress}
           testID={`seller-offer-${offer.id}`}

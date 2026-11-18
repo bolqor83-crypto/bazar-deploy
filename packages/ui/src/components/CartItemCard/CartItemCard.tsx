@@ -1,16 +1,17 @@
 /**
  * CartItemCard — позиция корзины (Промт 9, Часть D).
  *
- * Фото-заглушка 64×64 (пастельный тон), название, продавец,
- * минимальная партия, выбор количества (QuantitySelector),
- * сумма строки (PriceDisplay) и удаление. Только презентация:
- * действия приходят колбэками.
+ * Фото-слот 64×64: фото или силуэт продукции (Промт 16, A),
+ * название, продавец, минимальная партия, выбор количества
+ * (QuantitySelector), сумма строки (PriceDisplay) и удаление.
+ * Только презентация: действия приходят колбэками.
  */
 import { Pressable, View } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 import { useTheme } from '../../theme';
-import { placeholderTone } from '../../tokens/placeholder';
+import type { SilhouetteKey } from '../../icons/silhouettes';
 import { formatPrice, PriceDisplay } from '../PriceDisplay';
+import { ProductPlaceholder } from '../ProductPlaceholder/ProductPlaceholder';
 import { QuantitySelector } from '../QuantitySelector';
 import { Text } from '../Text';
 
@@ -29,8 +30,8 @@ export interface CartItemCardProps {
   minQuantity: number;
   /** Доступный склад. */
   stock: number;
-  /** Тон заглушки фото (индекс). */
-  toneIndex?: number;
+  /** Силуэт заглушки без фото (Промт 16, A). */
+  silhouette?: SilhouetteKey;
   /** Изменение количества. */
   onQuantityChange: (quantity: number) => void;
   /** Удаление позиции. */
@@ -47,7 +48,7 @@ export function CartItemCard({
   quantity,
   minQuantity,
   stock,
-  toneIndex = 0,
+  silhouette = 'crate',
   onQuantityChange,
   onRemove,
   testID,
@@ -69,22 +70,14 @@ export function CartItemCard({
       }}
       accessibilityLabel={`Позиция корзины: ${name}, ${quantity} × ${formatPrice(priceKopecks)}, сумма ${formatPrice(total)}`}
     >
-      {/* Заглушка фото — пастельный тон до настоящих фото (Промт 10). */}
-      <View
-        accessibilityLabel={`Фото: ${name}`}
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: radii.md,
-          backgroundColor: placeholderTone(toneIndex),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text variant="caption" color="textSecondary" style={{ opacity: 0.7 }}>
-          {unit}
-        </Text>
-      </View>
+      {/* Слот фото: настоящее фото или силуэт продукции
+          (Промт 16, A) — у покупателя, без камеры-бейджа. */}
+      <ProductPlaceholder
+        silhouette={silhouette}
+        size={64}
+        accessibilityLabel={`${name}, фото отсутствует`}
+        style={{ borderRadius: radii.md }}
+      />
 
       <View style={{ flex: 1, gap: spacing.xs }}>
         <View
@@ -102,6 +95,7 @@ export function CartItemCard({
             <Text variant="caption" color="textSecondary">
               {sellerName}
               {minQuantity > 1 ? ` · партия от ${minQuantity}` : ''}
+              {` · ${unit}`}
             </Text>
           </View>
           <Pressable

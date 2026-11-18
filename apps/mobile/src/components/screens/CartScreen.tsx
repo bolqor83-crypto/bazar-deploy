@@ -27,6 +27,7 @@ import {
   useRemoveCartItem,
   useUpdateCartItem,
 } from '../../hooks/useCart';
+import { resolveSilhouette } from '../../utils/silhouette';
 
 /** Скелетон корзины: три карточки. */
 function CartSkeleton() {
@@ -153,7 +154,7 @@ export default function CartScreen({ basePath }: CartScreenProps) {
               quantity={item.quantity}
               minQuantity={item.offer.minQuantity}
               stock={item.offer.stock}
-              toneIndex={index}
+              silhouette={resolveSilhouette(item.offer.product.name)}
               onQuantityChange={(quantity) => {
                 updateItem.mutate(
                   { itemId: item.id, quantity },

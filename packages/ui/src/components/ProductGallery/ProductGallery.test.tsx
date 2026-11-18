@@ -26,6 +26,24 @@ describe('ProductGallery', () => {
     expect(screen.getByLabelText('Фото 1 из 1')).toBeTruthy();
   });
 
+  it('пустой список — силуэт продукции без точек (Промт 16, A)', async () => {
+    const screen = await render(
+      <ProductGallery images={[]} silhouette="citrus" slideWidth={320} />,
+    );
+    expect(screen.getByTestId('product-placeholder')).toBeTruthy();
+    expect(screen.getByLabelText('Фото товара отсутствует')).toBeTruthy();
+    // Заглушка одна — точек-индикаторов нет.
+    const dots = screen.toJSON();
+    expect(JSON.stringify(dots)).not.toContain('borderRadius":4');
+  });
+
+  it('с фото — кадры Image, заглушки нет (Промт 16, A)', async () => {
+    const screen = await render(
+      <ProductGallery images={IMAGES} slideWidth={320} />,
+    );
+    expect(screen.queryByTestId('product-placeholder')).toBeNull();
+  });
+
   it('точки-индикаторы: по одной на кадр', async () => {
     const screen = await render(
       <ProductGallery images={IMAGES} slideWidth={320} />,

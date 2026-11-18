@@ -34,12 +34,14 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Minus, Plus, ShoppingBasket } from 'lucide-react-native';
+import { Minus, Plus } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { placeholderTone } from '../../tokens/placeholder';
+import type { SilhouetteKey } from '../../icons/silhouettes';
 import { Badge } from '../Badge';
 import { Card } from '../Card';
 import { PriceDisplay } from '../PriceDisplay';
+import { ProductPlaceholder } from '../ProductPlaceholder/ProductPlaceholder';
 import { StockDot } from '../StockDot';
 import { Text } from '../Text';
 import type { StockLevel } from '../StockIndicator';
@@ -71,6 +73,9 @@ export interface ProductCardProps {
   toneIndex?: number;
   /** Фото товара (URL или относительный путь API). */
   imageUrl?: string | null;
+  /** Силуэт заглушки без фото (Промт 16, A): ключ решает
+   *  бизнес-слой (resolveSilhouette), UI не мапит. */
+  silhouette?: SilhouetteKey;
   /** Быстрое добавление в корзину (минимальной партией). */
   onAddToCart?: () => void;
   /** Товар уже в корзине: партий (мини-степпер вместо «+»). */
@@ -103,6 +108,7 @@ export function ProductCard({
   isPerishable = false,
   toneIndex = 0,
   imageUrl,
+  silhouette = 'crate',
   onAddToCart,
   quantityInCart = 0,
   onIncrement,
@@ -270,15 +276,11 @@ export function ProductCard({
             accessibilityLabel={`Фото: ${name}`}
           />
         ) : (
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ShoppingBasket size={28} color={colors.textMuted} />
-          </View>
+          <ProductPlaceholder
+            silhouette={silhouette}
+            size="fill"
+            accessibilityLabel={`${name}, фото отсутствует`}
+          />
         )}
       </View>
 
@@ -364,15 +366,11 @@ export function ProductCard({
             accessibilityLabel={`Фото: ${name}`}
           />
         ) : (
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ShoppingBasket size={32} color={colors.textMuted} />
-          </View>
+          <ProductPlaceholder
+            silhouette={silhouette}
+            size="fill"
+            accessibilityLabel={`${name}, фото отсутствует`}
+          />
         )}
         {floatingAction}
       </View>

@@ -125,7 +125,7 @@ describe('CartScreen', () => {
     await waitFor(() =>
       expect(screen.getByText('Помидоры розовые')).toBeTruthy(),
     );
-    expect(screen.getByText('Опт-Юг · партия от 5')).toBeTruthy();
+    expect(screen.getByText('Опт-Юг · партия от 5 · 1 кг')).toBeTruthy();
     expect(screen.getByText('Товаров: 10 · Позиций: 1')).toBeTruthy();
     expect(screen.getByTestId('cart-checkout')).toBeTruthy();
   });

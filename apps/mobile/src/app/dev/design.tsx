@@ -35,7 +35,9 @@ import {
   ProductCard,
   ProductDetailCard,
   ProductGallery,
+  ProductPlaceholder,
   QuantitySelector,
+  SILHOUETTE_LABELS,
   Radio,
   SearchBar,
   SectionHeader,
@@ -234,6 +236,49 @@ function ShowcaseBody() {
               </Text>
             </View>
           ))}
+        </Section>
+
+        {/* Промт 16, Часть A: витрина силуэтов продукции — все 24
+            на фоне заглушки (светлая тема — светлые тона, тёмная —
+            тёмные) + живой компонент ProductPlaceholder с
+            камера-бейджем продавца. */}
+        <Section title="Силуэты продукции">
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: spacing.sm,
+            }}
+          >
+            {SILHOUETTE_LABELS.map(({ key, label }) => (
+              <View
+                key={key}
+                style={{
+                  width: 76,
+                  gap: spacing.xs,
+                  alignItems: 'center',
+                }}
+              >
+                <ProductPlaceholder silhouette={key} size={64} />
+                <Text variant="caption" color="textSecondary">
+                  {label}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.sm,
+              marginTop: spacing.md,
+              alignItems: 'center',
+            }}
+          >
+            <ProductPlaceholder silhouette="tomato" size={64} showCameraBadge />
+            <Text variant="caption" color="textSecondary">
+              Кабинет продавца: камера-бейдж «добавьте фото»
+            </Text>
+          </View>
         </Section>
 
         <Section title="Поле ввода">

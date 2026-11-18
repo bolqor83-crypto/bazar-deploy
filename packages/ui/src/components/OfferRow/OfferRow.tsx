@@ -2,13 +2,15 @@
  * OfferRow — строка предложения в кабинете продавца (Промт 10).
  *
  * Плотность рабочего инструмента: высота ряда 64–72 px, фото 48×48
- * (или плейсхолдер), название, цена табличными цифрами, склад и
- * бейдж. Только презентация; действия — снаружи (swipe / кнопки).
+ * (или силуэт с камера-бейджем — Промт 16, A: «добавьте фото»),
+ * название, цена табличными цифрами, склад и бейдж.
+ * Только презентация; действия — снаружи (swipe / кнопки).
  */
 import { View, Image, Pressable } from 'react-native';
-import { Package } from 'lucide-react-native';
 import { useTheme } from '../../theme';
+import type { SilhouetteKey } from '../../icons/silhouettes';
 import { Badge } from '../Badge';
+import { ProductPlaceholder } from '../ProductPlaceholder/ProductPlaceholder';
 import { Text } from '../Text';
 import { formatPrice } from '../PriceDisplay';
 
@@ -25,8 +27,12 @@ export interface OfferRowProps {
   minQuantity?: number;
   /** Бейдж: hit / new / discount. */
   badge?: string | null;
-  /** Первое фото (URL) или null — плейсхолдер. */
+  /** Первое фото (URL) или null — силуэт продукции. */
   imageUrl?: string | null;
+  /** Силуэт заглушки без фото (Промт 16, A). */
+  silhouette?: SilhouetteKey;
+  /** Камера-бейдж «добавьте фото» (кабинет продавца). */
+  showCameraBadge?: boolean;
   /** Архивное предложение — приглушение. */
   archived?: boolean;
   onPress?: () => void;
@@ -47,6 +53,8 @@ export function OfferRow({
   minQuantity,
   badge,
   imageUrl,
+  silhouette = 'crate',
+  showCameraBadge = true,
   archived = false,
   onPress,
   testID,
@@ -79,19 +87,13 @@ export function OfferRow({
           accessibilityLabel={`Фото: ${title}`}
         />
       ) : (
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: radii.sm,
-            backgroundColor: colors.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          accessibilityLabel="Фото не загружено"
-        >
-          <Package size={22} color={colors.textMuted} />
-        </View>
+        <ProductPlaceholder
+          silhouette={silhouette}
+          size={48}
+          showCameraBadge={showCameraBadge}
+          accessibilityLabel={`${title}, фото отсутствует`}
+          style={{ borderRadius: radii.sm }}
+        />
       )}
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

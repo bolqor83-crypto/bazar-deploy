@@ -75,9 +75,12 @@ describe('StockRow', () => {
     expect(screen.getByText('× 100 г')).toBeTruthy();
   });
 
-  it('без фото — плейсхолдер с подписью', async () => {
+  it('без фото — силуэт с камера-бейджем (Промт 16, A)', async () => {
     const screen = await render(<StockRow {...BASE} imageUrl={null} />);
-    expect(screen.getByLabelText('Фото не загружено')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Огурцы гладкие, фото отсутствует'),
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Нет фото — добавьте')).toBeTruthy();
   });
 });
 

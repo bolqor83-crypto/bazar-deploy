@@ -22,6 +22,7 @@ import {
   useToast,
 } from '@bazar/ui';
 import { RoleScreen } from '../../../../components/shell/RoleScreen';
+import { resolveSilhouette } from '../../../../utils/silhouette';
 import {
   useArchiveSellerProduct,
   useSellerProducts,
@@ -262,6 +263,7 @@ export default function SellerProductEditScreen() {
                       priceKopecks={offer.price}
                       stock={offer.stock}
                       badge={offer.badge}
+                      silhouette={resolveSilhouette(offer.title)}
                       archived={Boolean(offer.archivedAt)}
                       onPress={() =>
                         router.push(`/wholesale/offers/${offer.id}`)

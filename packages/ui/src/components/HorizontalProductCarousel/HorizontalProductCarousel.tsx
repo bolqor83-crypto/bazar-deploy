@@ -22,6 +22,7 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { hapticSelection } from '../../tokens/haptics';
+import type { SilhouetteKey } from '../../icons/silhouettes';
 import {
   ProductCard,
   PRODUCT_CARD_COMPACT_WIDTH,
@@ -35,6 +36,8 @@ export interface CarouselItem {
   title: string;
   subtitle?: string;
   image?: string;
+  /** Силуэт заглушки без фото (Промт 16, A). */
+  silhouette?: SilhouetteKey;
   /** Цена в копейках. */
   price: number;
   unit: string;
@@ -164,6 +167,7 @@ export function HorizontalProductCarousel({
                 name={item.title}
                 description={item.subtitle}
                 imageUrl={item.image ?? null}
+                silhouette={item.silhouette}
                 priceKopecks={item.price}
                 unit={item.unit}
                 badge={item.badge}

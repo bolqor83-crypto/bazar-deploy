@@ -27,6 +27,7 @@ import {
   stockLevelOf,
 } from '@bazar/ui';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
+import { resolveSilhouette } from '../../../utils/silhouette';
 import { useStockLocations, useStockOverview } from '../../../hooks/useStock';
 import { resolveMediaUrl } from '../../../services/api/client';
 
@@ -186,6 +187,7 @@ export default function StockOverviewScreen() {
               reservedQty={item.reservedQty}
               availableQty={item.availableQty}
               imageUrl={firstImage(item.offer.product.images)}
+              silhouette={resolveSilhouette(item.offer.product.name)}
               onPress={() => router.push(`/wholesale/stock/${item.offer.id}`)}
               testID={`stock-row-${item.offer.id}`}
             />

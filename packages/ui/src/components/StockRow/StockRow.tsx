@@ -10,8 +10,9 @@
  * соединяет useStockOverview.
  */
 import { Image, Pressable, View } from 'react-native';
-import { Package } from 'lucide-react-native';
 import { useTheme } from '../../theme';
+import type { SilhouetteKey } from '../../icons/silhouettes';
+import { ProductPlaceholder } from '../ProductPlaceholder/ProductPlaceholder';
 import { Text } from '../Text';
 import { formatPrice } from '../PriceDisplay';
 
@@ -60,8 +61,12 @@ export interface StockRowProps {
   reservedQty: number;
   /** Доступно к продаже. */
   availableQty: number;
-  /** Первое фото (URL) или null — плейсхолдер. */
+  /** Первое фото (URL) или null — силуэт продукции. */
   imageUrl?: string | null;
+  /** Силуэт заглушки без фото (Промт 16, A). */
+  silhouette?: SilhouetteKey;
+  /** Камера-бейдж «добавьте фото» (кабинет продавца). */
+  showCameraBadge?: boolean;
   onPress?: () => void;
   testID?: string;
 }
@@ -81,6 +86,8 @@ export function StockRow({
   reservedQty,
   availableQty,
   imageUrl,
+  silhouette = 'crate',
+  showCameraBadge = true,
   onPress,
   testID,
 }: StockRowProps) {
@@ -129,34 +136,28 @@ export function StockRow({
         paddingVertical: 6,
       }}
     >
-      {/* Плейсхолдер всегда под фото: пастерный фон + иконка;
-          загрузившееся фото закрывает его собой. */}
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: colors.surfaceMuted,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        accessibilityLabel={imageUrl ? `Фото: ${title}` : 'Фото не загружено'}
-      >
-        <Package size={18} color={colors.textMuted} />
-        {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-            }}
-          />
-        ) : null}
-      </View>
+      {/* Слот фото 40×40 (круг): фото или силуэт с камера-бейджем
+          (Промт 16, A) — «добавьте фото». */}
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: colors.surfaceMuted,
+          }}
+          accessibilityLabel={`Фото: ${title}`}
+        />
+      ) : (
+        <ProductPlaceholder
+          silhouette={silhouette}
+          size={40}
+          showCameraBadge={showCameraBadge}
+          accessibilityLabel={`${title}, фото отсутствует`}
+          style={{ borderRadius: 20 }}
+        />
+      )}
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="bodyStrong" numberOfLines={1} style={{ flexShrink: 1 }}>
           {title}

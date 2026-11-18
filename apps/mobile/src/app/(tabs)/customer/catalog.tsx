@@ -54,6 +54,7 @@ import {
   fetchProducts,
 } from '../../../services/api/catalogApi';
 import { resolveMediaUrl } from '../../../services/api/client';
+import { resolveSilhouette } from '../../../utils/silhouette';
 import {
   useAddToCart,
   useCart,
@@ -422,6 +423,7 @@ function CatalogBody() {
               isPerishable={item.bestOffer?.isPerishable}
               toneIndex={index}
               imageUrl={item.images[0] ? resolveMediaUrl(item.images[0]) : null}
+              silhouette={resolveSilhouette(item.name)}
               quantityInCart={inCart?.quantity}
               onIncrement={inCart ? () => increment(inCart) : undefined}
               onDecrement={inCart ? () => decrement(inCart) : undefined}

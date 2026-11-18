@@ -28,6 +28,7 @@ import {
 import { ChevronLeft, Heart } from 'lucide-react-native';
 import { fetchProduct } from '../../../../services/api/catalogApi';
 import { resolveMediaUrl } from '../../../../services/api/client';
+import { resolveSilhouette } from '../../../../utils/silhouette';
 import type { CarouselItem } from '@bazar/ui';
 
 /** Скелетон экрана товара: галерея — квадрат 1:1 (Промт 14b). */
@@ -74,6 +75,7 @@ function ProductBody({ id }: { id: string }) {
         title: item.name,
         subtitle: item.category.name,
         image: item.images[0] ? resolveMediaUrl(item.images[0]) : undefined,
+        silhouette: resolveSilhouette(item.name),
         price: item.bestOffer?.priceKopecks ?? 0,
         unit: item.unit,
         badge:
@@ -147,6 +149,7 @@ function ProductBody({ id }: { id: string }) {
             (ширина экрана минус боковые отступы 20+20). */}
         <ProductGallery
           images={product.images.map(resolveMediaUrl)}
+          silhouette={resolveSilhouette(product.name)}
           slideWidth={Math.floor(width - spacing.lg * 2)}
           height={Math.floor(width - spacing.lg * 2)}
         />

@@ -172,6 +172,11 @@ export { ProductCard } from './components/ProductCard';
 export type { ProductCardProps } from './components/ProductCard';
 export { PRODUCT_CARD_COMPACT_WIDTH } from './components/ProductCard';
 
+// Заглушка фото товара — силуэт продукции (Промт 16, Часть A)
+export { ProductPlaceholder } from './components/ProductPlaceholder/ProductPlaceholder';
+export type { ProductPlaceholderProps } from './components/ProductPlaceholder/ProductPlaceholder';
+export { PLACEHOLDER_SHAPE_RATIO } from './components/ProductPlaceholder/ProductPlaceholder';
+
 export { HorizontalProductCarousel } from './components/HorizontalProductCarousel';
 export type {
   HorizontalProductCarouselProps,
@@ -278,6 +283,18 @@ export {
   IconAnalytics,
 } from './icons';
 export type { ColoredIcon, ColoredIconProps, IconPaletteKey } from './icons';
+
+// Силуэты продукции — заглушки без фото (Промт 16, Часть A)
+export {
+  SILHOUETTES,
+  SILHOUETTE_LABELS,
+  placeholderPalette,
+} from './icons/silhouettes';
+export type {
+  SilhouetteKey,
+  SilhouetteProps,
+  PlaceholderPaletteKey,
+} from './icons/silhouettes';
 
 // Точка наличия (Промт 15, Часть B)
 export { StockDot } from './components/StockDot';
