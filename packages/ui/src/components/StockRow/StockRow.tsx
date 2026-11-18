@@ -91,7 +91,7 @@ export function StockRow({
     level === 'in'
       ? colors.success
       : level === 'low'
-        ? colors.accent
+        ? colors.accentText
         : colors.danger;
 
   // Фасовка-мультипакет («100 г») уходит под числом отдельной строкой:

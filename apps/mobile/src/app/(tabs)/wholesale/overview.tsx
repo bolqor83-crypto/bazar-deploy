@@ -45,7 +45,7 @@ export default function OverviewScreen() {
               <Metric
                 label="Мало"
                 value={overview.totals.low}
-                color={overview.totals.low > 0 ? colors.accent : undefined}
+                color={overview.totals.low > 0 ? colors.accentText : undefined}
               />
               <Metric
                 label="Нет"

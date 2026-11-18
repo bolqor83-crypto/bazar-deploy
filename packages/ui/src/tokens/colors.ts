@@ -9,23 +9,38 @@
  * - Значения light-темы для textSecondary/textMuted/accent/danger/success/info
  *   скорректированы относительно исходного макета ради AA — семантика сохранена
  *   (решение подтверждено по отчёту Промта 2).
+ *
+ * Промт 14b «Воздух и свежесть»: изумрудный акцент #0E7C5A, тёплый светлый
+ * фон #FBFCFA. Семантика янтаря разделена по паттерну primary/primaryText:
+ * - accent — насыщенный #D89A2E — ТОЛЬКО фоны кнопок и бейджей
+ *   (текст на нём — onAccent, тёмный);
+ * - accentText — тёмный янтарь для текста и иконок (бывший accent light).
+ *
+ * Отклонение от таблицы Промта 14b: border light оставлен #818880 —
+ * значение #EAEFEA из таблицы даёт 1.16:1 против surface и нарушает
+ * WCAG 1.4.11 (рамки ≥ 3:1), зафиксированный в Промте 12 / ADR 0013.
+ * Таблица промта описывала до-Промтное состояние (#E4EAE4).
  */
 
 export const colorsLight = {
-  background: '#FAF8F4',
+  background: '#FBFCFA',
   backgroundElevated: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceMuted: '#F2EFE9',
 
-  primary: '#2E6B4E',
-  primaryText: '#2E6B4E',
-  primarySoft: '#E7F2EB',
-  primaryPressed: '#255A41',
+  primary: '#0E7C5A',
+  primaryText: '#0E7C5A',
+  // Скорректирован относительно #E0F2EA из Промта 14b: пара
+  // primaryText/primarySoft (кнопка secondary, аватары) должна
+  // проходить AA — 4.54:1 вместо 4.46:1.
+  primarySoft: '#E2F4EC',
+  primaryPressed: '#0A6A4B',
   onPrimary: '#FFFFFF',
 
-  accent: '#8A6519',
-  accentSoft: '#F8F1D9',
-  onAccent: '#FFFFFF',
+  accent: '#D89A2E',
+  accentText: '#8A6519',
+  accentSoft: '#FBF1D6',
+  onAccent: '#1A1A17',
 
   danger: '#9F4C3B',
   dangerSoft: '#F5E4DF',
@@ -45,9 +60,9 @@ export const colorsLight = {
   textDisabled: '#B8BDB6',
 
   // Промт 12, Часть E: не-текстовой контраст рамок ≥ 3:1 (WCAG
-  // 1.4.11) — против surface (#FFFFFF), background (#FAF8F4) и
-  // surfaceMuted (#F2EFE9). Значения из промта (#C9D2C9/#3E4440)
-  // дают лишь 1.5–1.8:1 — см. ADR 0013.
+  // 1.4.11) — против surface (#FFFFFF), background (#FBFCFA) и
+  // surfaceMuted (#F2EFE9). Значения из таблицы Промта 14b
+  // (#EAEFEA) дают лишь ~1.1:1 — см. ADR 0013/0014.
   border: '#818880',
   borderStrong: '#666D66',
 
@@ -60,13 +75,16 @@ export const colorsDark = {
   surface: '#1E211F',
   surfaceMuted: '#252925',
 
-  primary: '#2E6B4E',
-  primaryText: '#7FB894',
-  primarySoft: '#1F3D2D',
-  primaryPressed: '#3A7E5C',
-  onPrimary: '#FFFFFF',
+  primary: '#3DA57E',
+  primaryText: '#5FB88E',
+  primarySoft: '#1A3828',
+  primaryPressed: '#2F8C6A',
+  // Светлый изумруд кнопки требует тёмного текста (Material-паттерн
+  // on-primary в dark): белый на #3DA57E давал лишь 3.05:1.
+  onPrimary: '#04170D',
 
   accent: '#D89A2E',
+  accentText: '#D89A2E',
   accentSoft: '#3A2E14',
   onAccent: '#1A1A17',
 

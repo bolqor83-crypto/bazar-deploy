@@ -26,7 +26,9 @@ export function StockIndicator({ stock }: StockIndicatorProps) {
 
   const dotColor: Record<StockLevel, string> = {
     in: colors.success,
-    low: colors.accent,
+    // Промт 14b: accent — только фоны; точка-индикатор — accentText
+    // (в light насыщенный #D89A2E давал 2.45:1 против surface).
+    low: colors.accentText,
     out: colors.danger,
   };
 

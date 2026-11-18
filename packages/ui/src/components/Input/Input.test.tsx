@@ -76,7 +76,7 @@ describe('Input', () => {
     await fireEvent(screen.getByLabelText('Поиск'), 'focus');
     // Перечитываем дерево: стили обновились после рендера
     const field = screen.getByLabelText('Поиск').parent;
-    expect(field?.props.style.borderColor).toBe('#2E6B4E');
+    expect(field?.props.style.borderColor).toBe('#0E7C5A');
     expect(field?.props.style.borderWidth).toBe(2);
   });
 

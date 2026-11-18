@@ -2,7 +2,8 @@
  * Badge — статусный бейдж.
  *
  * Варианты: neutral / success / warning / danger / info.
- * warning использует янтарь (accent) — красный запрещён.
+ * warning (Промт 14b) — сплошной янтарный фон accent с тёмным
+ * текстом onAccent (7.1:1): accent — только фоны, не текст.
  * Радиус pill, размеры sm/md.
  */
 import type { ReactNode } from 'react';
@@ -10,7 +11,8 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme';
 import { Text } from '../Text';
 
-export type BadgeVariant = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeVariant =
+  'neutral' | 'success' | 'warning' | 'danger' | 'info';
 export type BadgeSize = 'sm' | 'md';
 
 export interface BadgeProps {
@@ -19,13 +21,17 @@ export interface BadgeProps {
   children: ReactNode;
 }
 
-export function Badge({ variant = 'neutral', size = 'md', children }: BadgeProps) {
+export function Badge({
+  variant = 'neutral',
+  size = 'md',
+  children,
+}: BadgeProps) {
   const { colors, radii, spacing } = useTheme();
 
   const palette: Record<BadgeVariant, { bg: string; fg: string }> = {
     neutral: { bg: colors.surfaceMuted, fg: colors.textSecondary },
     success: { bg: colors.successSoft, fg: colors.success },
-    warning: { bg: colors.accentSoft, fg: colors.accent },
+    warning: { bg: colors.accent, fg: colors.onAccent },
     danger: { bg: colors.dangerSoft, fg: colors.danger },
     info: { bg: colors.infoSoft, fg: colors.info },
   };

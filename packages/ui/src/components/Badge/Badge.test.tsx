@@ -15,7 +15,7 @@ describe('Badge', () => {
     async (variant) => {
       const screen = await render(<Badge variant={variant}>Статус</Badge>);
       expect(screen.getByText('Статус')).toBeTruthy();
-    }
+    },
   );
 
   it('warning использует янтарь, а не красный', async () => {
@@ -23,7 +23,9 @@ describe('Badge', () => {
     const json = JSON.stringify(screen.toJSON());
     expect(json).not.toContain('#FF0000');
     expect(json).not.toContain('#DC3545');
-    expect(json).toContain('#8A6519');
+    // Промт 14b: сплошной янтарный фон + тёмный текст onAccent.
+    expect(json).toContain('#D89A2E');
+    expect(json).toContain('#1A1A17');
   });
 
   it.each(['sm', 'md'] as const)('размер %s рендерится', async (size) => {

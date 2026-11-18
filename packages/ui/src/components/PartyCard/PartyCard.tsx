@@ -90,7 +90,7 @@ export function PartyCard({
         ) : null}
         {rating !== null ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Star size={14} color={colors.accent} />
+            <Star size={14} color={colors.accentText} />
             <Text variant="caption" mono color="textSecondary">
               {formatRating(rating)}
             </Text>

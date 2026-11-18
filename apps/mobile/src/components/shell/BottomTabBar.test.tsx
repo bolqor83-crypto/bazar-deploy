@@ -97,8 +97,8 @@ describe('BottomTabBar', () => {
   it('активный пункт окрашен в primary, неактивный — textSecondary', async () => {
     const screen = await setup();
     const json = JSON.stringify(screen.toJSON());
-    // #2E6B4E — primary (активный), #565E55 — textSecondary (неактивный)
-    expect(json).toContain('#2E6B4E');
+    // #0E7C5A — primary (активный, Промт 14b), #565E55 — textSecondary
+    expect(json).toContain('#0E7C5A');
     expect(json).toContain('#565E55');
   });
 });

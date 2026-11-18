@@ -76,9 +76,7 @@ export default function StockOverviewScreen() {
   const counts = useMemo(() => {
     const needle = query.toLowerCase();
     const scoped = overview.rows.filter((row) =>
-      needle
-        ? row.offer.product.name.toLowerCase().includes(needle)
-        : true,
+      needle ? row.offer.product.name.toLowerCase().includes(needle) : true,
     );
     let low = 0;
     let out = 0;
@@ -344,7 +342,7 @@ function SummaryBar({
     {
       label: 'Мало',
       value: totals.low,
-      color: totals.low > 0 ? colors.accent : colors.text,
+      color: totals.low > 0 ? colors.accentText : colors.text,
     },
     // Счёт «Нет» — нейтральным цветом: терракотовые цифры в панели
     // читались как «красный сигнал» (VLM-аудит доработки); сигнал

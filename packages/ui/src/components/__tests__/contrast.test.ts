@@ -53,10 +53,11 @@ type PairName =
   | 'onDanger/danger'
   | 'onAccent/accent'
   | 'primaryText/surface'
+  | 'primaryText/primarySoft'
   | 'danger/surface'
   | 'success/surface'
   | 'info/surface'
-  | 'accent/surface';
+  | 'accentText/surface';
 
 type BorderPairName =
   | 'border/surface'
@@ -72,10 +73,14 @@ const PAIRS: readonly [PairName, keyof ColorPalette, keyof ColorPalette][] = [
   ['onDanger/danger', 'onDanger', 'danger'],
   ['onAccent/accent', 'onAccent', 'accent'],
   ['primaryText/surface', 'primaryText', 'surface'],
+  // Промт 14b: текст на мягком фоне — кнопка secondary, аватары.
+  ['primaryText/primarySoft', 'primaryText', 'primarySoft'],
   ['danger/surface', 'danger', 'surface'],
   ['success/surface', 'success', 'surface'],
   ['info/surface', 'info', 'surface'],
-  ['accent/surface', 'accent', 'surface'],
+  // Промт 14b: accent — только фоны (кнопки, бейджи), текст/иконки
+  // янтарной семантики — accentText (бывший accent light).
+  ['accentText/surface', 'accentText', 'surface'],
 ];
 
 /** Рамки против всех смежных фонов (WCAG 1.4.11, Промт 12). */
