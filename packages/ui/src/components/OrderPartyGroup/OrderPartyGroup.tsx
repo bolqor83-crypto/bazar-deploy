@@ -54,8 +54,10 @@ export interface OrderPartyGroupProps {
   totalSum: number;
   expanded: boolean;
   onToggle: () => void;
-  /** OrderCard'ы группы — видны только в развёрнутом состоянии. */
-  children: ReactNode;
+  /** OrderCard'ы группы — видны только в развёрнутом состоянии.
+   * Необязательные: свёрнутый заголовок рендерится и без карточек
+   * (например, пока данные фильтруются). */
+  children?: ReactNode;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
