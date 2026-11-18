@@ -424,5 +424,37 @@
     "authState": "user",
     "role": "wholesale_seller",
     "waitForText": "Все инструменты"
+  },
+  {
+    "name": "orders-grouped-dark-390",
+    "file": "orders-grouped-dark-390.png",
+    "url": "/customer/orders",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Опт-Юг"
+  },
+  {
+    "name": "orders-collapsed-light-390",
+    "file": "orders-collapsed-light-390.png",
+    "url": "/customer/orders",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Опт-Юг",
+    "ordersCollapse": true
+  },
+  {
+    "name": "seller-orders-grouped-light-390",
+    "file": "seller-orders-grouped-light-390.png",
+    "url": "/wholesale/orders",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Заказы",
+    "sellerOrdersGrouped": true
   }
 ]

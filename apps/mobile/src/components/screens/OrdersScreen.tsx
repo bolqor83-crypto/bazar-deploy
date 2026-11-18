@@ -157,7 +157,10 @@ export default function OrdersScreen({ basePath }: OrdersScreenProps) {
           onOpenOrder={(orderId) =>
             router.push(`/${basePath}/orders/${orderId}` as const)
           }
-          testIDPrefix="orders"
+          // Префикс «order» даёт карточкам testID order-card-… —
+          // селектор golden-съёмки openFirstOrder их находит и в
+          // групповом виде (карточка = order-card-<группа>-<номер>).
+          testIDPrefix="order"
         />
         <View style={{ paddingTop: spacing.lg }} />
       </View>

@@ -147,13 +147,18 @@ const DEMO_PHONE_RAW = '+79001234567';
  *  Промт 14b: через fetchWithRetry — транзиентные 500 от Neon
  *  больше не роняют прогон на этапе логина. */
 async function apiLogin() {
+  return apiLoginAs(DEMO_PHONE_RAW, DEMO_PASSWORD);
+}
+
+/** Логин произвольным аккаунтом (Промт 15, E: второй продавец). */
+async function apiLoginAs(phone, password) {
   const res = await fetchWithRetry(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: DEMO_PHONE_RAW, password: DEMO_PASSWORD }),
+    body: JSON.stringify({ phone, password }),
   });
   if (!res.ok) {
-    throw new Error(`apiLogin: ${res.status} ${await res.text()}`);
+    throw new Error(`apiLoginAs: ${res.status} ${await res.text()}`);
   }
   const body = await res.json();
   return body.accessToken;
@@ -631,6 +636,120 @@ async function prepareDemoDeliveries() {
       });
     }
 
+    // 5.6. Второй продавец для golden-группировки (Промт 15, E):
+    //      «Агрофирма Север» + предложение ДОРОЖЕ лучшего (bestOffer
+    //      каталога не меняется — он самый дешёвый) + 1 завершённый
+    //      заказ Ивана к нему. Группа «Север» свёрнута по умолчанию:
+    //      в кадре видны оба состояния (Промт 15, §8.1).
+    const north = await prisma.organization.upsert({
+      where: { id: 'golden-north-org' },
+      create: {
+        id: 'golden-north-org',
+        name: 'Агрофирма Север',
+        type: 'WHOLESALE',
+      },
+      update: { name: 'Агрофирма Север', type: 'WHOLESALE' },
+    });
+    const northUser = await prisma.user.upsert({
+      where: { phone: '+79007770001' },
+      create: {
+        phone: '+79007770001',
+        name: 'Мария Северова',
+        // Настоящий argon2-хеш: seller-переходы заказа Севера
+        // выполняются её логином (guard проверяет membership).
+        passwordHash:
+          '$argon2id$v=19$m=19456,t=2,p=1$EI3N5kfTEy3Vg3b4LRBkOw$pulYjazphuOgDZfmL/XSvojCGfawDpBVBbY/mlutoGA',
+        memberships: {
+          create: {
+            organizationId: north.id,
+            role: 'WHOLESALE_SELLER',
+          },
+        },
+      },
+      // Хеш обновляется и на повторных прогонах (первый запуск мог
+      // оставить пароль-заглушку до фикса).
+      update: {
+        passwordHash:
+          '$argon2id$v=19$m=19456,t=2,p=1$EI3N5kfTEy3Vg3b4LRBkOw$pulYjazphuOgDZfmL/XSvojCGfawDpBVBbY/mlutoGA',
+      },
+    });
+    void northUser;
+    await prisma.stockLocation.upsert({
+      where: { id: 'golden-north-loc' },
+      create: {
+        id: 'golden-north-loc',
+        organizationId: north.id,
+        name: 'Склад Севера',
+        type: 'WAREHOUSE',
+        address: 'ул. Северная, 1',
+        isDefault: true,
+      },
+      update: {},
+    });
+    const tomatoes = productByName.get('Помидоры розовые');
+    if (!tomatoes?.bestOffer) {
+      throw new Error('нет предложения помидоров для сценария Севера');
+    }
+    // Оффер Севера переиспользуется между прогонами (движения
+    // склада ссылаются на него каскадом) — цена обновляется,
+    // остаток выравнивается ADJUSTMENT-движением.
+    const northPrice = Math.round(tomatoes.bestOffer.priceKopecks * 1.5);
+    let northOffer = await prisma.productOffer.findFirst({
+      where: { organizationId: north.id, productId: tomatoes.id },
+    });
+    if (!northOffer) {
+      northOffer = await prisma.productOffer.create({
+        data: {
+          productId: tomatoes.id,
+          organizationId: north.id,
+          minQuantity: 5,
+        },
+      });
+    }
+    await prisma.productOffer.update({
+      where: { id: northOffer.id },
+      data: { priceKopecks: northPrice, minQuantity: 5 },
+    });
+    await ensureOfferBalance(
+      prisma,
+      {
+        id: northOffer.id,
+        organization: { id: north.id },
+        minQuantity: northOffer.minQuantity,
+      },
+      100,
+    );
+    const orderNorth = (
+      await createOrder([[{ id: northOffer.id, minQuantity: 5 }, 5]], {
+        method: 'pickup',
+        address: 'Склад Севера, ул. Северная, 1',
+        comment: 'Golden: группа второго продавца',
+      })
+    )[0];
+    // Seller-действия — от имени Марии (членство в «Севере»).
+    const northToken = await apiLoginAs('+79007770001', 'golden-north-123');
+    await apiPost(
+      northToken,
+      `/seller/orders/${orderNorth.id}/confirm`,
+      undefined,
+      north.id,
+    );
+    for (const action of ['preparing', 'ready', 'complete']) {
+      await apiPost(
+        northToken,
+        `/seller/orders/${orderNorth.id}/${action}`,
+        undefined,
+        north.id,
+      );
+    }
+    await prisma.order.update({
+      where: { id: orderNorth.id },
+      data: {
+        createdAt: new Date('2026-11-14T09:00:00Z'),
+        updatedAt: new Date('2026-11-14T09:00:00Z'),
+      },
+    });
+
     // 6. Уведомления сценария — прочитаны (badge профиля = 0).
     await prisma.notification.updateMany({
       where: { readAt: null },
@@ -963,7 +1082,10 @@ export async function captureSet(entries) {
         }
         if (entry.openFirstProduct) {
           const card = page.locator('[data-testid="catalog-product"]').first();
-          await card.click();
+          // Промт 15: центр карточки накрыт hitSlop-зоной степпера
+          // (первый товар демо-сценария всегда «в корзине») — клик
+          // по верхней части фото, вне точки/бейджа/степпера.
+          await card.click({ position: { x: 30, y: 100 } });
           // Ждать контент товара (не скелетон): карточка с testID product-card
           // появляется после загрузки данных из API.
           await page
@@ -992,6 +1114,35 @@ export async function captureSet(entries) {
         }
         if (entry.openContextSheet) {
           await openContextSheet(page);
+        }
+        // Промт 15, E: свёрнутая группа — клик по заголовку первой.
+        if (entry.ordersCollapse) {
+          await page
+            .waitForSelector('[data-testid="orders-group-0-header"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page
+            .locator('[data-testid="orders-group-0-header"]')
+            .first()
+            .click()
+            .catch(() => {});
+          await page.waitForTimeout(600);
+        }
+        // Промт 15, E: заказы продавца — фильтр «Все» (группы
+        // по покупателям, включая завершённых).
+        if (entry.sellerOrdersGrouped) {
+          await page
+            .waitForSelector('[data-testid="seller-orders-filter-all"]', {
+              timeout: 10_000,
+            })
+            .catch(() => {});
+          await page
+            .locator('[data-testid="seller-orders-filter-all"]')
+            .first()
+            .click()
+            .catch(() => {});
+          await page.waitForTimeout(1200);
         }
         // Промт 11b: золотые экраны склада оптовика.
         if (entry.stockSearch) {
