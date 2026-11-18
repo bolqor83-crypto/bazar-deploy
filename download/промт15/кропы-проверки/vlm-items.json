@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Проблемы нет. Строка позиции «Картофель мытый 40 × 1 кг» и сумма «1 800 ₽» читаются полностью, наложений и обрезок нет. Стрелка справа также не перекрывает сумму.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1795026324,
+  "id": "20261119022522b7aaba4f7217465f",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261119022522b7aaba4f7217465f",
+  "usage": {
+    "completion_tokens": 59,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 428,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 487
+  }
+}

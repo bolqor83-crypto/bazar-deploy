@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. Текст «Бананы», «89 ₽», «Грецкий орех», «490 ₽» затемнён шитом-оверлеем внизу — читается плохо.\n2. Кнопка «+» на карточке «Грецкий орех» сливается с тёмным фоном.\n3. Шит «Переключить контекст» перекрывает нижнюю часть карточек товаров (кнопка «В корзину» не видна).",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1795026238,
+  "id": "2026111902235565718631f7f649a6",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "2026111902235565718631f7f649a6",
+  "usage": {
+    "completion_tokens": 104,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1986,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2090
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "**Различима хорошо.**\n\nТочка наличия (зелёный кружок в левом верхнем углу) расположена отдельно от бейджа «Скоропорт» (он в правом углу), на тёмно-размытом фоне фото. Зелёный цвет контрастирует с тёмным фоном и с белым бейджем, не сливается ни с тем, ни с другим.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1795026309,
+  "id": "202611190225061c6297fcf7c546b4",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "202611190225061c6297fcf7c546b4",
+  "usage": {
+    "completion_tokens": 96,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 275,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 371
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. Фильтр-чип «Заверш…» справа обрезан краем экрана.\n2. В карточке BZ-2026-000008 строка «Лук репчатый золотистый 12 …» обрезается многоточием и почти налезает на сумму «1 976 ₽».\n3. Последняя карточка BZ-2026-000005 обрезана снизу панелью навигации (строка «Бананы 5 × 1 кг» прижата к таббару).",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1795026211,
+  "id": "20261119022328c89493b09e8c473a",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261119022328c89493b09e8c473a",
+  "usage": {
+    "completion_tokens": 127,
+    "completion_tokens_details": {
+      "reasoning_tokens": 126
+    },
+    "prompt_tokens": 1995,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2122
+  }
+}
