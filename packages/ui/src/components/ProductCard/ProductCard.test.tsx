@@ -211,12 +211,39 @@ describe('ProductCard', () => {
     expect(screen.queryByText('Опт-Юг')).toBeNull();
   });
 
-  it('заголовок — фиксированная высота 46 (сетка не прыгает, Промт 15)', async () => {
+  it('заголовок — bodySmall 15/600 с фиксированной высотой 44 (Промт 16, B)', async () => {
     const screen = await render(
       <ProductCard name="Молоко 3,2%" priceKopecks={8_900} />,
     );
     const json = JSON.stringify(screen.toJSON());
-    expect(json).toContain('"height":46');
+    expect(json).toContain('"height":44');
+    expect(json).not.toContain('"height":46');
+    // Типографика заголовка: variant bodySmall + weight 600.
+    const title = screen.getByText('Молоко 3,2%');
+    const style = Object.assign(
+      {},
+      ...[title.props.style].flat(Infinity),
+    ) as Record<string, unknown>;
+    expect(style.fontWeight).toBe('600');
+    expect(style.fontSize).toBe(15);
+    expect(style.lineHeight).toBe(22);
+  });
+
+  it('длинное название — 2 строки, сетка не прыгает (Промт 16, B)', async () => {
+    const long = await render(
+      <ProductCard
+        name="Картофель продовольственный мытый"
+        priceKopecks={3_200}
+      />,
+    );
+    const short = await render(<ProductCard name="Лук" priceKopecks={3_200} />);
+    // Контейнер заголовка — одна и та же фиксированная высота.
+    const longJson = JSON.stringify(long.toJSON());
+    const shortJson = JSON.stringify(short.toJSON());
+    expect(longJson).toContain('"height":44');
+    expect(shortJson).toContain('"height":44');
+    // Обрезка tail и 2 строки — на длинном названии.
+    expect(long.getByText('Картофель продовольственный мытый')).toBeTruthy();
   });
 
   it('кнопка «+» — плавающая поверх фото, не в потоке цены (Промт 15)', async () => {
@@ -240,14 +267,14 @@ describe('ProductCard', () => {
     expect(style.right).toBe(12);
   });
 
-  it('высота карточки на ширине 173 — 275±5 (Промт 15, C)', async () => {
-    // Фото 173 (aspect 1 при bleed) + paddingTop 6 + title 46
-    // + gap 6 + цена 24 + paddingBottom md = 271.
+  it('высота карточки на ширине 173 — 270±5 (Промт 16, B)', async () => {
+    // Фото 173 (aspect 1 при bleed) + paddingTop 6 + title 44
+    // + gap 6 + цена 24 + paddingBottom md = 269.
     // Токен-зависимая часть (paddingBottom) — реальная: дрейф
     // шкалы ломает тест.
     const total = 173 + 6 + PRODUCT_CARD_TITLE_HEIGHT + 6 + 24 + spacing.md;
-    expect(total).toBeGreaterThanOrEqual(270);
-    expect(total).toBeLessThanOrEqual(280);
+    expect(total).toBeGreaterThanOrEqual(265);
+    expect(total).toBeLessThanOrEqual(275);
   });
 
   it('onPress делает карточку кнопкой и вызывается', async () => {
