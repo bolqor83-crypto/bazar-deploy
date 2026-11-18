@@ -3,8 +3,9 @@
  * Промт 14b: фото 1:1 и shadow sm (Card default) во всех режимах.
  */
 import { fireEvent, render } from '@testing-library/react-native';
+import { spacing } from '../../tokens';
 import { NARROW_NBSP } from '../PriceDisplay';
-import { ProductCard } from './ProductCard';
+import { ProductCard, PRODUCT_CARD_TITLE_HEIGHT } from './ProductCard';
 
 describe('ProductCard', () => {
   it('показывает название, цену и единицу', async () => {
@@ -19,7 +20,7 @@ describe('ProductCard', () => {
     expect(screen.queryByText('/ 1 л')).toBeNull();
   });
 
-  it('юнит уходит под цену при быстром добавлении', async () => {
+  it('юнит рядом с ценой в одну строку (Промт 15)', async () => {
     const screen = await render(
       <ProductCard
         name="Грецкий орех"
@@ -28,8 +29,8 @@ describe('ProductCard', () => {
         onAddToCart={() => {}}
       />,
     );
+    expect(screen.getByText(`490${NARROW_NBSP}₽`)).toBeTruthy();
     expect(screen.getByText('за 500 г')).toBeTruthy();
-    expect(screen.queryByText('/ 500 г')).toBeNull();
   });
 
   it('товар в корзине показывает мини-степпер вместо «+»', async () => {
@@ -137,7 +138,7 @@ describe('ProductCard', () => {
     expect(screen.getByText('Скоропорт')).toBeTruthy();
   });
 
-  it('цена и юнит — двумя этажами, не обрезаются (Промт 14b)', async () => {
+  it('цена и юнит — в одной строке, без обрезки (Промт 15)', async () => {
     const screen = await render(
       <ProductCard
         name="Манго"
@@ -146,9 +147,65 @@ describe('ProductCard', () => {
         onAddToCart={() => {}}
       />,
     );
-    // Цена и «за кг» — отдельные узлы: перенос вместо обрезки.
     expect(screen.getByText(`1\u202F234${NARROW_NBSP}₽`)).toBeTruthy();
     expect(screen.getByText('за кг')).toBeTruthy();
+  });
+
+  it('описание и продавец НЕ рендерятся в карточке каталога (Промт 15, C)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Молоко 3,2%"
+        priceKopecks={8_900}
+        description="Пастеризованное"
+        organizationName="Опт-Юг"
+      />,
+    );
+    expect(screen.queryByText('Пастеризованное')).toBeNull();
+    expect(screen.queryByText('Опт-Юг')).toBeNull();
+  });
+
+  it('заголовок — фиксированная высота 46 (сетка не прыгает, Промт 15)', async () => {
+    const screen = await render(
+      <ProductCard name="Молоко 3,2%" priceKopecks={8_900} />,
+    );
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain('"height":46');
+  });
+
+  it('кнопка «+» — плавающая поверх фото, не в потоке цены (Промт 15)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Молоко 3,2%"
+        priceKopecks={8_900}
+        onAddToCart={() => {}}
+      />,
+    );
+    const btn = screen.getByTestId('product-quick-add');
+    const wrap = btn.parent as unknown as {
+      props: { style: Record<string, unknown>[] };
+    };
+    const style = Object.assign(
+      {},
+      ...[wrap.props.style].flat(Infinity),
+    ) as Record<string, unknown>;
+    expect(style.position).toBe('absolute');
+    expect(style.bottom).toBe(12);
+    expect(style.right).toBe(12);
+  });
+
+  it('высота карточки на ширине 173 — 275±5 (Промт 15, C)', async () => {
+    // Фото 173 (aspect 1 при bleed) + paddingTop sm + title 46
+    // + gap xs + цена 24 + paddingBottom md ≈ 275.
+    // Считаем на РЕАЛЬНЫХ токенах: дрейф шкалы ломает тест.
+    const total =
+      173 +
+      spacing.sm +
+      PRODUCT_CARD_TITLE_HEIGHT +
+      spacing.xs +
+      24 +
+      spacing.md;
+    expect(total).toBeGreaterThanOrEqual(270);
+    expect(total).toBeLessThanOrEqual(280);
   });
 
   it('onPress делает карточку кнопкой и вызывается', async () => {

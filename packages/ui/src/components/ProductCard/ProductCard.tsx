@@ -4,29 +4,27 @@
  * Только презентация: данные приходят пропсами. Фото товара —
  * Image с cover-заглушкой (иконка на пастельном тоне) при отсутствии
  * или ошибке загрузки. Цена — PriceDisplay (копейки, U+202F, табличные
- * цифры), наличие — StockIndicator.
+ * цифры), наличие — StockDot.
  *
- * Промт 8: добавлены описание, продавец, бейджи «Хит»/«Скоропорт»
- * и ширина под сетку каталога (2 колонки).
+ * Промт 12: бейджи «Хит»/«Скоропорт», кнопка быстрого добавления,
+ * мини-степпер «в корзине».
  *
- * Промт 12 (доработка по VLM-аудиту): кнопка быстрого добавления
- * в корзину, бейджи поверх фото и цена с юнитом «/ кг» в одной
- * строке — у всех карточек одинаковая структура.
+ * Промт 14b: фото 1:1, радиус md, Card default (shadow sm).
  *
- * Промт 12 (итерация 3): реальные фото товаров (imageUrl) вместо
- * постоянной заглушки-корзины (VLM: «черновик, не инструмент»);
- * юнит под ценой («за 500 г») — строка «490 ₽ / 500 г» съедалась
- * кнопкой «+»; мини-степпер «в корзине» вместо «+» (состояние
- * «товар уже в корзине»).
+ * Промт 15 (Часть C): компактная карточка каталога —
+ * - фото на всю ширину карточки (bleed, без боковых полей);
+ * - заголовок — 2 строки bodyStrong с ФИКСИРОВАННОЙ высотой 46:
+ *   сетка не «прыгает» от длины названия;
+ * - цена — одна строка bodyStrong + юнит (перенос на 360px);
+ * - степпер/«+» — плавающий, absolute bottom/right ПОВЕРХ ФОТО
+ *   (паттерн доставки еды): не занимает высоту карточки;
+ * - описание и продавец из карточки убраны: в сетке каталога
+ *   решают фото, название и цена (пропцы оставлены для
+ *   совместимости вызовов, игнорируются — решение в отчёте 15).
  *
- * Промт 14b: фото 1:1 во всех режимах (квадрат, как в compact),
- * радиус фото md (16), бейджи с отступом sm от края фото. Обёртка —
- * Card default (shadow sm, без border) — «карточка товара = тень».
- *
- * Промт 15 (Часть B): наличие — точка StockDot в левом верхнем
- * углу фото; бейджи переехали в правый верхний, чтобы не
- * пересекаться с точкой. Текст наличия из карточки убран —
- * он остаётся в <StockIndicator> на детальной странице.
+ * Высота на 390 (колонка 173): фото 173 (bleed от верхнего края)
+ * + 12 + 46 (заголовок) + 4 + 24 (цена) + 16 = 275±5 —
+ * 2×2 видно без скролла.
  */
 import { useState } from 'react';
 import {
@@ -49,6 +47,9 @@ import type { StockLevel } from '../StockIndicator';
 /** Ширина compact-карточки (Промт 14a): карусель похожих. */
 export const PRODUCT_CARD_COMPACT_WIDTH = 160;
 
+/** Фиксированная высота заголовка: 2 строки bodyStrong (17/22). */
+export const PRODUCT_CARD_TITLE_HEIGHT = 46;
+
 export interface ProductCardProps {
   name: string;
   /** Цена в копейках. */
@@ -59,9 +60,9 @@ export interface ProductCardProps {
   stock?: StockLevel;
   /** Единица измерения: «кг», «шт», «упак». */
   unit?: string;
-  /** Короткое описание: одна строка с многоточием. */
+  /** Короткое описание — НЕ рендерится с Промта 15 (Часть C). */
   description?: string;
-  /** Продавец лучшего предложения («Опт-Юг»). */
+  /** Продавец — НЕ рендерится с Промта 15 (Часть C). */
   organizationName?: string;
   /** Хит продаж (badge === 'hit' в API). */
   isHit?: boolean;
@@ -81,7 +82,7 @@ export interface ProductCardProps {
   onPress?: () => void;
   testID?: string;
   /** Компактный режим (Промт 14a): для карусели похожих товаров —
-   * ширина 160, квадратное фото, без корзинных действий. */
+   *  ширина 160, квадратное фото, без корзинных действий. */
   compact?: boolean;
   /** Единый бейдж для compact-режима («Хит», «Скоропорт»). */
   badge?: string;
@@ -95,8 +96,9 @@ export function ProductCard({
   oldPriceKopecks = null,
   stock,
   unit,
+  // Description остаётся для compact-режима (карусель 14a);
+  // из карточки каталога убран (Промт 15, C).
   description,
-  organizationName,
   isHit = false,
   isPerishable = false,
   toneIndex = 0,
@@ -121,11 +123,109 @@ export function ProductCard({
   // пара isHit/isPerishable.
   const hasBadges = compact ? Boolean(badge) : Boolean(isHit || isPerishable);
 
-  const body = (
-    <View style={{ gap: compact ? spacing.xs : spacing.sm }}>
-      {/* Промт 15: точка наличия — абсолют в левом верхнем углу
-          фото; бейджи — в правом верхнем (не пересекаются).
-          Отступ от края фото — spacing.sm. */}
+  // Корзинное действие карточки: мини-степпер (уже в корзине)
+  // или «+» (быстрое добавление). В compact-режиме их нет.
+  const showStepper =
+    !compact &&
+    quantityInCart > 0 &&
+    onIncrement !== undefined &&
+    onDecrement !== undefined;
+  const showQuickAdd = !compact && !showStepper && onAddToCart !== undefined;
+
+  /** Плавающий корпус действия — absolute поверх фото. */
+  const floatingAction =
+    showStepper || showQuickAdd ? (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: spacing.sm + 4,
+          right: spacing.sm + 4,
+          zIndex: 2,
+        }}
+      >
+        {showStepper ? (
+          <View
+            testID="product-in-cart-stepper"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 36,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: colors.borderStrong,
+              backgroundColor: colors.surface,
+              overflow: 'hidden',
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Убрать партию: ${name}`}
+              onPress={onDecrement}
+              hitSlop={{ top: 6, bottom: 6, left: 10, right: 10 }}
+              testID="product-decrement"
+              style={({ pressed }) => ({
+                width: 30,
+                height: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Minus size={15} color={colors.primaryText} />
+            </Pressable>
+            <Text
+              variant="bodySmall"
+              mono
+              style={{ minWidth: 20, textAlign: 'center' }}
+            >
+              {quantityInCart}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Добавить партию: ${name}`}
+              onPress={onIncrement}
+              hitSlop={{ top: 6, bottom: 6, left: 10, right: 10 }}
+              testID="product-increment"
+              style={({ pressed }) => ({
+                width: 30,
+                height: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Plus size={15} color={colors.primaryText} />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Добавить в корзину: ${name}`}
+            onPress={onAddToCart}
+            hitSlop={4}
+            testID="product-quick-add"
+            style={({ pressed }) => [
+              {
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              pressed ? { opacity: 0.8 } : null,
+            ]}
+          >
+            <Plus size={21} color={colors.onPrimary} />
+          </Pressable>
+        )}
+      </View>
+    ) : null;
+
+  const body = compact ? (
+    <View style={{ gap: spacing.xs }}>
+      {/* Compact (Промт 14a): квадратное фото с бейджем,
+         StockDot — для консистентности с каталогом (Промт 15). */}
       <View
         style={{
           backgroundColor: placeholderTone(toneIndex),
@@ -153,29 +253,12 @@ export function ProductCard({
               position: 'absolute',
               top: spacing.sm,
               right: spacing.sm,
-              flexDirection: 'row',
-              gap: spacing.xs,
               zIndex: 1,
             }}
           >
-            {compact ? (
-              <Badge variant="neutral" size="sm">
-                {badge}
-              </Badge>
-            ) : (
-              <>
-                {isHit ? (
-                  <Badge variant="warning" size="sm">
-                    Хит
-                  </Badge>
-                ) : null}
-                {isPerishable ? (
-                  <Badge variant="neutral" size="sm">
-                    Скоропорт
-                  </Badge>
-                ) : null}
-              </>
-            )}
+            <Badge variant="neutral" size="sm">
+              {badge}
+            </Badge>
           </View>
         ) : null}
         {showImage ? (
@@ -194,180 +277,159 @@ export function ProductCard({
               justifyContent: 'center',
             }}
           >
-            <ShoppingBasket size={compact ? 28 : 32} color={colors.textMuted} />
+            <ShoppingBasket size={28} color={colors.textMuted} />
           </View>
         )}
       </View>
 
-      {compact ? (
-        /* Compact (Промт 14a): bodySmall 600, две строки, цена
-           сильнее текста; без корзинных действий. */
-        <>
+      <Text variant="bodySmall" style={{ fontWeight: '600' }} numberOfLines={2}>
+        {name}
+      </Text>
+      {description ? (
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
+          {description}
+        </Text>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+        <PriceDisplay value={priceKopecks} oldPrice={null} size="sm" />
+        {unit ? (
           <Text
-            variant="bodySmall"
-            style={{ fontWeight: '600' }}
-            numberOfLines={2}
+            variant="caption"
+            color="textMuted"
+            numberOfLines={1}
+            style={{ marginLeft: spacing.xs }}
           >
-            {name}
+            {`/ ${unit}`}
           </Text>
-          {description ? (
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {description}
-            </Text>
-          ) : null}
-          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-            <PriceDisplay value={priceKopecks} oldPrice={null} size="sm" />
-            {unit ? (
-              <Text
-                variant="caption"
-                color="textMuted"
-                numberOfLines={1}
-                style={{ marginLeft: spacing.xs }}
-              >
-                {`/ ${unit}`}
-              </Text>
-            ) : null}
-          </View>
-        </>
-      ) : (
-        <>
-          <Text variant="bodyStrong" numberOfLines={2}>
-            {name}
-          </Text>
-
-          {description ? (
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {description}
-            </Text>
-          ) : null}
-
-          {/* Цена и юнит в два этажа: «490 ₽ / 500 г» в одну строку
-              съедалась кнопкой «+» (VLM-аудит итерации 3) — юнит теперь
-              под ценой («за 500 г»). Промт 14b (VLM): в узкой карточке
-              сетки мини-степпер наезжал на цену — flexWrap переносит
-              степпер/«+» на новую строку, цена не режется. Справа —
-              «+» или мини-степпер, когда товар уже в корзине. */}
+        ) : null}
+      </View>
+    </View>
+  ) : (
+    <View>
+      {/* Фото — bleed на всю ширину карточки от верхнего края:
+          верхние углы повторяют радиус карточки, нижние прямые.
+          Точка наличия — слева сверху, бейджи — справа сверху,
+          степпер/«+» — плавающий справа внизу (Промт 15, B+C). */}
+      <View
+        style={{
+          backgroundColor: placeholderTone(toneIndex),
+          overflow: 'hidden',
+          aspectRatio: 1,
+          borderTopLeftRadius: radii.md,
+          borderTopRightRadius: radii.md,
+        }}
+      >
+        {stock ? (
           <View
+            testID="product-stock-dot"
             style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: spacing.xs,
+              position: 'absolute',
+              top: spacing.sm,
+              left: spacing.sm,
+              zIndex: 1,
             }}
           >
-            <View style={{ flexShrink: 0 }}>
-              <PriceDisplay value={priceKopecks} oldPrice={oldPriceKopecks} />
-              {unit ? (
-                <Text
-                  variant="micro"
-                  color="textMuted"
-                  numberOfLines={1}
-                  style={{ marginTop: 1 }}
-                >
-                  {`за ${unit}`}
-                </Text>
-              ) : null}
-            </View>
-            {quantityInCart > 0 && onIncrement && onDecrement ? (
-              <View
-                testID="product-in-cart-stepper"
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  height: 40,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: colors.borderStrong,
-                  backgroundColor: colors.primarySoft,
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Промт 14b (VLM, раунд 2): компактные кнопки 28 —
-                    степпер влезает в одну строку с ценой карточки
-                    сетки 390/430 (перенос остаётся страховкой на 360);
-                    зоны нажатия добираются hitSlop до 48×48. */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Убрать партию: ${name}`}
-                  onPress={onDecrement}
-                  hitSlop={{ top: 4, bottom: 4, left: 10, right: 10 }}
-                  testID="product-decrement"
-                  style={({ pressed }) => ({
-                    width: 28,
-                    height: 40,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: pressed ? 0.6 : 1,
-                  })}
-                >
-                  <Minus size={16} color={colors.primaryText} />
-                </Pressable>
-                <Text
-                  variant="bodyStrong"
-                  mono
-                  style={{ minWidth: 20, textAlign: 'center' }}
-                >
-                  {quantityInCart}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Добавить партию: ${name}`}
-                  onPress={onIncrement}
-                  hitSlop={{ top: 4, bottom: 4, left: 10, right: 10 }}
-                  testID="product-increment"
-                  style={({ pressed }) => ({
-                    width: 28,
-                    height: 40,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: pressed ? 0.6 : 1,
-                  })}
-                >
-                  <Plus size={16} color={colors.primaryText} />
-                </Pressable>
-              </View>
-            ) : onAddToCart ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Добавить в корзину: ${name}`}
-                onPress={onAddToCart}
-                hitSlop={2}
-                testID="product-quick-add"
-                style={({ pressed }) => [
-                  {
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                  pressed ? { opacity: 0.8 } : null,
-                ]}
-              >
-                <Plus size={22} color={colors.onPrimary} />
-              </Pressable>
+            <StockDot level={stock} />
+          </View>
+        ) : null}
+        {hasBadges ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: spacing.sm,
+              right: spacing.sm,
+              flexDirection: 'row',
+              gap: spacing.xs,
+              zIndex: 1,
+            }}
+          >
+            {isHit ? (
+              <Badge variant="warning" size="sm">
+                Хит
+              </Badge>
+            ) : null}
+            {isPerishable ? (
+              <Badge variant="neutral" size="sm">
+                Скоропорт
+              </Badge>
             ) : null}
           </View>
+        ) : null}
+        {showImage ? (
+          <Image
+            source={{ uri: imageUrl as string }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+            accessibilityLabel={`Фото: ${name}`}
+          />
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ShoppingBasket size={32} color={colors.textMuted} />
+          </View>
+        )}
+        {floatingAction}
+      </View>
 
-          {organizationName ? (
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {organizationName}
+      {/* Текстовый блок: боковые поля только здесь. */}
+      <View
+        style={{
+          paddingHorizontal: spacing.md,
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.md,
+          gap: spacing.xs,
+        }}
+      >
+        {/* Заголовок: строго 2 строки — фиксированная высота
+            сохраняет ритм сетки при любой длине названия. */}
+        <Text
+          variant="bodyStrong"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+          style={{ height: PRODUCT_CARD_TITLE_HEIGHT }}
+        >
+          {name}
+        </Text>
+
+        {/* Цена и юнит в одну строку (Промт 15): кнопка «+»
+            переехала на фото, строка свободна. На узких экранах
+            (360) юнит переносится на вторую строку. */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'baseline',
+            flexWrap: 'wrap',
+            columnGap: spacing.xs,
+          }}
+        >
+          <PriceDisplay
+            value={priceKopecks}
+            oldPrice={oldPriceKopecks}
+            size="sm"
+          />
+          {unit ? (
+            <Text variant="caption" color="textMuted" numberOfLines={1}>
+              {`за ${unit}`}
             </Text>
           ) : null}
-        </>
-      )}
+        </View>
+      </View>
     </View>
   );
 
   const width = compact ? PRODUCT_CARD_COMPACT_WIDTH : 168;
   const cardStyle: StyleProp<ViewStyle> = [
     { width },
-    // Compact (Промт 14a): плотнее внутренние отступы. Промт 14b:
-    // при новой шкале md = 16 — фото 128×128, заголовок влезает
-    // в 2 строки; оставляем md (решение в отчёте 14b).
-    ...(compact ? [{ padding: spacing.md }] : []),
+    // Compact (Промт 14a): плотные отступы (решение 14b).
+    // Обычный режим (Промт 15, C): паддинг Card обнулён — фото
+    // bleed от верхнего края, боковые поля задаёт текстовый блок.
+    ...(compact ? [{ padding: spacing.md }] : [{ padding: 0 }]),
     style,
   ];
 

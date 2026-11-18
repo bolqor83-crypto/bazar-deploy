@@ -9,7 +9,9 @@ import { colorsDark, colorsLight } from '../../tokens';
 import { useThemeStore } from '../../theme/themeStore';
 import { StockDot } from './StockDot';
 
-function dotStyleOf(screen: ReturnType<typeof render>) {
+type Screen = Awaited<ReturnType<typeof render>>;
+
+function dotStyleOf(screen: Screen) {
   const json = screen.toJSON();
   const node = (function find(n: unknown): Record<string, unknown> | null {
     if (!n || typeof n !== 'object') {
