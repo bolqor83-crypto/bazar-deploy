@@ -136,9 +136,7 @@ export function LogoutSection() {
 
         {showContext ? (
           <View style={{ gap: spacing.xs, paddingTop: spacing.sm }}>
-            <Text variant="caption" color="textMuted">
-              Контекст работы
-            </Text>
+            <Text variant="h3">Контекст работы</Text>
             <ContextRow
               icon={Briefcase}
               label="Роль"
@@ -177,9 +175,10 @@ export function LogoutSection() {
         {showContext ? 'Переключить контекст' : 'Сменить роль или организацию'}
       </Button>
 
-      {/* Выход — спокойная нейтральная строка: деструктивность
-          живёт в диалоге подтверждения, а терракота-текст читалась
-          как «красная кнопка» (VLM-аудит доработки Промта 12). */}
+      {/* Промт 14b: «Выйти» — деструктивная кнопка-призрак:
+       * прозрачная, терракотовый текст, отделена divider'ом.
+       * Спокойнее заливки danger, но семантика читается. */}
+      <Divider inset="sm" />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Выйти из аккаунта"
@@ -193,10 +192,11 @@ export function LogoutSection() {
           gap: spacing.sm,
           minHeight: 48,
           borderRadius: radii.sm,
+          opacity: busy ? 0.5 : 1,
         }}
       >
-        <LogOut size={18} color={colors.textSecondary} />
-        <Text variant="body" color="textSecondary">
+        <LogOut size={18} color={colors.danger} />
+        <Text variant="body" color="danger">
           Выйти из аккаунта
         </Text>
       </Pressable>

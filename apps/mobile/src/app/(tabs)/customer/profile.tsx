@@ -111,16 +111,14 @@ export default function ProfileScreen() {
 
   return (
     <RoleScreen role="customer" section="profile" title="Профиль">
-      <View style={{ padding: spacing.md, gap: spacing.md, width: '100%' }}>
+      {/* Промт 14b: воздух профиля — сетка 20 (padding lg), между
+       * секциями spacing.lg. Карточки — outlined (часть C). */}
+      <View style={{ padding: spacing.lg, gap: spacing.lg, width: '100%' }}>
         {orders.length > 0 ? <OperationsSummary orders={orders} /> : null}
 
         {recent.length > 0 ? (
           <Card variant="outlined">
-            <Text
-              variant="caption"
-              color="textMuted"
-              style={{ marginBottom: spacing.xs }}
-            >
+            <Text variant="h3" style={{ marginBottom: spacing.sm }}>
               Последние заказы
             </Text>
             {recent.map((order) => (

@@ -76,24 +76,27 @@ function pluralTovarov(n: number): string {
   return 'товаров';
 }
 
-/** Скелетон сетки на время первой загрузки. */
+/** Скелетон сетки на время первой загрузки: 4 карточки 2×2 —
+ *  размеры совпадают с реальными, включая квадратное фото 1:1
+ *  (Промт 14b: скелетон не должен «схлопываться» при смене раскладки). */
 function CatalogSkeleton() {
-  const { spacing } = useTheme();
+  const { spacing, radii } = useTheme();
+  const skeletonCard = (key: string) => (
+    <View key={key} style={{ flex: 1, gap: spacing.sm }}>
+      <Skeleton style={{ aspectRatio: 1 }} radius={radii.md} />
+      <Skeleton height={18} width="85%" />
+      <Skeleton height={16} width="50%" />
+    </View>
+  );
   return (
-    <View style={{ padding: spacing.lg, gap: spacing.md }}>
-      <Skeleton height={48} />
-      <Skeleton height={40} width="70%" />
+    <View style={{ gap: spacing.md }}>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        <View style={{ flex: 1, gap: spacing.sm }}>
-          <Skeleton height={96} />
-          <Skeleton height={16} width="80%" />
-          <Skeleton height={16} width="50%" />
-        </View>
-        <View style={{ flex: 1, gap: spacing.sm }}>
-          <Skeleton height={96} />
-          <Skeleton height={16} width="80%" />
-          <Skeleton height={16} width="50%" />
-        </View>
+        {skeletonCard('a')}
+        {skeletonCard('b')}
+      </View>
+      <View style={{ flexDirection: 'row', gap: spacing.md }}>
+        {skeletonCard('c')}
+        {skeletonCard('d')}
       </View>
     </View>
   );
@@ -242,8 +245,10 @@ function CatalogBody() {
     );
   };
 
-  const header = (
-    <View style={{ padding: spacing.lg, gap: spacing.md }}>
+  /* Промт 14b: поиск закреплён под шапкой — не уезжает вместе
+   * со списком, до него не тянуться при длинной прокрутке. */
+  const searchBlock = (
+    <View style={{ padding: spacing.lg, paddingBottom: 0 }}>
       <SearchBar
         value={searchInput}
         onChangeText={setSearchInput}
@@ -251,7 +256,11 @@ function CatalogBody() {
         onSubmit={() => setQuery(searchInput.trim())}
         testID="catalog-search"
       />
+    </View>
+  );
 
+  const header = (
+    <View style={{ padding: spacing.lg, gap: spacing.md }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -300,20 +309,32 @@ function CatalogBody() {
         />
       ) : null}
 
-      {/* Счётчик результатов (VLM-аудит: «нет счётчика результатов»). */}
-      {productsQuery.data ? (
-        <Text variant="caption" color="textSecondary">
-          {`${productsQuery.data.pages[0]?.total ?? products.length} ${pluralTovarov(
-            productsQuery.data.pages[0]?.total ?? products.length,
-          )}`}
-        </Text>
-      ) : null}
+      {/* Заголовок секции «Все товары» (Промт 14b): h2 + счётчик
+          результатов в одну строку, отступ сверху — spacing.xl. */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginTop: spacing.xl - spacing.md,
+        }}
+      >
+        <Text variant="h2">Все товары</Text>
+        {productsQuery.data ? (
+          <Text variant="caption" color="textSecondary">
+            {`${productsQuery.data.pages[0]?.total ?? products.length} ${pluralTovarov(
+              productsQuery.data.pages[0]?.total ?? products.length,
+            )}`}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 
   if (productsQuery.isError) {
     return (
       <View style={{ flex: 1 }}>
+        {searchBlock}
         {header}
         <ErrorState
           title="Каталог не загрузился"
@@ -327,87 +348,90 @@ function CatalogBody() {
   const list = productsQuery;
 
   return (
-    <FlatList
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingBottom: spacing.lg, gap: spacing.md }}
-      data={products}
-      keyExtractor={(item: CatalogProduct) => item.id}
-      renderItem={({ item, index }) => {
-        const offerId = item.bestOffer?.id;
-        const inCart = offerId ? cartByOffer.get(offerId) : undefined;
-        return (
-          <ProductCard
-            name={item.name}
-            description={item.description}
-            unit={item.unit}
-            priceKopecks={item.bestOffer?.priceKopecks ?? 0}
-            stock={
-              item.bestOffer
-                ? item.bestOffer.stock > 0
-                  ? item.bestOffer.stock < 20
-                    ? 'low'
-                    : 'in'
-                  : 'out'
-                : undefined
-            }
-            organizationName={item.bestOffer?.organization.name}
-            isHit={item.bestOffer?.badge === 'hit'}
-            isPerishable={item.bestOffer?.isPerishable}
-            toneIndex={index}
-            imageUrl={item.images[0] ? resolveMediaUrl(item.images[0]) : null}
-            quantityInCart={inCart?.quantity}
-            onIncrement={inCart ? () => increment(inCart) : undefined}
-            onDecrement={inCart ? () => decrement(inCart) : undefined}
-            testID="catalog-product"
-            onPress={() => openProduct(item.id)}
-            onAddToCart={
-              item.bestOffer && item.bestOffer.stock > 0
-                ? () => quickAdd(item)
-                : undefined
-            }
-            style={{ flex: 1 }}
-          />
-        );
-      }}
-      numColumns={2}
-      columnWrapperStyle={{ gap: spacing.md, paddingHorizontal: spacing.lg }}
-      ListHeaderComponent={header}
-      ListEmptyComponent={
-        list.isPending ? (
-          <CatalogSkeleton />
-        ) : (
-          <EmptyCatalogState hasFilters={hasFilters} onReset={resetFilters} />
-        )
-      }
-      ListFooterComponent={
-        list.isFetchingNextPage ? (
-          <View
-            style={{
-              padding: spacing.lg,
-              flexDirection: 'row',
-              gap: spacing.md,
-            }}
-          >
-            <Skeleton height={16} width="40%" />
-            <Skeleton height={16} width="30%" />
-          </View>
-        ) : undefined
-      }
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.textSecondary}
-        />
-      }
-      onEndReachedThreshold={0.4}
-      onEndReached={() => {
-        if (list.hasNextPage && !list.isFetchingNextPage) {
-          void list.fetchNextPage();
+    <View style={{ flex: 1 }}>
+      {searchBlock}
+      <FlatList
+        style={{ flex: 1, backgroundColor: colors.background }}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
+        data={products}
+        keyExtractor={(item: CatalogProduct) => item.id}
+        renderItem={({ item, index }) => {
+          const offerId = item.bestOffer?.id;
+          const inCart = offerId ? cartByOffer.get(offerId) : undefined;
+          return (
+            <ProductCard
+              name={item.name}
+              description={item.description}
+              unit={item.unit}
+              priceKopecks={item.bestOffer?.priceKopecks ?? 0}
+              stock={
+                item.bestOffer
+                  ? item.bestOffer.stock > 0
+                    ? item.bestOffer.stock < 20
+                      ? 'low'
+                      : 'in'
+                    : 'out'
+                  : undefined
+              }
+              organizationName={item.bestOffer?.organization.name}
+              isHit={item.bestOffer?.badge === 'hit'}
+              isPerishable={item.bestOffer?.isPerishable}
+              toneIndex={index}
+              imageUrl={item.images[0] ? resolveMediaUrl(item.images[0]) : null}
+              quantityInCart={inCart?.quantity}
+              onIncrement={inCart ? () => increment(inCart) : undefined}
+              onDecrement={inCart ? () => decrement(inCart) : undefined}
+              testID="catalog-product"
+              onPress={() => openProduct(item.id)}
+              onAddToCart={
+                item.bestOffer && item.bestOffer.stock > 0
+                  ? () => quickAdd(item)
+                  : undefined
+              }
+              style={{ flex: 1 }}
+            />
+          );
+        }}
+        numColumns={2}
+        columnWrapperStyle={{ gap: spacing.md, paddingHorizontal: spacing.lg }}
+        ListHeaderComponent={header}
+        ListEmptyComponent={
+          list.isPending ? (
+            <CatalogSkeleton />
+          ) : (
+            <EmptyCatalogState hasFilters={hasFilters} onReset={resetFilters} />
+          )
         }
-      }}
-      keyboardShouldPersistTaps="handled"
-    />
+        ListFooterComponent={
+          list.isFetchingNextPage ? (
+            <View
+              style={{
+                padding: spacing.lg,
+                flexDirection: 'row',
+                gap: spacing.md,
+              }}
+            >
+              <Skeleton height={16} width="40%" />
+              <Skeleton height={16} width="30%" />
+            </View>
+          ) : undefined
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.textSecondary}
+          />
+        }
+        onEndReachedThreshold={0.4}
+        onEndReached={() => {
+          if (list.hasNextPage && !list.isFetchingNextPage) {
+            void list.fetchNextPage();
+          }
+        }}
+        keyboardShouldPersistTaps="handled"
+      />
+    </View>
   );
 }
 

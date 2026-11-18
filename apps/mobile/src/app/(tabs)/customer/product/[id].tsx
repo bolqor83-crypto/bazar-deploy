@@ -30,12 +30,13 @@ import { fetchProduct } from '../../../../services/api/catalogApi';
 import { resolveMediaUrl } from '../../../../services/api/client';
 import type { CarouselItem } from '@bazar/ui';
 
-/** Скелетон экрана товара. */
+/** Скелетон экрана товара: галерея — квадрат 1:1 (Промт 14b). */
 function ProductSkeleton() {
   const { spacing } = useTheme();
+  const { width } = useWindowDimensions();
   return (
     <View style={{ padding: spacing.lg, gap: spacing.md }}>
-      <Skeleton height={220} />
+      <Skeleton height={Math.floor(width - spacing.lg * 2)} radius={20} />
       <Skeleton height={24} width="70%" />
       <Skeleton height={16} width="90%" />
       <Skeleton height={16} width="40%" />
@@ -142,9 +143,12 @@ function ProductBody({ id }: { id: string }) {
           paddingBottom: 140,
         }}
       >
+        {/* Промт 14b: галерея 1:1 — высота равна ширине кадра
+            (ширина экрана минус боковые отступы 20+20). */}
         <ProductGallery
           images={product.images.map(resolveMediaUrl)}
           slideWidth={Math.floor(width - spacing.lg * 2)}
+          height={Math.floor(width - spacing.lg * 2)}
         />
 
         <ProductDetailCard
@@ -204,6 +208,8 @@ function ProductBody({ id }: { id: string }) {
         </View>
       </ScrollView>
 
+      {/* Промт 14b: sticky-CTA — padding lg сверху и снизу; кнопка
+          primary size lg уже 56 (thumb zone для перчаток). */}
       <View
         style={{
           position: 'absolute',
@@ -214,7 +220,6 @@ function ProductBody({ id }: { id: string }) {
           alignItems: 'center',
           gap: spacing.md,
           padding: spacing.lg,
-          paddingBottom: spacing.xl,
           backgroundColor: colors.backgroundElevated,
           borderTopWidth: 1,
           borderTopColor: colors.border,
