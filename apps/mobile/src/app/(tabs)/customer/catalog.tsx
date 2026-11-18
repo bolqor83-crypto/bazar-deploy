@@ -4,14 +4,23 @@
  *
  * Данные — публичный API каталога через TanStack Query:
  * - поиск с дебаунсом 400 мс (тег «запрос ×» снимает его);
- * - чипы категорий (все + 6 из API);
- * - сортировка SortPicker, фильтр цены «от/до» в раскрывающейся панели;
+ * - чипы категорий (все + 6 из API) с цветными SVG-иконками;
+ * - сортировка SortPicker compact и фильтры — в заголовке секции
+ *   «Все товары (N)» одной строкой (Промт 15, Часть D);
+ * - адаптивная сетка: 2 колонки < 600, 3 колонки ≥ 600 (планшет,
+ *   широкий web) с key={numColumns} для пересоздания при повороте;
  * - бесконечная пагинация (onEndReached, страница 10 позиций);
  * - pull-to-refresh, скелетоны (не спиннеры), осмысленные пустое
  *   состояние и состояние ошибки.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, View } from 'react-native';
+import {
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { CatalogCategory, CatalogProduct } from '@bazar/types';
@@ -20,6 +29,7 @@ import {
   EmptyCatalogState,
   ErrorState,
   FilterChip,
+  IconButton,
   IconApple,
   IconBox,
   IconCarrot,
@@ -64,6 +74,9 @@ const CATEGORY_ICONS: Record<string, ColoredIcon> = {
 
 const PAGE_SIZE = 10;
 
+/** Брейкпоинт планшета/широкого web (Промт 15, Часть D). */
+const TABLET_BREAKPOINT = 600;
+
 /** Русская плюрализация для счётчика результатов. */
 function pluralTovarov(n: number): string {
   const mod10 = n % 10;
@@ -75,10 +88,9 @@ function pluralTovarov(n: number): string {
   return 'товаров';
 }
 
-/** Скелетон сетки на время первой загрузки: 4 карточки 2×2 —
- *  размеры совпадают с реальными, включая квадратное фото 1:1
- *  (Промт 14b: скелетон не должен «схлопываться» при смене раскладки). */
-function CatalogSkeleton() {
+/** Скелетон сетки на время первой загрузки (Промт 15: повторяет
+ *  раскладку — 2×2 на мобиле, 3×2 от брейкпоинта 600). */
+function CatalogSkeleton({ numColumns }: { numColumns: number }) {
   const { spacing, radii } = useTheme();
   const skeletonCard = (key: string) => (
     <View key={key} style={{ flex: 1, gap: spacing.sm }}>
@@ -89,14 +101,19 @@ function CatalogSkeleton() {
   );
   return (
     <View style={{ gap: spacing.md }}>
-      <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        {skeletonCard('a')}
-        {skeletonCard('b')}
-      </View>
-      <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        {skeletonCard('c')}
-        {skeletonCard('d')}
-      </View>
+      {[0, 1].map((row) => (
+        <View
+          key={row}
+          style={{
+            flexDirection: 'row',
+            gap: numColumns >= 3 ? spacing.md : spacing.sm,
+          }}
+        >
+          {Array.from({ length: numColumns }, (_, i) =>
+            skeletonCard(`s-${row}-${i}`),
+          )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -108,6 +125,17 @@ function CatalogBody() {
   const addToCartMutation = useAddToCart();
   const updateItemMutation = useUpdateCartItem();
   const removeItemMutation = useRemoveCartItem();
+
+  // Промт 15 (Часть D): адаптивная сетка — 2 колонки на мобиле,
+  // 3 от 600px (планшет, широкий web). key={numColumns} ниже
+  //  пересоздаёт FlatList при смене раскладки (без warnings).
+  const { width: windowWidth } = useWindowDimensions();
+  const numColumns = windowWidth >= TABLET_BREAKPOINT ? 3 : 2;
+  // Литералы из ТЗ Промта 15 (§6.1): в шкале 14b нет шага 12,
+  // а ширина карточки 173 на 390 считается ровно от этих чисел:
+  // (390 − 2×16 − 12) / 2 = 173.
+  const gridGap = windowWidth >= TABLET_BREAKPOINT ? 16 : 12;
+  const gridPadding = 16;
 
   // Промт 14a: «Все →» из карусели похожих ведёт в каталог с той же
   // категорией — читаем стартовый фильтр из query-параметра.
@@ -247,7 +275,7 @@ function CatalogBody() {
   /* Промт 14b: поиск закреплён под шапкой — не уезжает вместе
    * со списком, до него не тянуться при длинной прокрутке. */
   const searchBlock = (
-    <View style={{ padding: spacing.lg, paddingBottom: 0 }}>
+    <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
       <SearchBar
         value={searchInput}
         onChangeText={setSearchInput}
@@ -259,7 +287,14 @@ function CatalogBody() {
   );
 
   const header = (
-    <View style={{ padding: spacing.lg, gap: spacing.md }}>
+    <View
+      style={{
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.sm,
+        gap: spacing.sm,
+      }}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -286,18 +321,11 @@ function CatalogBody() {
         })}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        <SortPicker value={sort} onChange={setSort} />
-        <FilterChip
-          label="Фильтры"
-          icon={SlidersHorizontal}
-          active={priceMin !== '' || priceMax !== ''}
-          onPress={() => setFiltersOpen(!filtersOpen)}
-        />
-        {query ? (
-          <FilterChip label={query} onRemove={() => setSearchInput('')} />
-        ) : null}
-      </View>
+      {/* Активный поисковый запрос — отдельной строкой: заголовок
+          секции занят сортировкой и фильтрами (Промт 15, D). */}
+      {query ? (
+        <FilterChip label={query} onRemove={() => setSearchInput('')} />
+      ) : null}
 
       {filtersOpen ? (
         <PriceRangeInput
@@ -308,24 +336,40 @@ function CatalogBody() {
         />
       ) : null}
 
-      {/* Заголовок секции «Все товары» (Промт 14b): h2 + счётчик
-          результатов в одну строку, отступ сверху — spacing.xl. */}
+      {/* Заголовок секции — одна строка 40px (Промт 15, D):
+          «Все товары (N)» слева, compact-сортировка и кнопка
+          фильтров справа. Было 3 строки (120px) — стало 1. */}
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginTop: spacing.xl - spacing.md,
+          alignItems: 'center',
+          gap: spacing.xs,
         }}
       >
-        <Text variant="h2">Все товары</Text>
+        <Text variant="h2" numberOfLines={1} style={{ flexShrink: 1 }}>
+          Все товары
+        </Text>
         {productsQuery.data ? (
-          <Text variant="caption" color="textSecondary">
-            {`${productsQuery.data.pages[0]?.total ?? products.length} ${pluralTovarov(
+          <Text
+            variant="caption"
+            color="textSecondary"
+            style={{ flexShrink: 0 }}
+            accessibilityLabel={`${pluralTovarov(
               productsQuery.data.pages[0]?.total ?? products.length,
-            )}`}
+            )}: ${productsQuery.data.pages[0]?.total ?? products.length}`}
+          >
+            {`(${productsQuery.data.pages[0]?.total ?? products.length})`}
           </Text>
         ) : null}
+        <View style={{ flex: 1 }} />
+        <SortPicker compact value={sort} onChange={setSort} />
+        <IconButton
+          icon={SlidersHorizontal}
+          variant={filtersOpen ? 'default' : 'ghost'}
+          accessibilityLabel="Фильтры"
+          onPress={() => setFiltersOpen(!filtersOpen)}
+          testID="catalog-filters"
+        />
       </View>
     </View>
   );
@@ -353,6 +397,9 @@ function CatalogBody() {
         style={{ flex: 1, backgroundColor: colors.background }}
         contentContainerStyle={{ paddingBottom: spacing.lg }}
         data={products}
+        // Пересоздание списка при смене числа колонок (поворот,
+        // resize окна на web) — иначе stale-раскладка и warnings.
+        key={numColumns}
         keyExtractor={(item: CatalogProduct) => item.id}
         renderItem={({ item, index }) => {
           const offerId = item.bestOffer?.id;
@@ -360,7 +407,6 @@ function CatalogBody() {
           return (
             <ProductCard
               name={item.name}
-              description={item.description}
               unit={item.unit}
               priceKopecks={item.bestOffer?.priceKopecks ?? 0}
               stock={
@@ -372,7 +418,6 @@ function CatalogBody() {
                     : 'out'
                   : undefined
               }
-              organizationName={item.bestOffer?.organization.name}
               isHit={item.bestOffer?.badge === 'hit'}
               isPerishable={item.bestOffer?.isPerishable}
               toneIndex={index}
@@ -387,16 +432,16 @@ function CatalogBody() {
                   ? () => quickAdd(item)
                   : undefined
               }
-              style={{ flex: 1 }}
+              style={{ flex: 1 / numColumns }}
             />
           );
         }}
-        numColumns={2}
-        columnWrapperStyle={{ gap: spacing.md, paddingHorizontal: spacing.lg }}
+        numColumns={numColumns}
+        columnWrapperStyle={{ gap: gridGap, paddingHorizontal: gridPadding }}
         ListHeaderComponent={header}
         ListEmptyComponent={
           list.isPending ? (
-            <CatalogSkeleton />
+            <CatalogSkeleton numColumns={numColumns} />
           ) : (
             <EmptyCatalogState hasFilters={hasFilters} onReset={resetFilters} />
           )

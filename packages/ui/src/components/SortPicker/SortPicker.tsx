@@ -5,6 +5,9 @@
  * (рамка, поверхность) с четырьмя вариантами, у активного — галочка.
  * Выбор закрывает меню. Тот же список значений, что в API
  * (popular | price-asc | price-desc | name).
+ *
+ * Промт 15 (Часть D): compact — для заголовка секции «Все товары»:
+ * высота 32, иконка + значение в одну строку, без шеврона.
  */
 import { useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -22,9 +25,25 @@ export const SORT_OPTIONS = [
 
 export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
 
+/** Короткие подписи для compact-режима (Промт 15): заголовок
+ *  секции «Все товары» — одна строка, длинные подписи не влезают. */
+const COMPACT_SORT_LABELS: Record<SortValue, string> = {
+  popular: 'Популярное',
+  'price-asc': 'Дешевле',
+  'price-desc': 'Дороже',
+  name: 'По алфавиту',
+};
+
+function compactSortLabel(value: SortValue): string {
+  return COMPACT_SORT_LABELS[value];
+}
+
 export interface SortPickerProps {
   value: SortValue;
   onChange: (value: SortValue) => void;
+  /** Компактный режим (Промт 15): высота 32, без шеврона —
+   *  для заголовка секции каталога. */
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -32,6 +51,7 @@ export interface SortPickerProps {
 export function SortPicker({
   value,
   onChange,
+  compact = false,
   style,
   testID,
 }: SortPickerProps) {
@@ -54,25 +74,32 @@ export function SortPicker({
         }}
       >
         <View
-          style={{
-            height: 40,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.xs + 2,
-            paddingHorizontal: spacing.md,
-            borderRadius: radii.pill,
-            backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}
+          style={[
+            {
+              minHeight: compact ? 32 : 40,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: compact ? spacing.xs : spacing.xs + 2,
+              paddingHorizontal: compact ? 10 : spacing.md,
+              borderRadius: radii.pill,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+            },
+            compact ? { paddingVertical: 4 } : { height: 40 },
+          ]}
         >
-          <ArrowUpDown size={16} color={colors.textSecondary} />
-          <Text variant="bodySmall">{current.label}</Text>
-          <ChevronDown
-            size={16}
-            color={colors.textSecondary}
-            style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
-          />
+          <ArrowUpDown size={compact ? 14 : 16} color={colors.textSecondary} />
+          <Text variant={compact ? 'caption' : 'bodySmall'} numberOfLines={1}>
+            {compact ? compactSortLabel(current.value) : current.label}
+          </Text>
+          {compact ? null : (
+            <ChevronDown
+              size={16}
+              color={colors.textSecondary}
+              style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
+            />
+          )}
         </View>
       </Pressable>
 
@@ -80,7 +107,7 @@ export function SortPicker({
         <View
           style={{
             position: 'absolute',
-            top: 46,
+            top: compact ? 38 : 46,
             left: 0,
             right: 0,
             zIndex: 10,

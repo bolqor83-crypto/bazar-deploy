@@ -381,21 +381,25 @@ export function ProductCard({
       <View
         style={{
           paddingHorizontal: spacing.md,
-          paddingTop: spacing.sm,
+          paddingTop: 6,
           paddingBottom: spacing.md,
-          gap: spacing.xs,
+          gap: 6,
         }}
       >
         {/* Заголовок: строго 2 строки — фиксированная высота
-            сохраняет ритм сетки при любой длине названия. */}
-        <Text
-          variant="bodyStrong"
-          numberOfLines={2}
-          ellipsizeMode="tail"
-          style={{ height: PRODUCT_CARD_TITLE_HEIGHT }}
+            сохраняет ритм сетки при любой длине названия.
+            Прижат к низу блока: у коротких названий нет «пустоты»
+            перед ценой (VLM-аудит Промта 15). */}
+        <View
+          style={{
+            height: PRODUCT_CARD_TITLE_HEIGHT,
+            justifyContent: 'flex-end',
+          }}
         >
-          {name}
-        </Text>
+          <Text variant="bodyStrong" numberOfLines={2} ellipsizeMode="tail">
+            {name}
+          </Text>
+        </View>
 
         {/* Цена и юнит в одну строку (Промт 15): кнопка «+»
             переехала на фото, строка свободна. На узких экранах

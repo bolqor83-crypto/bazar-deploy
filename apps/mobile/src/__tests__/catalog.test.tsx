@@ -171,3 +171,161 @@ describe('(tabs)/customer/catalog', () => {
     );
   });
 });
+
+describe('(tabs)/customer/catalog — адаптивная сетка (Промт 15, D)', () => {
+  let dimensionsSpy: jest.SpyInstance;
+
+  function setWidth(width: number) {
+    dimensionsSpy.mockReturnValue({
+      width,
+      height: 844,
+      scale: 2,
+      fontScale: 1,
+    });
+  }
+
+  beforeEach(() => {
+    dimensionsSpy = jest
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- spy на самом объекте модуля react-native: статический импорт даёт копию
+      .spyOn(require('react-native'), 'useWindowDimensions')
+      .mockReturnValue({ width: 390, height: 844, scale: 2, fontScale: 1 });
+    fetchProductsMock.mockResolvedValue(
+      page([
+        product({ id: 'p1', name: 'Помидоры розовые' }),
+        product({ id: 'p2', name: 'Огурцы гладкие' }),
+        product({ id: 'p3', name: 'Морковь мытая' }),
+        product({ id: 'p4', name: 'Лук репчатый' }),
+        product({ id: 'p5', name: 'Кабачки' }),
+      ]),
+    );
+  });
+
+  afterEach(() => {
+    dimensionsSpy.mockRestore();
+  });
+
+  /** Ряды сетки: View с flexDirection row, содержащие карточки
+   *  каталога (testID catalog-product у Pressable карточки). */
+  function gridRows(screen: Awaited<ReturnType<typeof renderWithQuery>>) {
+    const rows: { cards: number; gap: unknown }[] = [];
+    const walk = (node: unknown) => {
+      if (!node || typeof node !== 'object') {
+        return;
+      }
+      const record = node as {
+        props?: Record<string, unknown>;
+        children?: unknown[];
+      };
+      const style = record.props?.style;
+      if (style) {
+        const flat = Object.assign(
+          {},
+          ...([style].flat(Infinity) as Record<string, unknown>[]),
+        );
+        const cardChildren = (record.children ?? []).filter(
+          (child) =>
+            typeof child === 'object' &&
+            child !== null &&
+            (child as { props?: { testID?: string } }).props?.testID ===
+              'catalog-product',
+        );
+        if (flat.flexDirection === 'row' && cardChildren.length > 0) {
+          rows.push({ cards: cardChildren.length, gap: flat.gap });
+        }
+      }
+      for (const child of record.children ?? []) {
+        walk(child);
+      }
+    };
+    walk(screen.toJSON());
+    return rows;
+  }
+
+  it('на 390 — 2 колонки, gap 12', async () => {
+    setWidth(390);
+    const screen = await renderWithQuery(<CatalogScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    const rows = gridRows(screen);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0]?.cards).toBe(2);
+    expect(rows[0]?.gap).toBe(12);
+  });
+
+  it('на 768 — 3 колонки, gap 16', async () => {
+    setWidth(768);
+    const screen = await renderWithQuery(<CatalogScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    const rows = gridRows(screen);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0]?.cards).toBe(3);
+    expect(rows[0]?.gap).toBe(16);
+  });
+
+  it('resize пересоздаёт сетку: 2 → 3 колонки', async () => {
+    setWidth(390);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const screen = await render(
+      <QueryClientProvider client={client}>
+        <CatalogScreen />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    expect(gridRows(screen)[0]?.cards).toBe(2);
+
+    setWidth(800);
+    await screen.rerender(
+      <QueryClientProvider client={client}>
+        <CatalogScreen />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(gridRows(screen)[0]?.cards).toBe(3);
+    });
+  });
+
+  it('заголовок секции — сортировка и фильтры в одну строку', async () => {
+    const screen = await renderWithQuery(<CatalogScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    expect(screen.getByText('Все товары')).toBeTruthy();
+    expect(screen.getByLabelText('Сортировка: По популярности')).toBeTruthy();
+    expect(screen.getByLabelText('Фильтры')).toBeTruthy();
+    // Compact-подпись в заголовке, не длинная.
+    expect(screen.getByText('Популярное')).toBeTruthy();
+  });
+
+  it('кнопка фильтров раскрывает панель цены', async () => {
+    const screen = await renderWithQuery(<CatalogScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    expect(screen.queryByLabelText('Цена от')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Фильтры'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Цена от')).toBeTruthy();
+    });
+  });
+
+  it('сортировка из заголовка применяется к запросу', async () => {
+    const screen = await renderWithQuery(<CatalogScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Помидоры розовые')).toBeTruthy();
+    });
+    fetchProductsMock.mockClear();
+    await fireEvent.press(screen.getByLabelText('Сортировка: По популярности'));
+    await fireEvent.press(screen.getByLabelText('Сортировать Сначала дешевле'));
+    await waitFor(() => {
+      const call = fetchProductsMock.mock.calls[0]?.[0];
+      expect(call?.sort).toBe('price-asc');
+    });
+  });
+});

@@ -194,16 +194,11 @@ describe('ProductCard', () => {
   });
 
   it('высота карточки на ширине 173 — 275±5 (Промт 15, C)', async () => {
-    // Фото 173 (aspect 1 при bleed) + paddingTop sm + title 46
-    // + gap xs + цена 24 + paddingBottom md ≈ 275.
-    // Считаем на РЕАЛЬНЫХ токенах: дрейф шкалы ломает тест.
-    const total =
-      173 +
-      spacing.sm +
-      PRODUCT_CARD_TITLE_HEIGHT +
-      spacing.xs +
-      24 +
-      spacing.md;
+    // Фото 173 (aspect 1 при bleed) + paddingTop 6 + title 46
+    // + gap 6 + цена 24 + paddingBottom md = 271.
+    // Токен-зависимая часть (paddingBottom) — реальная: дрейф
+    // шкалы ломает тест.
+    const total = 173 + 6 + PRODUCT_CARD_TITLE_HEIGHT + 6 + 24 + spacing.md;
     expect(total).toBeGreaterThanOrEqual(270);
     expect(total).toBeLessThanOrEqual(280);
   });

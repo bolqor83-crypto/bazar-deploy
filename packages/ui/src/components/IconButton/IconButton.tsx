@@ -27,6 +27,7 @@ export interface IconButtonProps {
   /** Встроенный отклик hapticTap. Отключите, если нужна другая хаптика снаружи. */
   haptic?: boolean;
   onPress?: () => void;
+  testID?: string;
   children?: ReactNode;
 }
 
@@ -38,13 +39,18 @@ export function IconButton({
   disabled = false,
   haptic = true,
   onPress,
+  testID,
 }: IconButtonProps) {
   const { colors } = useTheme();
   const box = SIZES[size];
   const iconSize = size === 'lg' ? 26 : size === 'sm' ? 20 : 22;
 
   const fg =
-    variant === 'destructive' ? colors.danger : variant === 'ghost' ? colors.textSecondary : colors.text;
+    variant === 'destructive'
+      ? colors.danger
+      : variant === 'ghost'
+        ? colors.textSecondary
+        : colors.text;
 
   const containerStyle: StyleProp<ViewStyle> = {
     width: box,
@@ -72,7 +78,11 @@ export function IconButton({
       disabled={disabled}
       hitSlop={HIT_SLOP}
       onPress={handlePress}
-      style={({ pressed }) => [containerStyle, pressed && !disabled ? { opacity: 0.7 } : null]}
+      testID={testID}
+      style={({ pressed }) => [
+        containerStyle,
+        pressed && !disabled ? { opacity: 0.7 } : null,
+      ]}
     >
       <View accessible={false}>
         <Icon size={iconSize} color={fg} />
