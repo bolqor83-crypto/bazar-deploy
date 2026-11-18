@@ -9,16 +9,19 @@
 import { useState } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
-import {
-  Check,
-  Package,
-  ShoppingCart,
-  Store,
-  Truck,
-} from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import type { Role } from '@bazar/types';
-import { Button, Text, hapticSelection, useTheme } from '@bazar/ui';
+import {
+  Button,
+  IconBuyer,
+  IconCarrier,
+  IconSeller,
+  IconStoreOwner,
+  Text,
+  hapticSelection,
+  useTheme,
+  type ColoredIcon,
+} from '@bazar/ui';
 import { OnboardingShell } from '../../components/onboarding/OnboardingShell';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
@@ -26,7 +29,8 @@ interface RoleOption {
   role: Role;
   label: string;
   description: string;
-  icon: LucideIcon;
+  /** Цветная SVG-иконка роли (Промт 15: роль = цвет). */
+  icon: ColoredIcon;
 }
 
 const ROLE_OPTIONS: readonly RoleOption[] = [
@@ -34,25 +38,25 @@ const ROLE_OPTIONS: readonly RoleOption[] = [
     role: 'customer',
     label: 'Покупатель',
     description: 'Покупаю товары в розницу для себя и семьи',
-    icon: ShoppingCart,
+    icon: IconBuyer,
   },
   {
     role: 'store_owner',
     label: 'Владелец точки',
     description: 'Розничная точка: витрина, заказы покупателей, продажи',
-    icon: Store,
+    icon: IconStoreOwner,
   },
   {
     role: 'wholesale_seller',
     label: 'Оптовик',
     description: 'Оптовые продажи: каталог, клиенты-точки, отгрузки',
-    icon: Package,
+    icon: IconSeller,
   },
   {
     role: 'carrier',
     label: 'Перевозчик',
     description: 'Доставка заказов между оптовиками и точками',
-    icon: Truck,
+    icon: IconCarrier,
   },
 ];
 
@@ -96,7 +100,8 @@ function RoleCard({ option, selected, onPress }: RoleCardProps) {
           justifyContent: 'center',
         }}
       >
-        <Icon size={24} color={colors.primary} />
+        {/* Промт 15: иконка роли — цветная SVG, размер 32. */}
+        <Icon size={32} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="body">{option.label}</Text>

@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { Carrot, SlidersHorizontal, User } from 'lucide-react-native';
 import {
+  ALL_COLORED_ICONS,
   Badge,
   Button,
   Card,
@@ -206,6 +207,33 @@ function ShowcaseBody() {
               disabled
             />
           </View>
+        </Section>
+
+        {/* Промт 15: витрина цветных SVG-иконок — все 16 в двух
+            размерах (24 и 32) в текущей теме; цвета фиксированы
+            палитрой иконок и не зависят от темы. */}
+        <Section title="Иконки">
+          {ALL_COLORED_ICONS.map(({ icon: Icon, label }) => (
+            <View
+              key={label}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+                paddingVertical: spacing.xs,
+              }}
+            >
+              <View style={{ width: 32, alignItems: 'center' }}>
+                <Icon size={24} />
+              </View>
+              <View style={{ width: 40, alignItems: 'center' }}>
+                <Icon size={32} />
+              </View>
+              <Text variant="bodySmall" color="textSecondary">
+                {label}
+              </Text>
+            </View>
+          ))}
         </Section>
 
         <Section title="Поле ввода">

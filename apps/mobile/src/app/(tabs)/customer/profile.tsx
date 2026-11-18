@@ -26,7 +26,6 @@ import type { Order } from '@bazar/types';
 
 /** Сводка операций: два числа одинакового веса, подписи снизу. */
 function OperationsSummary({ orders }: { orders: Order[] }) {
-  const { spacing } = useTheme();
   const totalKopecks = orders.reduce((sum, order) => sum + order.total, 0);
   const inWork = orders.filter(
     (order) => order.status !== 'COMPLETED' && order.status !== 'CANCELLED',

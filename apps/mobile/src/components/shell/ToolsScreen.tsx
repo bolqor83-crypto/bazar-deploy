@@ -18,7 +18,9 @@ import {
   EmptyState,
   SearchBar,
   Text,
+  isColoredIcon,
   useTheme,
+  type ColoredIcon,
 } from '@bazar/ui';
 import type { Role } from '@bazar/types';
 import type { LucideIcon } from 'lucide-react-native';
@@ -154,7 +156,10 @@ export function ToolsScreen({ role }: { role: Role }) {
   );
 }
 
-/** Строка раздела: иконка, название с подзаголовком, бейдж, шеврон. */
+/** Строка раздела: иконка, название с подзаголовком, бейдж, шеврон.
+ *
+ *  Промт 15: торговые инструменты — цветные SVG (24), учётные
+ *  разделы — монохромные Lucide (20). */
 function ToolRow({
   label,
   subtitle,
@@ -165,7 +170,7 @@ function ToolRow({
 }: {
   label: string;
   subtitle?: string;
-  icon: LucideIcon;
+  icon: LucideIcon | ColoredIcon;
   badge: number;
   onPress: () => void;
   testID?: string;
@@ -190,7 +195,11 @@ function ToolRow({
         },
       ]}
     >
-      <Icon size={20} color={colors.textSecondary} />
+      {isColoredIcon(Icon) ? (
+        <Icon size={24} />
+      ) : (
+        <Icon size={20} color={colors.textSecondary} />
+      )}
       <View style={{ flex: 1, gap: 1 }}>
         <Text variant="body" numberOfLines={1}>
           {label}

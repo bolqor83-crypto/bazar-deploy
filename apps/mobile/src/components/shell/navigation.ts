@@ -10,14 +10,19 @@
  * wholesale / carrier. См. ADR 0003.
  */
 import type { LucideIcon } from 'lucide-react-native';
+import type { ColoredIcon } from '@bazar/ui';
 import {
-  Banknote,
-  BarChart3,
+  IconAnalytics,
+  IconDelivery,
+  IconFinance,
+  IconOrders,
+  IconStock,
+} from '@bazar/ui';
+import {
   Bell,
   ClipboardList,
   Heart,
   History,
-  Inbox,
   Layers,
   LayoutDashboard,
   LayoutGrid,
@@ -32,7 +37,6 @@ import {
   Truck,
   User,
   Users,
-  Warehouse,
 } from 'lucide-react-native';
 import type { Role } from '@bazar/types';
 
@@ -44,11 +48,15 @@ export interface TabItem {
   badge?: number;
 }
 
-/** Раздел экрана «Все инструменты». */
+/** Раздел экрана «Все инструменты».
+ *
+ *  Промт 15: торговые инструменты (запросы, склад, движения,
+ *  финансы, аналитика) — цветные SVG-иконки; учётные разделы
+ *  (профиль, настройки, уведомления) — монохромные Lucide. */
 export interface MoreItem {
   key: string;
   label: string;
-  icon: LucideIcon;
+  icon: LucideIcon | ColoredIcon;
   route: string;
   /** Подзаголовок строки: снимает путаницу близких названий
    *  («Склад»/«Склады») и делает список плотнее по смыслу. */
@@ -142,7 +150,7 @@ const storeNav: RoleNavConfig = {
         {
           key: 'finance',
           label: 'Финансы',
-          icon: Banknote,
+          icon: IconFinance,
           route: '/store/finance',
           subtitle: 'Движение денег',
         },
@@ -202,7 +210,7 @@ const wholesaleNav: RoleNavConfig = {
         {
           key: 'requests',
           label: 'Запросы',
-          icon: Inbox,
+          icon: IconOrders,
           route: '/wholesale/requests',
           subtitle: 'Запросы на подбор',
         },
@@ -215,7 +223,7 @@ const wholesaleNav: RoleNavConfig = {
         {
           key: 'stock',
           label: 'Склад',
-          icon: Warehouse,
+          icon: IconStock,
           route: '/wholesale/stock',
           subtitle: 'Остатки и журнал движений',
         },
@@ -229,7 +237,7 @@ const wholesaleNav: RoleNavConfig = {
         {
           key: 'movements',
           label: 'Движения',
-          icon: History,
+          icon: IconDelivery,
           route: '/wholesale/movements',
           subtitle: 'История по всем позициям',
         },
@@ -269,14 +277,14 @@ const wholesaleNav: RoleNavConfig = {
         {
           key: 'finance',
           label: 'Финансы',
-          icon: Banknote,
+          icon: IconFinance,
           route: '/wholesale/finance',
           subtitle: 'Движение денег',
         },
         {
           key: 'analytics',
           label: 'Аналитика',
-          icon: BarChart3,
+          icon: IconAnalytics,
           route: '/wholesale/analytics',
           subtitle: 'Продажи и топы',
         },

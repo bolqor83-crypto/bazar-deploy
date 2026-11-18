@@ -20,6 +20,12 @@ import {
   EmptyCatalogState,
   ErrorState,
   FilterChip,
+  IconApple,
+  IconBox,
+  IconCarrot,
+  IconGrain,
+  IconGreens,
+  IconMilk,
   PriceRangeInput,
   ProductCard,
   SearchBar,
@@ -28,18 +34,10 @@ import {
   Text,
   useTheme,
   useToast,
+  type ColoredIcon,
   type SortValue,
 } from '@bazar/ui';
-import {
-  Carrot,
-  Apple,
-  Leaf,
-  Milk,
-  Package,
-  SlidersHorizontal,
-  Wheat,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { SlidersHorizontal } from 'lucide-react-native';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 import {
   fetchCategories,
@@ -53,14 +51,15 @@ import {
   useUpdateCartItem,
 } from '../../../hooks/useCart';
 
-/** slug категории → иконка Lucide (fallback — Package). */
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  vegetables: Carrot,
-  fruits: Apple,
-  greens: Leaf,
-  grains: Wheat,
-  dairy: Milk,
-  other: Package,
+/** slug категории → цветная SVG-иконка (Промт 15: продукт = цвет;
+ *  fallback — коробка). */
+const CATEGORY_ICONS: Record<string, ColoredIcon> = {
+  vegetables: IconCarrot,
+  fruits: IconApple,
+  greens: IconGreens,
+  grains: IconGrain,
+  dairy: IconMilk,
+  other: IconBox,
 };
 
 const PAGE_SIZE = 10;

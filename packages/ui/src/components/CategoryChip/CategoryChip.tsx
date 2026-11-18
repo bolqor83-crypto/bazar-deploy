@@ -3,17 +3,22 @@
  *
  * Активная категория — заливка primary (белый текст), неактивная —
  * поверхность с рамкой. Высота 40, hitSlop добирает до 48 (перчатки).
- * Иконка категории — Lucide, один размер 16.
+ *
+ * Промт 15: иконка категории — цветная SVG (IconCarrot и др.,
+ * размер 20, цвет фиксирован палитрой иконок) или монохромная
+ * Lucide (16) как совместимость. Цветные иконки не реагируют на
+ * активность чипа — «свежесть через цвет, а не радугу».
  */
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
+import { isColoredIcon, type ColoredIcon } from '../../icons';
 import { hapticSelection } from '../../tokens';
 import { Text } from '../Text';
 
 export interface CategoryChipProps {
   label: string;
-  icon?: LucideIcon | null;
+  icon?: LucideIcon | ColoredIcon | null;
   active?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -45,10 +50,14 @@ export function CategoryChip({
       }}
     >
       {Icon ? (
-        <Icon
-          size={16}
-          color={active ? colors.onPrimary : colors.textSecondary}
-        />
+        isColoredIcon(Icon) ? (
+          <Icon size={20} />
+        ) : (
+          <Icon
+            size={16}
+            color={active ? colors.onPrimary : colors.textSecondary}
+          />
+        )
       ) : null}
       <Text
         variant="bodySmall"

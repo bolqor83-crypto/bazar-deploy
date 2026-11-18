@@ -254,3 +254,27 @@ export type { DeliveryTimelineProps } from './components/DeliveryTimeline';
 
 export { DeliveryRequestCard } from './components/DeliveryRequestCard';
 export type { DeliveryRequestCardProps } from './components/DeliveryRequestCard';
+
+// Цветные SVG-иконки (Промт 15, Часть A)
+export {
+  iconPalette,
+  ALL_COLORED_ICONS,
+  isColoredIcon,
+  IconCarrot,
+  IconApple,
+  IconGreens,
+  IconGrain,
+  IconMilk,
+  IconBox,
+  IconBuyer,
+  IconSeller,
+  IconCarrier,
+  IconStoreOwner,
+  IconProducts,
+  IconOrders,
+  IconStock,
+  IconDelivery,
+  IconFinance,
+  IconAnalytics,
+} from './icons';
+export type { ColoredIcon, ColoredIconProps, IconPaletteKey } from './icons';
