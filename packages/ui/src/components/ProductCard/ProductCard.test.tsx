@@ -55,18 +55,45 @@ describe('ProductCard', () => {
     expect(onDecrement).toHaveBeenCalledTimes(1);
   });
 
-  it('наличие отображается индикатором', async () => {
+  it('наличие — точка StockDot, без текста (Промт 15)', async () => {
     const screen = await render(
       <ProductCard name="Сыр» «Гауда»" priceKopecks={55_000} stock="low" />,
     );
-    expect(screen.getByText('Заканчивается')).toBeTruthy();
+    expect(screen.getByTestId('product-stock-dot')).toBeTruthy();
+    expect(screen.getByLabelText('Наличие: Мало осталось')).toBeTruthy();
+    // Текст наличия из карточки убран — остаётся на детальной.
+    expect(screen.queryByText('Заканчивается')).toBeNull();
   });
 
-  it('без наличия индикатор не показывается', async () => {
+  it('без наличия точка не показывается', async () => {
     const screen = await render(
       <ProductCard name="Сметана" priceKopecks={7_500} />,
     );
-    expect(screen.queryByText('В наличии')).toBeNull();
+    expect(screen.queryByTestId('product-stock-dot')).toBeNull();
+    expect(screen.queryByLabelText(/Наличие:/)).toBeNull();
+  });
+
+  it('точка — в левом верхнем углу фото, бейдж — в правом (Промт 15)', async () => {
+    const screen = await render(
+      <ProductCard
+        name="Сыр» «Гауда»"
+        priceKopecks={55_000}
+        stock="in"
+        isPerishable
+      />,
+    );
+    const dot = screen.getByTestId('product-stock-dot');
+    const dotStyle = Object.assign(
+      {},
+      ...[dot.props.style].flat(Infinity),
+    ) as Record<string, unknown>;
+    expect(dotStyle.top).toBe(8); // spacing.sm
+    expect(dotStyle.left).toBe(8);
+    expect(dotStyle.right).toBeUndefined();
+    // Бейдж — с того же отступа, но у ПРАВОГО края.
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain('"right":8');
+    expect(screen.getByText('Скоропорт')).toBeTruthy();
   });
 
   it('скидочная цена даёт бейдж процента', async () => {

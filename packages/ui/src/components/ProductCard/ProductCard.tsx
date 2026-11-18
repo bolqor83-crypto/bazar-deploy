@@ -22,6 +22,11 @@
  * Промт 14b: фото 1:1 во всех режимах (квадрат, как в compact),
  * радиус фото md (16), бейджи с отступом sm от края фото. Обёртка —
  * Card default (shadow sm, без border) — «карточка товара = тень».
+ *
+ * Промт 15 (Часть B): наличие — точка StockDot в левом верхнем
+ * углу фото; бейджи переехали в правый верхний, чтобы не
+ * пересекаться с точкой. Текст наличия из карточки убран —
+ * он остаётся в <StockIndicator> на детальной странице.
  */
 import { useState } from 'react';
 import {
@@ -37,8 +42,9 @@ import { placeholderTone } from '../../tokens/placeholder';
 import { Badge } from '../Badge';
 import { Card } from '../Card';
 import { PriceDisplay } from '../PriceDisplay';
-import { StockIndicator, type StockLevel } from '../StockIndicator';
+import { StockDot } from '../StockDot';
 import { Text } from '../Text';
+import type { StockLevel } from '../StockIndicator';
 
 /** Ширина compact-карточки (Промт 14a): карусель похожих. */
 export const PRODUCT_CARD_COMPACT_WIDTH = 160;
@@ -117,10 +123,9 @@ export function ProductCard({
 
   const body = (
     <View style={{ gap: compact ? spacing.xs : spacing.sm }}>
-      {/* Бейджи — поверх фото в левом верхнем углу: у всех карточек
-          одинаковая структура и высота (VLM-аудит: «разнобой —
-          бейдж/цена/наличие на разных уровнях»). Промт 14b: отступ
-          от края фото — spacing.sm. */}
+      {/* Промт 15: точка наличия — абсолют в левом верхнем углу
+          фото; бейджи — в правом верхнем (не пересекаются).
+          Отступ от края фото — spacing.sm. */}
       <View
         style={{
           backgroundColor: placeholderTone(toneIndex),
@@ -129,12 +134,25 @@ export function ProductCard({
           borderRadius: radii.md,
         }}
       >
+        {stock ? (
+          <View
+            testID="product-stock-dot"
+            style={{
+              position: 'absolute',
+              top: spacing.sm,
+              left: spacing.sm,
+              zIndex: 1,
+            }}
+          >
+            <StockDot level={stock} />
+          </View>
+        ) : null}
         {hasBadges ? (
           <View
             style={{
               position: 'absolute',
               top: spacing.sm,
-              left: spacing.sm,
+              right: spacing.sm,
               flexDirection: 'row',
               gap: spacing.xs,
               zIndex: 1,
@@ -338,8 +356,6 @@ export function ProductCard({
               {organizationName}
             </Text>
           ) : null}
-
-          {stock ? <StockIndicator stock={stock} /> : null}
         </>
       )}
     </View>

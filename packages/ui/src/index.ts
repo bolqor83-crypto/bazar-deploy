@@ -278,3 +278,7 @@ export {
   IconAnalytics,
 } from './icons';
 export type { ColoredIcon, ColoredIconProps, IconPaletteKey } from './icons';
+
+// Точка наличия (Промт 15, Часть B)
+export { StockDot } from './components/StockDot';
+export type { StockDotProps } from './components/StockDot';
