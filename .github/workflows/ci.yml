@@ -6,6 +6,17 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Промт 16 (C): e2e и pixelmatch делят общие БД Neon (bazar_test и
+# демо-neondb) с мутирующей prepare-фазой. Два параллельных рана
+# одного ref (пуши с интервалом в минуты) рвут друг другу схему и
+# данные: force-reset падает на AddForeignKey по записям соседа,
+# golden-кадры снимаются поверх чужой подготовки. Поэтому раны
+# одного ref сериализуем, устаревший отменяем — актуален последний
+# коммит (инцидент CI 19.11: e2e 861a299+73ee008, 18 и 7 кадров).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: lint + typecheck + test
