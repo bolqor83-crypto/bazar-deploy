@@ -122,6 +122,8 @@ export type {
 
 export { Dialog } from './components/Dialog';
 export type { DialogProps } from './components/Dialog';
+export { PriceRequestDialog } from './components/PriceRequestDialog';
+export type { PriceRequestDialogProps } from './components/PriceRequestDialog';
 
 export { ToastProvider, useToast, useToastStore } from './components/Toast';
 export type {

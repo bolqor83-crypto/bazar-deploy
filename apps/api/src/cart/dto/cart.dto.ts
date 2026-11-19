@@ -6,9 +6,18 @@
  * покупателя). Количество — целое, ограничено stock предложения.
  */
 import { Type } from 'class-transformer';
-import { IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
-/** Добавление позиции: offerId + количество (не ниже minQuantity). */
+/** Добавление позиции: offerId + количество (не ниже minQuantity).
+ * Промт 16 (C): priceRequestId — добавить по персональному
+ * предложению (цена строки = quotedPriceKopecks). */
 export class AddCartItemDto {
   @IsString()
   @MaxLength(64)
@@ -19,6 +28,12 @@ export class AddCartItemDto {
   @Min(1)
   @Max(100_000)
   quantity!: number;
+
+  /** Персональное предложение (необязательно). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  priceRequestId?: string;
 }
 
 /** Изменение количества позиции. */

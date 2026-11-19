@@ -6,18 +6,25 @@
  * карусель похожих товаров (Промт 14a).
  * Нижняя панель: количество (минимум — минимальная партия лучшего
  * предложения) и кнопка «В корзину · сумма».
+ *
+ * Промт 16 (C): если лучшее предложение «по запросу» — кнопка
+ * «Запросить цену» и шит PriceRequestDialog (количество +
+ * сообщение); после ответа продавца покупатель добавляет в
+ * корзину по персональной цене из экрана «Запросы».
  */
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAddToCart } from '../../../../hooks/useCart';
+import { useCreatePriceRequest } from '../../../../hooks/usePriceRequests';
 import { useSimilarProducts } from '../../../../hooks/useSimilarProducts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Button,
   ErrorState,
   HorizontalProductCarousel,
+  PriceRequestDialog,
   ProductDetailCard,
   ProductGallery,
   QuantitySelector,
@@ -64,12 +71,17 @@ function ProductBody({ id }: { id: string }) {
   const product = productQuery.data;
   const best = useMemo(() => product?.offers[0] ?? null, [product]);
 
-  // Карусель похожих: только товары с ценой (bestOffer), фото —
-  // первое из списка, бейдж — один («Хит» или «Скоропорт»).
+  // Карусель похожих: только товары с ОТКРЫТОЙ ценой (bestOffer
+  // с priceKopecks !== null — Промт 16, C: компактной карточке
+  // карусели нечего показать без цифры), фото — первое из списка,
+  // бейдж — один («Хит» или «Скоропорт»).
   const similarItems = useMemo<CarouselItem[]>(() => {
     const items = similarQuery.data?.items ?? [];
     return items
-      .filter((item) => item.bestOffer !== null)
+      .filter(
+        (item) =>
+          item.bestOffer !== null && item.bestOffer.priceKopecks !== null,
+      )
       .map((item) => ({
         id: item.id,
         title: item.name,
@@ -88,8 +100,10 @@ function ProductBody({ id }: { id: string }) {
   }, [similarQuery.data]);
 
   const [quantity, setQuantity] = useState<number | null>(null);
+  const [requestDialogVisible, setRequestDialogVisible] = useState(false);
   const { show } = useToast();
   const addToCartMutation = useAddToCart();
+  const createRequestMutation = useCreatePriceRequest();
 
   if (productQuery.isError) {
     return (
@@ -108,8 +122,48 @@ function ProductBody({ id }: { id: string }) {
   const minQuantity =
     best?.minQuantity && best.minQuantity > 1 ? best.minQuantity : 1;
   const effectiveQuantity = quantity ?? minQuantity;
-  const totalKopecks = best ? best.priceKopecks * effectiveQuantity : 0;
+  // Промт 16 (C): лучшее предложение «по запросу» — цены нет,
+  // покупатель запрашивает персональную.
+  const bestIsPor = best !== null && best.priceKopecks === null;
+  const totalKopecks =
+    best && best.priceKopecks !== null
+      ? best.priceKopecks * effectiveQuantity
+      : 0;
   const totalRubles = Math.round(totalKopecks / 100);
+
+  const submitPriceRequest = ({
+    quantity: requestQuantity,
+    message,
+  }: {
+    quantity: number;
+    message: string;
+  }) => {
+    if (!best) {
+      return;
+    }
+    createRequestMutation.mutate(
+      {
+        offerId: best.id,
+        quantity: requestQuantity,
+        message: message || undefined,
+      },
+      {
+        onSuccess: () => {
+          setRequestDialogVisible(false);
+          show({
+            variant: 'success',
+            message: 'Запрос отправлен — ответ придёт в уведомлениях',
+          });
+        },
+        onError: () => {
+          show({
+            variant: 'info',
+            message: 'Не удалось отправить запрос — попробуйте ещё раз',
+          });
+        },
+      },
+    );
+  };
 
   const addToCart = () => {
     if (!best) {
@@ -158,7 +212,7 @@ function ProductBody({ id }: { id: string }) {
           name={product.name}
           description={product.description}
           unit={product.unit}
-          priceKopecks={best?.priceKopecks ?? 0}
+          priceKopecks={best ? best.priceKopecks : null}
           stock={
             best
               ? best.stock > 0
@@ -212,7 +266,9 @@ function ProductBody({ id }: { id: string }) {
       </ScrollView>
 
       {/* Промт 14b: sticky-CTA — padding lg сверху и снизу; кнопка
-          primary size lg уже 56 (thumb zone для перчаток). */}
+          primary size lg уже 56 (thumb zone для перчаток).
+          Промт 16 (C): POR-предложение — «Запросить цену» (шит),
+          обычное — «В корзину · сумма». */}
       <View
         style={{
           position: 'absolute',
@@ -228,25 +284,51 @@ function ProductBody({ id }: { id: string }) {
           borderTopColor: colors.border,
         }}
       >
-        <QuantitySelector
-          value={effectiveQuantity}
-          onChange={setQuantity}
-          min={minQuantity}
-          max={Math.min(best?.stock ?? 99, 99)}
-        />
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onPress={addToCart}
-          disabled={!best}
-          testID="add-to-cart"
-        >
-          {best
-            ? `В корзину · ${totalRubles.toLocaleString('ru-RU')} ₽`
-            : 'Нет предложений'}
-        </Button>
+        {bestIsPor ? (
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onPress={() => setRequestDialogVisible(true)}
+            testID="request-price"
+          >
+            Запросить цену
+          </Button>
+        ) : (
+          <>
+            <QuantitySelector
+              value={effectiveQuantity}
+              onChange={setQuantity}
+              min={minQuantity}
+              max={Math.min(best?.stock ?? 99, 99)}
+            />
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={addToCart}
+              disabled={!best}
+              testID="add-to-cart"
+            >
+              {best
+                ? `В корзину · ${totalRubles.toLocaleString('ru-RU')} ₽`
+                : 'Нет предложений'}
+            </Button>
+          </>
+        )}
       </View>
+
+      {/* Промт 16 (C): шит запроса цены для POR-предложения. */}
+      <PriceRequestDialog
+        visible={requestDialogVisible}
+        onClose={() => setRequestDialogVisible(false)}
+        productName={product.name}
+        minQuantity={minQuantity}
+        stock={best?.stock ?? 99}
+        initialQuantity={effectiveQuantity}
+        onSubmit={submitPriceRequest}
+        submitting={createRequestMutation.isPending}
+      />
     </View>
   );
 }

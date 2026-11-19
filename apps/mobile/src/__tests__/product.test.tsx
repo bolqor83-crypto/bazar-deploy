@@ -59,6 +59,7 @@ const DETAIL: CatalogProductDetail = {
     {
       id: 'o1',
       priceKopecks: 18_900,
+      priceOnRequest: false,
       stock: 53,
       minQuantity: 5,
       badge: 'hit',
@@ -68,6 +69,7 @@ const DETAIL: CatalogProductDetail = {
     {
       id: 'o2',
       priceKopecks: 23_700,
+      priceOnRequest: false,
       stock: 82,
       minQuantity: 1,
       badge: null,
@@ -89,6 +91,7 @@ const SIMILAR: CatalogSimilarProducts = {
       bestOffer: {
         id: 'o3',
         priceKopecks: 10_400,
+        priceOnRequest: false,
         stock: 120,
         minQuantity: 1,
         badge: null,
@@ -107,6 +110,7 @@ const SIMILAR: CatalogSimilarProducts = {
       bestOffer: {
         id: 'o4',
         priceKopecks: 8_900,
+        priceOnRequest: false,
         stock: 35,
         minQuantity: 3,
         badge: null,
@@ -175,7 +179,7 @@ describe('(tabs)/customer/product/[id]', () => {
     await fireEvent.press(screen.getByTestId('add-to-cart'));
     await waitFor(() => {
       // 189 ₽ × 5 (минимальная партия) = 945 ₽ — количество в запросе.
-      expect(addCartItemMock).toHaveBeenCalledWith('o1', 5);
+      expect(addCartItemMock).toHaveBeenCalledWith('o1', 5, undefined);
     });
     await waitFor(() => {
       expect(screen.getByText(/— в корзине/)).toBeTruthy();

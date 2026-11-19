@@ -30,6 +30,7 @@ import {
   returnForOrder,
   unreserveForOrder,
 } from '../stock/stock.helper';
+import { isExpired } from '../price-requests/price-request.service';
 import type { DeliveryMethod } from './dto/order.dto';
 
 /** Статусы заказа (строки, значения валидируются DTO). */
@@ -67,6 +68,7 @@ export interface OrderView {
     price: number;
     quantity: number;
     total: number;
+    priceRequestId: string | null;
   }[];
   events: { id: string; type: string; createdAt: Date }[];
   /** Активная доставка заказа (Промт 10, Часть D). */
@@ -136,6 +138,7 @@ function toView(order: OrderWithRelations): OrderView {
       price: item.price,
       quantity: item.quantity,
       total: item.total,
+      priceRequestId: item.priceRequestId,
     })),
     events: order.events,
     delivery: order.deliveries?.[0] ? toBrief(order.deliveries[0]) : null,
@@ -161,7 +164,14 @@ async function nextOrderNumber(tx: Prisma.TransactionClient): Promise<string> {
 export class OrderService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Создать заказ(ы): группировка по продавцу + stock-резерв. */
+  /** Создать заказ(ы): группировка по продавцу + stock-резерв.
+   *
+   * Промт 16 (C): цена позиций — из корзины покупателя: если строка
+   * корзины для оффера добавлена по персональному предложению
+   * (CartItem.priceRequestId), заказ считается по quotedPriceKopecks
+   * (снапшот в OrderItem.price + priceRequestId для трассировки).
+   * POR-оффер без валидного предложения — PRICE_REQUIRED; истёкшее —
+   * QUOTE_EXPIRED. Сервер не доверяет клиенту цену: смотрит сам. */
   async create(input: CreateOrderInput): Promise<OrderView[]> {
     const offerIds = [...new Set(input.items.map((i) => i.offerId))];
     const offers = await this.prisma.productOffer.findMany({
@@ -169,6 +179,7 @@ export class OrderService {
       select: {
         id: true,
         priceKopecks: true,
+        priceOnRequest: true,
         minQuantity: true,
         organizationId: true,
         product: { select: { name: true, unit: true } },
@@ -179,6 +190,32 @@ export class OrderService {
       where: { id: input.buyerId },
       select: { id: true, name: true },
     });
+
+    // Строки корзины покупателя по этим офферам — ценовая база
+    // позиций (персональные предложения, Промт 16, C).
+    const buyerCartItems = await this.prisma.cartItem.findMany({
+      where: {
+        cart: { userId: input.buyerId },
+        offerId: { in: offerIds },
+      },
+      select: {
+        offerId: true,
+        priceRequestId: true,
+        priceRequest: {
+          select: {
+            id: true,
+            status: true,
+            quotedPriceKopecks: true,
+            validUntil: true,
+          },
+        },
+      },
+    });
+    const quoteByOffer = new Map(
+      buyerCartItems
+        .filter((row) => row.priceRequestId !== null)
+        .map((row) => [row.offerId, row.priceRequest]),
+    );
 
     for (const item of input.items) {
       const offer = byId.get(item.offerId);
@@ -192,6 +229,29 @@ export class OrderService {
         throw new BadRequestException({
           code: 'BELOW_MIN_QUANTITY',
           message: `Минимальная партия «${offer.product.name}» — ${offer.minQuantity}`,
+        });
+      }
+      const quote = quoteByOffer.get(item.offerId);
+      if (quote) {
+        // Персональная цена: ответ должен быть жив (не истёк).
+        if (quote.status !== 'ANSWERED') {
+          throw new BadRequestException({
+            code: 'PRICE_REQUEST_NOT_ANSWERED',
+            message: `«${offer.product.name}»: продавец ещё не ответил на запрос цены`,
+          });
+        }
+        if (isExpired(quote)) {
+          throw new BadRequestException({
+            code: 'QUOTE_EXPIRED',
+            message: `«${offer.product.name}»: срок персональной цены истёк — создайте новый запрос`,
+          });
+        }
+      } else if (offer.priceOnRequest) {
+        // POR-оффер без предложения: базовая цена не покидает
+        // сервер — заказывать не с чем.
+        throw new BadRequestException({
+          code: 'PRICE_REQUIRED',
+          message: `«${offer.product.name}»: цена по запросу — сначала получите персональное предложение`,
         });
       }
     }
@@ -215,10 +275,21 @@ export class OrderService {
         const orders: OrderView[] = [];
         for (const [sellerId, groupItems] of groups) {
           const number = await nextOrderNumber(tx);
-          const subtotal = groupItems.reduce((sum, gi) => {
-            const offer = byId.get(gi.offerId);
-            return sum + (offer ? offer.priceKopecks * gi.quantity : 0);
-          }, 0);
+          // Промт 16 (C): эффективная цена позиции — персональная
+          // (если строка корзины по quote) или базовая оффера.
+          const effectivePrice = (offerId: string): number => {
+            const offer = byId.get(offerId);
+            if (!offer) return 0;
+            const quote = quoteByOffer.get(offerId);
+            if (quote && quote.quotedPriceKopecks !== null) {
+              return quote.quotedPriceKopecks;
+            }
+            return offer.priceKopecks;
+          };
+          const subtotal = groupItems.reduce(
+            (sum, gi) => sum + effectivePrice(gi.offerId) * gi.quantity,
+            0,
+          );
           const order = await tx.order.create({
             data: {
               number,
@@ -237,13 +308,19 @@ export class OrderService {
               items: {
                 create: groupItems.map((gi) => {
                   const offer = byId.get(gi.offerId);
+                  const quote = quoteByOffer.get(gi.offerId);
+                  const price =
+                    quote && quote.quotedPriceKopecks !== null
+                      ? quote.quotedPriceKopecks
+                      : (offer?.priceKopecks ?? 0);
                   return {
                     offerId: gi.offerId,
                     title: offer?.product.name ?? '',
                     unit: offer?.product.unit ?? '',
-                    price: offer?.priceKopecks ?? 0,
+                    price,
                     quantity: gi.quantity,
-                    total: (offer?.priceKopecks ?? 0) * gi.quantity,
+                    total: price * gi.quantity,
+                    priceRequestId: quote?.id ?? null,
                   };
                 }),
               },

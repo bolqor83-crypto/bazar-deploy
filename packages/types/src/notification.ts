@@ -18,6 +18,9 @@ export const NOTIFICATION_TYPES = [
   'DELIVERY_CANCELLED',
   'STOCK_WRITE_OFF',
   'STOCK_EMPTY',
+  'PRICE_REQUEST_CREATED',
+  'PRICE_REQUEST_ANSWERED',
+  'PRICE_REQUEST_DECLINED',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -27,7 +30,8 @@ export interface Notification {
   type: NotificationType;
   title: string;
   body: string;
-  /** JSON-контекст события: { orderId, orderNumber, status? }. */
+  /** JSON-контекст события: { orderId, orderNumber, status? } или
+   *  { priceRequestId, offerId, productId? } для запросов цены. */
   payload?: Record<string, unknown> | null;
   orderId?: string | null;
   readAt: string | null;

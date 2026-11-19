@@ -22,16 +22,21 @@ export async function fetchCart(): Promise<CartView> {
   });
 }
 
-/** Добавить предложение (quantity >= minQuantity). */
+/** Добавить предложение (quantity >= minQuantity).
+ * Промт 16 (C): priceRequestId — добавить по персональному
+ * предложению (цена строки = quotedPriceKopecks). */
 export async function addCartItem(
   offerId: string,
   quantity: number,
+  priceRequestId?: string,
 ): Promise<CartView> {
   return apiRequest<CartView>('/cart/items', {
     method: 'POST',
     auth: true,
     headers: scopeHeaders(),
-    body: { offerId, quantity },
+    body: priceRequestId
+      ? { offerId, quantity, priceRequestId }
+      : { offerId, quantity },
   });
 }
 

@@ -150,4 +150,134 @@ describe('CartService (unit)', () => {
     const retailCart = await service.getCart(USER, '');
     expect(retailCart.items[0].quantity).toBe(10);
   });
+
+  describe('Персональные цены (Промт 16, C)', () => {
+    /** Фикстура: POR-оффер + запрос цены покупателя. */
+    const seedPorOffer = (options?: {
+      status?: 'PENDING' | 'ANSWERED' | 'DECLINED';
+      validUntil?: Date;
+    }) => {
+      prisma.offers.set('offer-por', {
+        id: 'offer-por',
+        productId: 'product-por',
+        organizationId: 'org-1',
+        priceKopecks: 25000,
+        priceOnRequest: true,
+        minQuantity: 10,
+        badge: null,
+        isPerishable: false,
+        product: { id: 'product-por', name: 'Картофель', unit: '1 кг' },
+        organization: { id: 'org-1', name: 'Опт-Юг' },
+      });
+      prisma.seedStock('offer-por', 'org-1', 100);
+      prisma.priceRequests.set('quote-1', {
+        id: 'quote-1',
+        buyerId: USER,
+        offerId: 'offer-por',
+        quantity: 20,
+        message: null,
+        status: options?.status ?? 'ANSWERED',
+        quotedPriceKopecks: 22000,
+        validUntil:
+          options?.validUntil ?? new Date(Date.now() + 24 * 3_600_000),
+        respondedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      return 'quote-1';
+    };
+
+    it('добавление по quote: цена строки = персональная', async () => {
+      const quoteId = seedPorOffer();
+      const cart = await service.addItem(USER, '', 'offer-por', 20, quoteId);
+      expect(cart.items).toHaveLength(1);
+      expect(cart.items[0].offer.priceKopecks).toBeNull();
+      expect(cart.items[0].offer.priceOnRequest).toBe(true);
+      expect(cart.items[0].quote?.priceKopecks).toBe(22000);
+      expect(cart.items[0].subtotal).toBe(22000 * 20);
+      expect(cart.subtotal).toBe(22000 * 20);
+    });
+
+    it('POR-оффер без quote — PRICE_REQUIRED', async () => {
+      seedPorOffer();
+      await expect(
+        service.addItem(USER, '', 'offer-por', 20),
+      ).rejects.toMatchObject({ response: { code: 'PRICE_REQUIRED' } });
+    });
+
+    it('PENDING-запрос — PRICE_REQUEST_NOT_ANSWERED', async () => {
+      const quoteId = seedPorOffer({ status: 'PENDING' });
+      await expect(
+        service.addItem(USER, '', 'offer-por', 20, quoteId),
+      ).rejects.toMatchObject({
+        response: { code: 'PRICE_REQUEST_NOT_ANSWERED' },
+      });
+    });
+
+    it('истёкший quote — PRICE_REQUEST_EXPIRED', async () => {
+      const quoteId = seedPorOffer({
+        validUntil: new Date(Date.now() - 1_000),
+      });
+      await expect(
+        service.addItem(USER, '', 'offer-por', 20, quoteId),
+      ).rejects.toMatchObject({
+        response: { code: 'PRICE_REQUEST_EXPIRED' },
+      });
+    });
+
+    it('чужой quote — PRICE_REQUEST_NOT_FOUND (изоляция)', async () => {
+      const quoteId = seedPorOffer();
+      await expect(
+        service.addItem(OTHER, '', 'offer-por', 20, quoteId),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('повтор с тем же quote — инкремент количества', async () => {
+      const quoteId = seedPorOffer();
+      await service.addItem(USER, '', 'offer-por', 20, quoteId);
+      const cart = await service.addItem(USER, '', 'offer-por', 10, quoteId);
+      expect(cart.items[0].quantity).toBe(30);
+    });
+
+    it('смешение режимов — QUOTE_CONFLICT (оффер перестал быть POR)', async () => {
+      const quoteId = seedPorOffer();
+      await service.addItem(USER, '', 'offer-por', 20, quoteId);
+      // Продавец открыл цену после ответа: строка осталась с quote,
+      // добавление без quote поверх — конфликт режимов.
+      const offer = prisma.offers.get('offer-por');
+      if (offer) {
+        offer.priceOnRequest = false;
+      }
+      await expect(
+        service.addItem(USER, '', 'offer-por', 10),
+      ).rejects.toMatchObject({ response: { code: 'QUOTE_CONFLICT' } });
+    });
+
+    it('quote удалён из корзины — повторное добавление без quote запрещено', async () => {
+      const quoteId = seedPorOffer();
+      const cart = await service.addItem(USER, '', 'offer-por', 20, quoteId);
+      expect(cart.items).toHaveLength(1);
+      await service.removeItem(USER, '', cart.items[0].id);
+      await expect(
+        service.addItem(USER, '', 'offer-por', 20),
+      ).rejects.toMatchObject({ response: { code: 'PRICE_REQUIRED' } });
+    });
+
+    it('истёкший quote в корзине — warning при чтении', async () => {
+      const quoteId = seedPorOffer();
+      await service.addItem(USER, '', 'offer-por', 20, quoteId);
+      // Срок истёк после добавления (вычисляемое истечение).
+      const row = prisma.priceRequests.get('quote-1');
+      if (row) {
+        row.validUntil = new Date(Date.now() - 1_000);
+      }
+      const updated = await service.getCart(USER, '');
+      expect(
+        updated.warnings.find((w: { message: string }) =>
+          w.message.includes('Срок персональной цены истёк'),
+        ),
+      ).toBeDefined();
+      expect(updated.items[0].quote?.expired).toBe(true);
+    });
+  });
 });

@@ -395,4 +395,92 @@ describe('CatalogService (unit)', () => {
       });
     });
   });
+
+  describe('Цена по запросу (Промт 16, C)', () => {
+    let porProductId = '';
+
+    beforeEach(async () => {
+      // Персимон — товар только с POR-оффером.
+      const persimmon = await prisma.product.create({
+        data: {
+          categoryId: vegetablesId,
+          name: 'Хурма королькова',
+          unit: '1 кг',
+          description: 'Сладкая хурма.',
+          images: '[]',
+        },
+      });
+      porProductId = persimmon.id;
+      const porOffer = await prisma.productOffer.create({
+        data: {
+          productId: porProductId,
+          organizationId: orgSouthId,
+          priceKopecks: 30000,
+          priceOnRequest: true,
+          minQuantity: 5,
+          badge: null,
+          isPerishable: false,
+        },
+      });
+      prisma.seedStock(porOffer.id, 40);
+    });
+
+    it('публичный вид скрывает базовую цену POR-оффера', async () => {
+      const detail = await service.detail(porProductId);
+      expect(detail.offers).toHaveLength(1);
+      expect(detail.offers[0].priceKopecks).toBeNull();
+      expect(detail.offers[0].priceOnRequest).toBe(true);
+    });
+
+    it('список: bestOffer POR-товара — цена null', async () => {
+      const list = await service.list({ pageSize: 50 });
+      const persimmon = list.items.find((i) => i.id === porProductId);
+      expect(persimmon).toBeDefined();
+      expect(persimmon?.bestOffer?.priceKopecks).toBeNull();
+      expect(persimmon?.bestOffer?.priceOnRequest).toBe(true);
+    });
+
+    it('сортировка price-asc: POR-товары в конце', async () => {
+      const list = await service.list({ sort: 'price-asc', pageSize: 50 });
+      const ids = list.items.map((i) => i.id);
+      const porIndex = ids.indexOf(porProductId);
+      // Не последний (последний может быть товар без предложений —
+      // яблоки), но после всех с открытой ценой.
+      const priced = list.items.filter(
+        (i) => i.bestOffer && i.bestOffer.priceKopecks !== null,
+      );
+      const lastPricedIndex = list.items.indexOf(priced[priced.length - 1]);
+      expect(porIndex).toBeGreaterThan(lastPricedIndex);
+    });
+
+    it('фильтры цены исключают POR-товары', async () => {
+      const list = await service.list({
+        minPrice: 1,
+        maxPrice: 1000,
+        pageSize: 50,
+      });
+      expect(list.items.find((i) => i.id === porProductId)).toBeUndefined();
+    });
+
+    it('офферы сортируются: открытые цены первыми, POR в конце', async () => {
+      // Второй оффер на хурму — с открытой ценой (дороже POR-базы).
+      const openOffer = await prisma.productOffer.create({
+        data: {
+          productId: porProductId,
+          organizationId: orgHomeId,
+          priceKopecks: 35000,
+          priceOnRequest: false,
+          minQuantity: 2,
+          badge: null,
+          isPerishable: false,
+        },
+      });
+      prisma.seedStock(openOffer.id, 10);
+      const detail = await service.detail(porProductId);
+      expect(detail.offers).toHaveLength(2);
+      // Лучшая (первая) — открытая цена, POR — в конце.
+      expect(detail.offers[0].priceKopecks).toBe(35000);
+      expect(detail.offers[1].priceOnRequest).toBe(true);
+    });
+  });
 });

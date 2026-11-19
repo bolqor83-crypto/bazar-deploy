@@ -15,6 +15,8 @@ export interface FakeOffer {
   productId: string;
   organizationId: string;
   priceKopecks: number;
+  /** Промт 16 (C): «цена по запросу» (undefined ≡ false в фикстурах). */
+  priceOnRequest?: boolean;
   minQuantity: number;
   badge: string | null;
   isPerishable: boolean;
@@ -60,9 +62,26 @@ export interface FakeCartItem {
   cartId: string;
   offerId: string;
   quantity: number;
+  /** Промт 16 (C): персональное предложение позиции. */
+  priceRequestId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   offer: FakeOffer;
+}
+
+/** Запрос цены (Промт 16, C) — минимальная форма для корзины. */
+export interface FakePriceRequest {
+  id: string;
+  buyerId: string;
+  offerId: string;
+  quantity: number;
+  message: string | null;
+  status: 'PENDING' | 'ANSWERED' | 'DECLINED';
+  quotedPriceKopecks: number | null;
+  validUntil: Date | null;
+  respondedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface FakeCart {
@@ -136,6 +155,8 @@ export class FakeCartPrisma {
   readonly offers = new Map<string, FakeOffer>();
   readonly carts = new Map<string, FakeCart>();
   readonly cartItems = new Map<string, FakeCartItem>();
+  /** Промт 16 (C): запросы цены. */
+  readonly priceRequests = new Map<string, FakePriceRequest>();
   readonly orders = new Map<string, FakeOrder>();
   readonly orderCounters = new Map<number, { year: number; seq: number }>();
   readonly memberships = new Map<
@@ -657,25 +678,60 @@ export class FakeCartPrisma {
     },
   };
 
+  /** Промт 16 (C): запросы цены — чтение для валидации quote. */
+  readonly priceRequest = {
+    findUnique: async ({ where }: { where: { id: string } }) =>
+      this.priceRequests.get(where.id) ?? null,
+    findFirst: async ({ where }: { where: Record<string, unknown> }) =>
+      [...this.priceRequests.values()].find((r) => {
+        if (typeof where.buyerId === 'string' && r.buyerId !== where.buyerId) {
+          return false;
+        }
+        if (typeof where.offerId === 'string' && r.offerId !== where.offerId) {
+          return false;
+        }
+        if (typeof where.status === 'string' && r.status !== where.status) {
+          return false;
+        }
+        return true;
+      }) ?? null,
+  };
+
   readonly cartItem = {
     findUnique: async ({
       where,
     }: {
-      where: { id: string };
+      where: {
+        id?: string;
+        cartId_offerId?: { cartId: string; offerId: string };
+      };
       include?: unknown;
       select?: unknown;
     }) => {
-      const item = this.cartItems.get(where.id);
+      // По id или по составному ключу (cartId, offerId) — Промт 16, C.
+      let item: FakeCartItem | undefined;
+      if (where.id) {
+        item = this.cartItems.get(where.id);
+      } else if (where.cartId_offerId) {
+        item = [...this.cartItems.values()].find(
+          (i) =>
+            i.cartId === where.cartId_offerId!.cartId &&
+            i.offerId === where.cartId_offerId!.offerId,
+        );
+      }
       if (!item) return null;
-      const cart = [...this.carts.values()].find((c) => c.id === item.cartId);
+      const cart = [...this.carts.values()].find((c) => c.id === item!.cartId);
       return {
         ...item,
         offer: {
           ...item.offer,
           stockBalances: [...this.stockBalances.values()]
-            .filter((b) => b.offerId === item.offerId)
+            .filter((b) => b.offerId === item!.offerId)
             .map((b) => ({ availableQty: b.availableQty })),
         },
+        priceRequest: item.priceRequestId
+          ? (this.priceRequests.get(item.priceRequestId) ?? null)
+          : null,
         cart: { userId: cart?.userId },
       };
     },
@@ -684,14 +740,28 @@ export class FakeCartPrisma {
       orderBy,
       include,
     }: {
-      where: { cartId: string };
+      where: {
+        cartId?: string;
+        cart?: { userId?: string };
+        offerId?: { in?: string[] };
+      };
       orderBy?: unknown;
       include?: { offer?: { include?: unknown } };
     }) => {
       void orderBy;
       void include;
       const items = [...this.cartItems.values()]
-        .filter((i) => i.cartId === where.cartId)
+        .filter((i) => {
+          if (where.cartId && i.cartId !== where.cartId) return false;
+          if (where.cart?.userId) {
+            const cart = this.carts.get(i.cartId);
+            if (!cart || cart.userId !== where.cart?.userId) return false;
+          }
+          if (where.offerId?.in && !where.offerId.in.includes(i.offerId)) {
+            return false;
+          }
+          return true;
+        })
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       return items.map((item) => ({
         ...item,
@@ -701,6 +771,9 @@ export class FakeCartPrisma {
             .filter((b) => b.offerId === item.offerId)
             .map((b) => ({ availableQty: b.availableQty })),
         },
+        priceRequest: item.priceRequestId
+          ? (this.priceRequests.get(item.priceRequestId) ?? null)
+          : null,
       }));
     },
     upsert: async ({
@@ -734,16 +807,44 @@ export class FakeCartPrisma {
       this.cartItems.set(record.id, record);
       return record;
     },
+    /** Промт 16 (C): прямое создание строки (в т.ч. с priceRequestId). */
+    create: async ({
+      data,
+    }: {
+      data: {
+        cartId: string;
+        offerId: string;
+        quantity: number;
+        priceRequestId?: string | null;
+      };
+    }) => {
+      const offer = this.offers.get(data.offerId);
+      const record: FakeCartItem = {
+        id: this.nextId('cart-item'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        quantity: data.quantity,
+        cartId: data.cartId,
+        offerId: data.offerId,
+        priceRequestId: data.priceRequestId ?? null,
+        offer: offer as FakeOffer,
+      };
+      this.cartItems.set(record.id, record);
+      return record;
+    },
     update: async ({
       where,
       data,
     }: {
       where: { id: string };
-      data: { quantity: number };
+      data: { quantity: number | { increment: number } };
     }) => {
       const item = this.cartItems.get(where.id);
       if (!item) throw new Error('cart item not found');
-      item.quantity = data.quantity;
+      item.quantity =
+        typeof data.quantity === 'number'
+          ? data.quantity
+          : item.quantity + data.quantity.increment;
       return item;
     },
     delete: async ({ where }: { where: { id: string } }) => {

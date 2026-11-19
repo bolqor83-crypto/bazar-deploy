@@ -18,6 +18,9 @@ export const NOTIFICATION_TYPES = [
   'DELIVERY_CANCELLED',
   'STOCK_WRITE_OFF',
   'STOCK_EMPTY',
+  'PRICE_REQUEST_CREATED',
+  'PRICE_REQUEST_ANSWERED',
+  'PRICE_REQUEST_DECLINED',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -122,6 +125,43 @@ export async function notifyDeliveryEvent(
         ...input.extra,
       }),
       orderId: input.orderId,
+    })),
+  });
+}
+
+/** Контекст события запроса цены (Промт 16, Часть C). */
+export interface NotifyPriceRequestInput {
+  /** Адресаты. */
+  userIds: string[];
+  type: NotificationType;
+  title: string;
+  body: string;
+  priceRequestId: string;
+  offerId: string;
+  /** Дополнительные поля payload (quantity, quotedPriceKopecks). */
+  extra?: Record<string, unknown>;
+}
+
+/** Создать уведомления о событии запроса цены (createMany,
+ * внутри транзакции сервиса — атомарно с основной записью). */
+export async function notifyPriceRequestEvent(
+  tx: Prisma.TransactionClient,
+  input: NotifyPriceRequestInput,
+): Promise<void> {
+  const uniqueIds = [...new Set(input.userIds)];
+  if (uniqueIds.length === 0) return;
+  await tx.notification.createMany({
+    data: uniqueIds.map((userId) => ({
+      userId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      payload: JSON.stringify({
+        priceRequestId: input.priceRequestId,
+        offerId: input.offerId,
+        ...input.extra,
+      }),
+      orderId: null,
     })),
   });
 }

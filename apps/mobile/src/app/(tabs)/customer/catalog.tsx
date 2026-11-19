@@ -409,7 +409,8 @@ function CatalogBody() {
             <ProductCard
               name={item.name}
               unit={item.unit}
-              priceKopecks={item.bestOffer?.priceKopecks ?? 0}
+              priceKopecks={item.bestOffer?.priceKopecks ?? null}
+              priceOnRequest={item.bestOffer?.priceOnRequest ?? false}
               stock={
                 item.bestOffer
                   ? item.bestOffer.stock > 0

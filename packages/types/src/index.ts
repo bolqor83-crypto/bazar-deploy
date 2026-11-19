@@ -17,6 +17,8 @@
  * Уведомления (Notification) — в notification.ts, см. ADR 0011.
  * Склад (StockLocation, StockMovement, StockBalance) — в stock.ts,
  * см. ADR 0012 (Промт 11).
+ * Запросы цены (PriceRequest) — в price-request.ts, см. ADR 0016
+ * (Промт 16, Часть C).
  */
 export * from './context';
 export * from './auth';
@@ -28,3 +30,4 @@ export * from './seller';
 export * from './delivery';
 export * from './notification';
 export * from './stock';
+export * from './price-request';

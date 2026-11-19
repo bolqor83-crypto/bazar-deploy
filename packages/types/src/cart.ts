@@ -11,11 +11,14 @@
 export interface CartItem {
   id: string;
   quantity: number;
-  /** Цена × количество, копейки. */
+  /** Цена × количество, копейки (по персональной цене, если
+   * позиция добавлена по запросу — Промт 16, C). */
   subtotal: number;
   offer: {
     id: string;
-    priceKopecks: number;
+    priceKopecks: number | null;
+    /** Базовая цена скрыта (цена по запросу). */
+    priceOnRequest: boolean;
     stock: number;
     minQuantity: number;
     badge: string | null;
@@ -23,6 +26,15 @@ export interface CartItem {
     product: { id: string; name: string; unit: string };
     organization: { id: string; name: string };
   };
+  /** Персональное предложение, по которому позиция в корзине
+   * (Промт 16, C): цена строки = quote.priceKopecks. */
+  quote?: {
+    id: string;
+    priceKopecks: number;
+    /** Истёк ли срок (вычисляется на сервере при чтении). */
+    expired: boolean;
+    validUntil: string;
+  } | null;
 }
 
 /** Предупреждение корзины: позиция требует внимания. */

@@ -32,6 +32,9 @@ export interface OrderItem {
   price: number;
   quantity: number;
   total: number;
+  /** Персональное предложение, по цене которого куплено
+   * (Промт 16, C; null — обычная цена оффера). */
+  priceRequestId?: string | null;
 }
 
 /** Событие жизненного цикла заказа. */

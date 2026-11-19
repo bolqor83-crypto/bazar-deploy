@@ -34,6 +34,9 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   DELIVERY_CANCELLED: 'Отмена доставки',
   STOCK_WRITE_OFF: 'Списание товара',
   STOCK_EMPTY: 'Товар закончился',
+  PRICE_REQUEST_CREATED: 'Запрос цены',
+  PRICE_REQUEST_ANSWERED: 'Ответ на запрос цены',
+  PRICE_REQUEST_DECLINED: 'Запрос отклонён',
 };
 
 /** Формат времени: «13 ноя, 08:30». */

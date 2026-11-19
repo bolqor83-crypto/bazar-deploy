@@ -68,6 +68,9 @@ export interface SellerOffer {
     archivedAt: string | null;
   };
   price: number;
+  /** «Цена по запросу» (Промт 16, C): покупателям цена скрыта —
+   *  продавец видит свою базовую и переключатель в редакторе. */
+  priceOnRequest: boolean;
   stock: number;
   minQuantity: number;
   badge: string | null;
@@ -83,6 +86,8 @@ export interface SellerOffer {
 export interface CreateSellerOfferInput {
   productId: string;
   price: number;
+  /** «Цена по запросу» (Промт 16, C). */
+  priceOnRequest?: boolean;
   stock: number;
   minQuantity?: number;
   badge?: string;
@@ -93,6 +98,8 @@ export interface CreateSellerOfferInput {
 /** Ввод обновления предложения. */
 export interface UpdateSellerOfferInput {
   price?: number;
+  /** «Цена по запросу» (Промт 16, C): включить/выключить. */
+  priceOnRequest?: boolean;
   stock?: number;
   stockReason?: string;
   minQuantity?: number;

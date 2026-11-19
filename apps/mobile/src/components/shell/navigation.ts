@@ -209,10 +209,10 @@ const wholesaleNav: RoleNavConfig = {
         // не дублируем (VLM-аудит, итерация 3: дубли путали навигацию).
         {
           key: 'requests',
-          label: 'Запросы',
+          label: 'Запросы цен',
           icon: IconOrders,
           route: '/wholesale/requests',
-          subtitle: 'Запросы на подбор',
+          subtitle: 'Персональные цены покупателям',
         },
       ],
     },

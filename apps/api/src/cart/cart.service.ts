@@ -1,13 +1,18 @@
 /**
- * Сервис корзины (Промт 9, Часть D).
+ * Сервис корзины (Промт 9, Часть D; Промт 16, Часть C).
  *
  * Инварианты:
  * - quantity >= offer.minQuantity (партия продавца);
  * - quantity <= доступного остатка оффера (Промт 11: сумма
  *   availableQty по складам — ADR 0012);
  * - корзина одна на (userId, organizationId) — unique в БД;
- * - при чтении собираются warnings: offer исчез или остаток меньше
- *   сохранённого количества — покупатель видит честное состояние.
+ * - при чтении собираются warnings: offer исчез, остаток меньше
+ *   сохранённого количества или истёк срок персональной цены;
+ * - Промт 16 (C): позиция может быть добавлена по персональному
+ *   предложению (priceRequestId) — цена строки = quotedPriceKopecks;
+ *   строка «по запросу» без валидного предложения не живёт:
+ *   добавление POR-оффера без quote запрещено, истёкший quote —
+ *   warning + блок на чекауте (заказы проверяют отдельно).
  */
 import {
   Injectable,
@@ -16,6 +21,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma, CartItem } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isExpired } from '../price-requests/price-request.service';
 
 /** Вид позиции корзины для клиента. */
 export interface CartItemView {
@@ -24,12 +30,21 @@ export interface CartItemView {
   subtotal: number;
   offer: {
     id: string;
-    priceKopecks: number;
+    priceKopecks: number | null;
+    priceOnRequest: boolean;
     stock: number;
     minQuantity: number;
     product: { id: string; name: string; unit: string };
     organization: { id: string; name: string };
   };
+  /** Персональное предложение, по которому позиция в корзине
+   * (Промт 16, C): цена строки = quote.priceKopecks. */
+  quote: {
+    id: string;
+    priceKopecks: number;
+    expired: boolean;
+    validUntil: Date;
+  } | null;
 }
 
 /** Вид корзины для клиента. */
@@ -57,17 +72,27 @@ const includeOffer = {
       stockBalances: { select: { availableQty: true } },
     },
   },
+  // Персональное предложение позиции (Промт 16, C) — отношение
+  // CartItem.priceRequest, не оффера.
+  priceRequest: true,
 } satisfies Prisma.CartItemInclude;
 
 type CartItemWithOffer = CartItem & {
   offer: {
     id: string;
     priceKopecks: number;
+    priceOnRequest: boolean;
     stockBalances: { availableQty: number }[];
     minQuantity: number;
     product: { id: string; name: string; unit: string };
     organization: { id: string; name: string };
   };
+  priceRequest: {
+    id: string;
+    quotedPriceKopecks: number | null;
+    validUntil: Date | null;
+    status: string;
+  } | null;
 };
 
 /** Позиция с вычисленным остатком (для ответа и проверок). */
@@ -117,7 +142,15 @@ export class CartService {
     const views: CartItemView[] = [];
     let subtotal = 0;
     for (const item of items) {
-      const subtotalKopecks = item.offer.priceKopecks * item.quantity;
+      // Эффективная цена: персональная (если строка по quote),
+      // иначе базовая. POR-оффер в корзине всегда со строкой quote
+      // (добавление без quote запрещено — см. addItem).
+      const quote = item.priceRequest;
+      const effectivePrice =
+        quote && quote.quotedPriceKopecks !== null
+          ? quote.quotedPriceKopecks
+          : item.offer.priceKopecks;
+      const subtotalKopecks = effectivePrice * item.quantity;
       if (item.offer.stock <= 0) {
         warnings.push({
           itemId: item.id,
@@ -129,23 +162,54 @@ export class CartService {
           message: `В наличии осталось ${item.offer.stock}, в корзине ${item.quantity}`,
         });
       }
+      if (quote && isExpired(quote)) {
+        warnings.push({
+          itemId: item.id,
+          message: 'Срок персональной цены истёк — создайте новый запрос',
+        });
+      }
       subtotal += subtotalKopecks;
       views.push({
         id: item.id,
         quantity: item.quantity,
         subtotal: subtotalKopecks,
-        offer: item.offer,
+        offer: {
+          id: item.offer.id,
+          priceKopecks: item.offer.priceOnRequest
+            ? null
+            : item.offer.priceKopecks,
+          priceOnRequest: item.offer.priceOnRequest,
+          stock: item.offer.stock,
+          minQuantity: item.offer.minQuantity,
+          product: item.offer.product,
+          organization: item.offer.organization,
+        },
+        quote:
+          quote && quote.quotedPriceKopecks !== null
+            ? {
+                id: quote.id,
+                priceKopecks: quote.quotedPriceKopecks,
+                expired: isExpired(quote),
+                validUntil: quote.validUntil ?? new Date(0),
+              }
+            : null,
       });
     }
     return { items: views, subtotal, warnings };
   }
 
-  /** Добавить позицию (upsert по offerId). */
+  /** Добавить позицию (upsert по offerId).
+   *
+   * Промт 16 (C): с priceRequestId — по персональному предложению
+   * (валидация: свой запрос, ANSWERED, не истёк, оффер совпадает).
+   * Смешение режимов одной строки запрещено (QUOTE_CONFLICT):
+   * обычная цена и персональная не смешиваются в одной позиции. */
   async addItem(
     userId: string,
     organizationId: string,
     offerId: string,
     quantity: number,
+    priceRequestId?: string,
   ): Promise<CartView> {
     const offer = await this.prisma.productOffer.findUnique({
       where: { id: offerId },
@@ -153,6 +217,7 @@ export class CartService {
         id: true,
         minQuantity: true,
         organizationId: true,
+        priceOnRequest: true,
         stockBalances: { select: { availableQty: true } },
       },
     });
@@ -182,6 +247,46 @@ export class CartService {
       });
     }
 
+    // Валидация персонального предложения (Промт 16, C).
+    let quoteId: string | null = null;
+    if (priceRequestId) {
+      const quote = await this.prisma.priceRequest.findUnique({
+        where: { id: priceRequestId },
+      });
+      if (!quote || quote.buyerId !== userId) {
+        throw new NotFoundException({
+          code: 'PRICE_REQUEST_NOT_FOUND',
+          message: 'Персональное предложение не найдено',
+        });
+      }
+      if (quote.offerId !== offerId) {
+        throw new BadRequestException({
+          code: 'PRICE_REQUEST_MISMATCH',
+          message: 'Предложение относится к другому товару',
+        });
+      }
+      if (quote.status !== 'ANSWERED') {
+        throw new BadRequestException({
+          code: 'PRICE_REQUEST_NOT_ANSWERED',
+          message: 'Продавец ещё не ответил на запрос',
+        });
+      }
+      if (isExpired(quote)) {
+        throw new BadRequestException({
+          code: 'PRICE_REQUEST_EXPIRED',
+          message: 'Срок персональной цены истёк — создайте новый запрос',
+        });
+      }
+      quoteId = quote.id;
+    } else if (offer.priceOnRequest) {
+      // POR-оффер без персонального предложения — цены у покупателя
+      // нет: сначала запрос (базовая цена не покидает сервер).
+      throw new BadRequestException({
+        code: 'PRICE_REQUIRED',
+        message: 'Цена по запросу — сначала получите персональное предложение',
+      });
+    }
+
     // Корзина контура создаётся при первом добавлении.
     const cart = await this.prisma.cart.upsert({
       where: { userId_organizationId: { userId, organizationId } },
@@ -189,11 +294,30 @@ export class CartService {
       update: {},
     });
 
-    await this.prisma.cartItem.upsert({
+    const existing = await this.prisma.cartItem.findUnique({
       where: { cartId_offerId: { cartId: cart.id, offerId } },
-      create: { cartId: cart.id, offerId, quantity },
-      update: { quantity: { increment: quantity } },
+      select: { id: true, priceRequestId: true, quantity: true },
     });
+    if (existing) {
+      // Одна строка — одна цена: смешение режимов запрещено.
+      if (existing.priceRequestId !== quoteId) {
+        throw new BadRequestException({
+          code: 'QUOTE_CONFLICT',
+          message:
+            existing.priceRequestId !== null
+              ? 'Позиция уже с персональной ценой — сначала удалите её'
+              : 'Позиция уже в корзине по обычной цене — сначала удалите её',
+        });
+      }
+      await this.prisma.cartItem.update({
+        where: { id: existing.id },
+        data: { quantity: { increment: quantity } },
+      });
+    } else {
+      await this.prisma.cartItem.create({
+        data: { cartId: cart.id, offerId, quantity, priceRequestId: quoteId },
+      });
+    }
 
     return this.getCart(userId, organizationId);
   }

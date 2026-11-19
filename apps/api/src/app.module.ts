@@ -37,7 +37,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
-
+import { PriceRequestsModule } from './price-requests/price-requests.module';
 /** Каталог сборки mobile: ENV → cwd → __dirname (apps/mobile/dist). */
 function mobileDistPath(): string | null {
   const configured = loadEnv().MOBILE_DIST_PATH;
@@ -94,6 +94,7 @@ const ValidationPipeConfig = new ValidationPipe({
     NotificationsModule,
     DeliveryModule,
     HealthModule,
+    PriceRequestsModule,
   ],
   providers: [
     AppLogger,

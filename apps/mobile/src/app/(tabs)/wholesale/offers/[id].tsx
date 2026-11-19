@@ -16,6 +16,7 @@ import {
   ErrorState,
   Input,
   Skeleton,
+  Switch,
   Text,
   useTheme,
   useToast,
@@ -57,6 +58,8 @@ export default function SellerOfferEditScreen() {
     stock?: string;
     minQuantity?: string;
   }>({});
+  /** Промт 16 (C): режим «цена по запросу». */
+  const [priceOnRequest, setPriceOnRequest] = useState<boolean | null>(null);
 
   const offer = offerQuery.data;
 
@@ -87,10 +90,13 @@ export default function SellerOfferEditScreen() {
   const price = edits.price ?? (offer.price / 100).toString();
   const stock = edits.stock ?? String(offer.stock);
   const minQuantity = edits.minQuantity ?? String(offer.minQuantity);
+  const por = priceOnRequest ?? offer.priceOnRequest;
+  const porChanged =
+    (priceOnRequest ?? offer.priceOnRequest) !== offer.priceOnRequest;
   const priceChanged = Math.round(Number(price) * 100) !== offer.price;
   const stockChanged = Number(stock) !== offer.stock;
   const minChanged = Number(minQuantity) !== offer.minQuantity;
-  const dirty = priceChanged || stockChanged || minChanged;
+  const dirty = priceChanged || stockChanged || minChanged || porChanged;
   const valid =
     Number(price) > 0 && Number(stock) >= 0 && Number(minQuantity) >= 1;
 
@@ -100,6 +106,7 @@ export default function SellerOfferEditScreen() {
         id: offer.id,
         input: {
           ...(priceChanged ? { price: Math.round(Number(price) * 100) } : {}),
+          ...(porChanged ? { priceOnRequest: por } : {}),
           ...(stockChanged
             ? {
                 stock: Number(stock),
@@ -148,8 +155,23 @@ export default function SellerOfferEditScreen() {
             value={price}
             onChangeText={(text) => setEdits((e) => ({ ...e, price: text }))}
             keyboardType="numeric"
-            hint={priceChanged ? 'Смена цены попадёт в историю' : undefined}
+            hint={
+              por
+                ? 'Базовая цена скрыта от покупателей — не попадёт в историю'
+                : priceChanged
+                  ? 'Смена цены попадёт в историю'
+                  : undefined
+            }
             testID="offer-edit-price"
+          />
+          {/* Промт 16 (C): режим «цена по запросу» — покупатели
+              просят персональную цену, базовая не показывается. */}
+          <Switch
+            value={por}
+            onChange={setPriceOnRequest}
+            label="Цена по запросу"
+            hint="Покупатели не увидят цену — будут запрашивать персональную (действует 72 часа)"
+            testID="offer-edit-price-on-request"
           />
           <Input
             label="Склад"

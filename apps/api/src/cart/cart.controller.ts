@@ -63,6 +63,7 @@ export class CartController {
       this.scope(orgHeader),
       dto.offerId,
       dto.quantity,
+      dto.priceRequestId,
     );
   }
 

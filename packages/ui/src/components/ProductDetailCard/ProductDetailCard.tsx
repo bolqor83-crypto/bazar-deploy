@@ -24,7 +24,8 @@ export function unitShort(unit: string): string {
 export interface DetailOffer {
   id: string;
   organizationName: string;
-  priceKopecks: number;
+  /** null — «по запросу» (Промт 16, C). */
+  priceKopecks: number | null;
   stock: number;
   minQuantity: number;
 }
@@ -34,8 +35,9 @@ export interface ProductDetailCardProps {
   description?: string;
   /** «1 кг», «500 г» — подставляется к цене. */
   unit: string;
-  /** Лучшая (минимальная) цена в копейках. */
-  priceKopecks: number;
+  /** Лучшая (минимальная) цена в копейках; null — все
+   *  предложения «по запросу» (Промт 16, C). */
+  priceKopecks: number | null;
   stock: StockLevel;
   /** Минимальная партия лучшего предложения. */
   minQuantity?: number;
@@ -94,18 +96,30 @@ export function ProductDetailCard({
           </Text>
         ) : null}
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'baseline',
-            gap: spacing.xs + 2,
-          }}
-        >
-          <PriceDisplay value={priceKopecks} size="lg" />
-          <Text variant="caption" color="textSecondary">
-            за {unit}
+        {priceKopecks === null ? (
+          // Промт 16 (C): все предложения «по запросу» —
+          // приглашение запросить цену вместо цифры.
+          <Text
+            variant="h2"
+            color="primaryText"
+            testID="detail-price-on-request"
+          >
+            Цена по запросу
           </Text>
-        </View>
+        ) : (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: spacing.xs + 2,
+            }}
+          >
+            <PriceDisplay value={priceKopecks} size="lg" />
+            <Text variant="caption" color="textSecondary">
+              за {unit}
+            </Text>
+          </View>
+        )}
 
         <StockIndicator stock={stock} />
 
@@ -182,7 +196,17 @@ export function ProductDetailCard({
                 <Text variant="caption" color="textSecondary">
                   склад {offer.stock}
                 </Text>
-                <PriceDisplay value={offer.priceKopecks} />
+                {offer.priceKopecks === null ? (
+                  <Text
+                    variant="caption"
+                    color="primaryText"
+                    style={{ fontWeight: '600' }}
+                  >
+                    по запросу
+                  </Text>
+                ) : (
+                  <PriceDisplay value={offer.priceKopecks} />
+                )}
               </View>
             ))}
           </View>

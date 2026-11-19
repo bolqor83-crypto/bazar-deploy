@@ -20,7 +20,12 @@ export interface CatalogCategory {
 /** Предложение продавца на товар. */
 export interface CatalogOffer {
   id: string;
-  priceKopecks: number;
+  /** Цена в копейках; null — «цена по запросу» (Промт 16, C:
+   * базовая цена не покидает сервер, покупатель запрашивает
+   * персональное предложение — ADR 0016). */
+  priceKopecks: number | null;
+  /** Признак «цена по запросу» (priceKopecks === null). */
+  priceOnRequest: boolean;
   stock: number;
   minQuantity: number;
   /** «hit» — хит продаж; расширяется без миграций. */

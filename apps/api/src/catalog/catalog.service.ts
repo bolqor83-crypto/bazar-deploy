@@ -31,6 +31,7 @@ interface ProductWithRelations {
   offers: {
     id: string;
     priceKopecks: number;
+    priceOnRequest: boolean;
     minQuantity: number;
     badge: string | null;
     isPerishable: boolean;
@@ -52,7 +53,10 @@ function offerStock(offer: ProductWithRelations['offers'][number]): number {
 
 export interface OfferView {
   id: string;
-  priceKopecks: number;
+  /** Цена в копейках; null — «цена по запросу» (Промт 16, C:
+   * базовая цена не покидает сервер в публичных ответах). */
+  priceKopecks: number | null;
+  priceOnRequest: boolean;
   stock: number;
   minQuantity: number;
   badge: string | null;
@@ -142,8 +146,31 @@ function bestOfferOf(
   if (visible.length === 0) {
     return null;
   }
-  const sorted = [...visible].sort((a, b) => a.priceKopecks - b.priceKopecks);
-  return sorted[0];
+  // Промт 16 (C): «цена по запросу» всегда в конце — лучшее
+  // предложение = самая дешёвая ОТКРЫТАЯ цена; если открытых
+  // нет, первый POR-оффер (цена null — карточка покажет
+  // «Цена по запросу»). Порядок с дешёвкой из pricedFirst().
+  return pricedFirst(visible)[0];
+}
+
+/** Сортировка офферов: открытые цены по возрастанию, затем
+ * «по запросу» (Промт 16, C — ADR 0016: такие офферы всегда
+ * в конце ценовых списков). */
+function pricedFirst(
+  offers: ProductWithRelations['offers'][number][],
+): ProductWithRelations['offers'][number][] {
+  return [...offers].sort((a, b) => {
+    const aPor = a.priceOnRequest ? 1 : 0;
+    const bPor = b.priceOnRequest ? 1 : 0;
+    if (aPor !== bPor) {
+      return aPor - bPor;
+    }
+    if (aPor === 1) {
+      // Оба «по запросу»: стабильный порядок не важен — по id.
+      return a.id.localeCompare(b.id);
+    }
+    return a.priceKopecks - b.priceKopecks;
+  });
 }
 
 /** JSON-массив картинок → строковый массив (битый JSON → []). */
@@ -229,8 +256,10 @@ export class CatalogService {
     }
 
     if (minKopecks !== null || maxKopecks !== null) {
+      // Промт 16 (C): фильтры цены исключают товары без открытой
+      // цены (POR-цена не покидает сервер — сравнивать не с чем).
       rows = rows.filter(({ best }) => {
-        if (!best) {
+        if (!best || best.priceOnRequest) {
           return false;
         }
         if (minKopecks !== null && best.priceKopecks < minKopecks) {
@@ -246,13 +275,23 @@ export class CatalogService {
     rows.sort((a, b) => {
       switch (sort) {
         case 'price-asc': {
-          const pa = a.best?.priceKopecks ?? Number.MAX_SAFE_INTEGER;
-          const pb = b.best?.priceKopecks ?? Number.MAX_SAFE_INTEGER;
+          // Промт 16 (C): POR-товары (без открытой цены) — в конце.
+          const pa =
+            a.best && !a.best.priceOnRequest
+              ? a.best.priceKopecks
+              : Number.MAX_SAFE_INTEGER;
+          const pb =
+            b.best && !b.best.priceOnRequest
+              ? b.best.priceKopecks
+              : Number.MAX_SAFE_INTEGER;
           return pa - pb || a.product.name.localeCompare(b.product.name, 'ru');
         }
         case 'price-desc': {
-          const pa = a.best?.priceKopecks ?? -1;
-          const pb = b.best?.priceKopecks ?? -1;
+          // POR — в конце и по убыванию (цены нет — сравнивать не с чем).
+          const pa =
+            a.best && !a.best.priceOnRequest ? a.best.priceKopecks : -1;
+          const pb =
+            b.best && !b.best.priceOnRequest ? b.best.priceKopecks : -1;
           return pb - pa || a.product.name.localeCompare(b.product.name, 'ru');
         }
         case 'name':
@@ -308,9 +347,9 @@ export class CatalogService {
         name: product.category.name,
       },
       images: resolveProductImages(product.name, parseImages(product.images)),
-      offers: visibleOffers(product)
-        .sort((a, b) => a.priceKopecks - b.priceKopecks)
-        .map((offer) => this.toOfferView(offer)),
+      offers: pricedFirst(visibleOffers(product)).map((offer) =>
+        this.toOfferView(offer),
+      ),
     };
   }
 
@@ -333,9 +372,9 @@ export class CatalogService {
     }
 
     return {
-      items: [...product.offers]
-        .sort((a, b) => a.priceKopecks - b.priceKopecks)
-        .map((offer) => this.toOfferView(offer)),
+      items: pricedFirst(product.offers).map((offer) =>
+        this.toOfferView(offer),
+      ),
     };
   }
 
@@ -412,7 +451,10 @@ export class CatalogService {
   ): OfferView {
     return {
       id: offer.id,
-      priceKopecks: offer.priceKopecks,
+      // Промт 16 (C): базовая цена POR-оффера не покидает сервер —
+      // публичный контракт: priceKopecks null + priceOnRequest true.
+      priceKopecks: offer.priceOnRequest ? null : offer.priceKopecks,
+      priceOnRequest: offer.priceOnRequest,
       stock: offerStock(offer),
       minQuantity: offer.minQuantity,
       badge: offer.badge,

@@ -61,6 +61,7 @@ const fullCart: CartView = {
       offer: {
         id: 'offer-1',
         priceKopecks: 18_900,
+        priceOnRequest: false,
         stock: 50,
         minQuantity: 5,
         badge: null,

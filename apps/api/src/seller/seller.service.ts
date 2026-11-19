@@ -141,6 +141,7 @@ function offerView(offer: OfferWithRelations) {
       ),
     },
     price: offer.priceKopecks,
+    priceOnRequest: offer.priceOnRequest,
     stock,
     minQuantity: offer.minQuantity,
     badge: offer.badge,
@@ -164,17 +165,12 @@ export class SellerService {
   // Products
   // -------------------------------------------------------------------
 
-  async listProducts(
-    seller: SellerContext,
-    options: { archived?: boolean },
-  ) {
+  async listProducts(seller: SellerContext, options: { archived?: boolean }) {
     const archived = options.archived ?? false;
     const products = await this.prisma.product.findMany({
       where: {
         organizationId: seller.organizationId,
-        ...(archived
-          ? { archivedAt: { not: null } }
-          : { archivedAt: null }),
+        ...(archived ? { archivedAt: { not: null } } : { archivedAt: null }),
       },
       include: productInclude,
       orderBy: { updatedAt: 'desc' },
@@ -188,11 +184,7 @@ export class SellerService {
       select: { id: true },
     });
     if (!category) {
-      throw new ApiError(
-        404,
-        'CATEGORY_NOT_FOUND',
-        'Категория не найдена',
-      );
+      throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Категория не найдена');
     }
     const product = await this.prisma.product.create({
       data: {
@@ -214,10 +206,7 @@ export class SellerService {
       where: { id },
       include: productInclude,
     });
-    if (
-      !product ||
-      product.organizationId !== seller.organizationId
-    ) {
+    if (!product || product.organizationId !== seller.organizationId) {
       throw new NotFoundException('Товар не найден');
     }
     return product;
@@ -235,11 +224,7 @@ export class SellerService {
         select: { id: true },
       });
       if (!category) {
-        throw new ApiError(
-          404,
-          'CATEGORY_NOT_FOUND',
-          'Категория не найдена',
-        );
+        throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Категория не найдена');
       }
     }
     const product = await this.prisma.product.update({
@@ -252,9 +237,7 @@ export class SellerService {
         ...(dto.description !== undefined
           ? { description: dto.description }
           : {}),
-        ...(dto.categoryId !== undefined
-          ? { categoryId: dto.categoryId }
-          : {}),
+        ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
         ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
       },
       include: productInclude,
@@ -293,9 +276,7 @@ export class SellerService {
 
     const where: Prisma.ProductOfferWhereInput = {
       organizationId: seller.organizationId,
-      ...(archived
-        ? { archivedAt: { not: null } }
-        : { archivedAt: null }),
+      ...(archived ? { archivedAt: { not: null } } : { archivedAt: null }),
       ...(search
         ? { product: { name: { contains: search, mode: 'insensitive' } } }
         : {}),
@@ -324,10 +305,7 @@ export class SellerService {
       where: { id },
       include: offerInclude,
     });
-    if (
-      !offer ||
-      offer.organizationId !== seller.organizationId
-    ) {
+    if (!offer || offer.organizationId !== seller.organizationId) {
       throw new NotFoundException('Предложение не найдено');
     }
     return offerView(offer);
@@ -355,6 +333,7 @@ export class SellerService {
           productId: dto.productId,
           organizationId: seller.organizationId,
           priceKopecks: dto.price,
+          priceOnRequest: dto.priceOnRequest ?? false,
           minQuantity: dto.minQuantity ?? 1,
           badge: dto.badge ?? null,
           isPerishable: dto.isPerishable ?? false,
@@ -400,18 +379,11 @@ export class SellerService {
     return this.getOffer(seller, offer.id);
   }
 
-  async updateOffer(
-    seller: SellerContext,
-    id: string,
-    dto: UpdateOfferDto,
-  ) {
+  async updateOffer(seller: SellerContext, id: string, dto: UpdateOfferDto) {
     const existing = await this.prisma.productOffer.findUnique({
       where: { id },
     });
-    if (
-      !existing ||
-      existing.organizationId !== seller.organizationId
-    ) {
+    if (!existing || existing.organizationId !== seller.organizationId) {
       throw new NotFoundException('Предложение не найдено');
     }
     const currentStock = await totalsOf(this.prisma, id);
@@ -423,12 +395,15 @@ export class SellerService {
           ...(dto.price !== undefined && dto.price !== existing.priceKopecks
             ? { priceKopecks: dto.price }
             : {}),
+          // Промт 16 (C): режим «цена по запросу» — смена флага
+          // НЕ пишется в историю цены (базовая цена не меняется).
+          ...(dto.priceOnRequest !== undefined
+            ? { priceOnRequest: dto.priceOnRequest }
+            : {}),
           ...(dto.minQuantity !== undefined
             ? { minQuantity: dto.minQuantity }
             : {}),
-          ...(dto.badge !== undefined
-            ? { badge: dto.badge || null }
-            : {}),
+          ...(dto.badge !== undefined ? { badge: dto.badge || null } : {}),
           ...(dto.isPerishable !== undefined
             ? { isPerishable: dto.isPerishable }
             : {}),
@@ -490,10 +465,7 @@ export class SellerService {
         stockBalances: true,
       },
     });
-    if (
-      !existing ||
-      existing.organizationId !== seller.organizationId
-    ) {
+    if (!existing || existing.organizationId !== seller.organizationId) {
       throw new NotFoundException('Предложение не найдено');
     }
     if (existing._count.orderItems > 0) {

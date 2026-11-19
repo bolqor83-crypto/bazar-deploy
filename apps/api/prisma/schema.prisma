@@ -18,21 +18,22 @@ datasource db {
 /// Пользователь. Пароль хранится как хеш Argon2id — никогда не
 /// покидает сервер (в ответах API его нет).
 model User {
-  id           String       @id @default(cuid())
-  phone        String       @unique
-  name         String
-  passwordHash String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  memberships  Membership[]
-  sessions     Session[]
-  carts        Cart[]
-  orders       Order[]      @relation("OrderBuyer")
-  orderEvents  OrderEvent[] @relation("OrderActor")
-  notifications Notification[] @relation("UserNotifications")
+  id               String            @id @default(cuid())
+  phone            String            @unique
+  name             String
+  passwordHash     String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  memberships      Membership[]
+  sessions         Session[]
+  carts            Cart[]
+  orders           Order[]           @relation("OrderBuyer")
+  orderEvents      OrderEvent[]      @relation("OrderActor")
+  notifications    Notification[]    @relation("UserNotifications")
   deliveryRequests DeliveryRequest[] @relation("DeliveryRequester")
   deliveryEvents   DeliveryEvent[]   @relation("DeliveryActor")
   stockMovements   StockMovement[]   @relation("StockMovementActor")
+  priceRequests    PriceRequest[]    @relation("PriceRequestBuyer")
 }
 
 /// Сессия refresh-токена. В БД лежит только SHA-256-хеш токена.
@@ -118,11 +119,15 @@ model Product {
 /// Промт 11: остатки — event-sourced (StockMovement + StockBalance,
 /// ADR 0012); колонка stock удалена, доступно = SUM(availableQty)
 /// по складам организации.
+/// Промт 16 (C): priceOnRequest — «цена по запросу»: базовая цена
+/// обязательна (>0), но не покидает сервер в публичных ответах
+/// каталога (priceKopecks: null, priceOnRequest: true — ADR 0016).
 model ProductOffer {
   id             String              @id @default(cuid())
   productId      String
   organizationId String
   priceKopecks   Int
+  priceOnRequest Boolean             @default(false)
   minQuantity    Int                 @default(1)
   badge          String?
   isPerishable   Boolean             @default(false)
@@ -136,6 +141,7 @@ model ProductOffer {
   priceHistory   OfferPriceHistory[]
   stockBalances  StockBalance[]
   stockMovements StockMovement[]
+  priceRequests  PriceRequest[]
 
   @@index([productId])
   @@index([organizationId])
@@ -225,15 +231,15 @@ enum StockMovementType {
 /// каталога/корзины; пересчитывается при каждом движении).
 /// Источник правды — журнал StockMovement, баланс — агрегат.
 model StockBalance {
-  id          String        @id @default(cuid())
-  offerId     String
-  offer       ProductOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  locationId  String
-  location    StockLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  physicalQty Int           @default(0)
-  reservedQty Int           @default(0)
-  availableQty Int          @default(0)
-  updatedAt   DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  offerId      String
+  offer        ProductOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  locationId   String
+  location     StockLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  physicalQty  Int           @default(0)
+  reservedQty  Int           @default(0)
+  availableQty Int           @default(0)
+  updatedAt    DateTime      @updatedAt
 
   @@unique([offerId, locationId])
   @@index([offerId])
@@ -259,15 +265,20 @@ model Cart {
 /// Позиция корзины: предложение продавца + количество.
 /// @@unique([cartId, offerId]) — один оффер одна строка (количество
 /// меняется PATCH'ем, а не новой строкой).
+/// Промт 16 (C): priceRequestId — персональное предложение, по
+/// которому позиция добавлена: цена строки = quotedPriceKopecks
+/// (не базовая цена оффера). Строка без запроса — обычная цена.
 model CartItem {
-  id        String       @id @default(cuid())
-  cartId    String
-  cart      Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  offerId   String
-  offer     ProductOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  quantity  Int
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id             String        @id @default(cuid())
+  cartId         String
+  cart           Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  offerId        String
+  offer          ProductOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  quantity       Int
+  priceRequestId String?
+  priceRequest   PriceRequest? @relation(fields: [priceRequestId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@unique([cartId, offerId])
 }
@@ -276,21 +287,21 @@ model CartItem {
 /// по продавцу — позиции разных организаций раскладываются в
 /// отдельные заказы. Номер BZ-YYYY-NNNNNN генерируется в транзакции.
 model Order {
-  id             String       @id @default(cuid())
-  number         String       @unique
+  id             String            @id @default(cuid())
+  number         String            @unique
   buyerId        String
-  buyer          User         @relation("OrderBuyer", fields: [buyerId], references: [id])
+  buyer          User              @relation("OrderBuyer", fields: [buyerId], references: [id])
   sellerId       String
-  seller         Organization @relation("OrderSeller", fields: [sellerId], references: [id])
+  seller         Organization      @relation("OrderSeller", fields: [sellerId], references: [id])
   organizationId String?
-  status         String       @default("PENDING")
+  status         String            @default("PENDING")
   subtotal       Int
-  deliveryCost   Int          @default(0)
+  deliveryCost   Int               @default(0)
   total          Int
   address        String?
   comment        String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   items          OrderItem[]
   events         OrderEvent[]
   deliveries     DeliveryRequest[] @relation("OrderDeliveries")
@@ -301,17 +312,21 @@ model Order {
 
 /// Позиция заказа: снапшот предложения на момент покупки
 /// (title/unit/price фиксируются — каталог меняется, заказ нет).
+/// Промт 16 (C): priceRequestId — трассировка персонального
+/// предложения, по цене которого куплено (без FK: заказ живёт
+/// дольше запроса; колонка — снимок для аудита).
 model OrderItem {
-  id       String       @id @default(cuid())
-  orderId  String
-  order    Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  offerId  String
-  offer    ProductOffer @relation(fields: [offerId], references: [id])
-  title    String
-  unit     String
-  price    Int
-  quantity Int
-  total    Int
+  id             String       @id @default(cuid())
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  offerId        String
+  offer          ProductOffer @relation(fields: [offerId], references: [id])
+  title          String
+  unit           String
+  price          Int
+  quantity       Int
+  total          Int
+  priceRequestId String?
 
   @@index([orderId])
 }
@@ -369,17 +384,17 @@ model OrderCounter {
 /// carrierOrganizationId — организация перевозчика, принявшая
 /// заявку (командная модель: любой её член ведёт рейс).
 model DeliveryRequest {
-  id                    String   @id @default(cuid())
-  number                String   @unique
+  id                    String          @id @default(cuid())
+  number                String          @unique
   orderId               String
-  order                 Order    @relation("OrderDeliveries", fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  order                 Order           @relation("OrderDeliveries", fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   /// Кто создал заявку: покупатель или член организации-продавца.
   requesterId           String
-  requester             User     @relation("DeliveryRequester", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  requester             User            @relation("DeliveryRequester", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   /// Организация-перевозчик, принявшая заявку.
   carrierOrganizationId String?
-  carrierOrganization   Organization? @relation("DeliveryCarrier", fields: [carrierOrganizationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  status                String   @default("PENDING")
+  carrierOrganization   Organization?   @relation("DeliveryCarrier", fields: [carrierOrganizationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  status                String          @default("PENDING")
   pickupAddress         String
   pickupContact         String
   dropoffAddress        String
@@ -390,8 +405,8 @@ model DeliveryRequest {
   /// Ставка перевозчика в копейках (при принятии).
   price                 Int?
   cancelReason          String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
   events                DeliveryEvent[]
 
   @@index([orderId])
@@ -418,6 +433,44 @@ model DeliveryEvent {
 model DeliveryCounter {
   year Int @id
   seq  Int @default(0)
+}
+
+/// Запрос цены «по запросу» (Промт 16, C — ADR 0016).
+///
+/// buyer → offer + quantity (+ сообщение); продавец отвечает
+/// ценой (копейки) или отклоняет. Ответ действует 72 часа
+/// (validUntil); продление/редактирование недоступны — новый
+/// запрос. Истечение ВЫЧИСЛЯЕМОЕ (ANSWERED && validUntil < now),
+/// без cron: просроченный запрос не меняет статус в БД.
+/// Идемпотентность: один PENDING-запрос на пару (buyer, offer) —
+/// повторное создание возвращает существующий.
+model PriceRequest {
+  id                 String             @id @default(cuid())
+  buyerId            String
+  buyer              User               @relation("PriceRequestBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  offerId            String
+  offer              ProductOffer       @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  quantity           Int
+  message            String?
+  status             PriceRequestStatus @default(PENDING)
+  /// Ответ продавца: цена за единицу в копейках.
+  quotedPriceKopecks Int?
+  /// Срок действия предложения: respondedAt + 72 часа.
+  validUntil         DateTime?
+  respondedAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  cartItems          CartItem[]
+
+  @@index([buyerId, createdAt])
+  @@index([offerId])
+  @@index([status])
+}
+
+enum PriceRequestStatus {
+  PENDING
+  ANSWERED
+  DECLINED
 }
 
 /// Членство пользователя в организации.

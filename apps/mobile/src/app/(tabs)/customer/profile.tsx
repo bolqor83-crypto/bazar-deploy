@@ -8,7 +8,7 @@
  */
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, ChevronRight } from 'lucide-react-native';
+import { Bell, ChevronRight, MessageSquareText } from 'lucide-react-native';
 import {
   Badge,
   Card,
@@ -155,6 +155,27 @@ export default function ProfileScreen() {
         ) : null}
 
         <Card variant="outlined">
+          {/* Промт 16 (C): запросы персональных цен — вход рядом
+           * с уведомлениями (ответы продавца приходят туда же). */}
+          <Pressable
+            testID="profile-price-requests"
+            accessibilityRole="button"
+            accessibilityLabel="Запросы цены"
+            onPress={() => router.push('/customer/requests')}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.sm,
+              minHeight: 56,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <MessageSquareText size={22} color={colors.text} />
+            <Text variant="body" style={{ flex: 1 }}>
+              Запросы цены
+            </Text>
+            <ChevronRight size={20} color={colors.textSecondary} />
+          </Pressable>
           <Pressable
             testID="profile-notifications"
             accessibilityRole="button"

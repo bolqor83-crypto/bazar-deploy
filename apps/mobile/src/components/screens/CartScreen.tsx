@@ -150,7 +150,12 @@ export default function CartScreen({ basePath }: CartScreenProps) {
               name={item.offer.product.name}
               unit={item.offer.product.unit}
               sellerName={item.offer.organization.name}
-              priceKopecks={item.offer.priceKopecks}
+              priceKopecks={
+                item.quote
+                  ? item.quote.priceKopecks
+                  : (item.offer.priceKopecks ?? 0)
+              }
+              quote={item.quote ?? null}
               quantity={item.quantity}
               minQuantity={item.offer.minQuantity}
               stock={item.offer.stock}

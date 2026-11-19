@@ -63,8 +63,12 @@ export const PRODUCT_CARD_TITLE_WEIGHT = '600' as const;
 
 export interface ProductCardProps {
   name: string;
-  /** Цена в копейках. */
-  priceKopecks: number;
+  /** Цена в копейках; null — «цена по запросу» (Промт 16, C):
+   *  вместо цены — подпись, корзинные действия скрыты
+   *  (без персонального предложения добавить нельзя). */
+  priceKopecks: number | null;
+  /** Явный признак «цена по запросу» (priceKopecks === null). */
+  priceOnRequest?: boolean;
   /** Прежняя цена в копейках (скидка). */
   oldPriceKopecks?: number | null;
   /** Наличие; не показывается, если не задано. */
@@ -107,6 +111,7 @@ export interface ProductCardProps {
 export function ProductCard({
   name,
   priceKopecks,
+  priceOnRequest = false,
   oldPriceKopecks = null,
   stock,
   unit,
@@ -130,6 +135,11 @@ export function ProductCard({
 }: ProductCardProps) {
   const { colors, radii, spacing } = useTheme();
 
+  // Промт 16 (C): «цена по запросу» — цены нет, корзинных
+  // действий нет (нужно персональное предложение — детальный
+  // экран ведёт на запрос цены).
+  const isPor = priceOnRequest || priceKopecks === null;
+
   // Ошибка загрузки фото → заглушка (тон по индексу).
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(imageUrl) && !imageFailed;
@@ -140,12 +150,15 @@ export function ProductCard({
 
   // Корзинное действие карточки: мини-степпер (уже в корзине)
   // или «+» (быстрое добавление). В compact-режиме их нет.
+  // POR-товар — без корзинных действий (Промт 16, C).
   const showStepper =
     !compact &&
+    !isPor &&
     quantityInCart > 0 &&
     onIncrement !== undefined &&
     onDecrement !== undefined;
-  const showQuickAdd = !compact && !showStepper && onAddToCart !== undefined;
+  const showQuickAdd =
+    !compact && !isPor && !showStepper && onAddToCart !== undefined;
 
   /** Плавающий корпус действия — absolute поверх фото. */
   const floatingAction =
@@ -301,19 +314,31 @@ export function ProductCard({
           {description}
         </Text>
       ) : null}
-      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-        <PriceDisplay value={priceKopecks} oldPrice={null} size="sm" />
-        {unit ? (
-          <Text
-            variant="caption"
-            color="textMuted"
-            numberOfLines={1}
-            style={{ marginLeft: spacing.xs }}
-          >
-            {`/ ${unit}`}
-          </Text>
-        ) : null}
-      </View>
+      {isPor ? (
+        <Text
+          variant="bodySmall"
+          color="primaryText"
+          style={{ fontWeight: '600' }}
+          numberOfLines={1}
+          testID="product-price-on-request"
+        >
+          Цена по запросу
+        </Text>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+          <PriceDisplay value={priceKopecks ?? 0} oldPrice={null} size="sm" />
+          {unit ? (
+            <Text
+              variant="caption"
+              color="textMuted"
+              numberOfLines={1}
+              style={{ marginLeft: spacing.xs }}
+            >
+              {`/ ${unit}`}
+            </Text>
+          ) : null}
+        </View>
+      )}
     </View>
   ) : (
     <View>
@@ -415,26 +440,39 @@ export function ProductCard({
 
         {/* Цена и юнит в одну строку (Промт 15): кнопка «+»
             переехала на фото, строка свободна. На узких экранах
-            (360) юнит переносится на вторую строку. */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'baseline',
-            flexWrap: 'wrap',
-            columnGap: spacing.xs,
-          }}
-        >
-          <PriceDisplay
-            value={priceKopecks}
-            oldPrice={oldPriceKopecks}
-            size="sm"
-          />
-          {unit ? (
-            <Text variant="caption" color="textMuted" numberOfLines={1}>
-              {`за ${unit}`}
-            </Text>
-          ) : null}
-        </View>
+            (360) юнит переносится на вторую строку.
+            Промт 16 (C): POR — подпись вместо цены. */}
+        {isPor ? (
+          <Text
+            variant="bodySmall"
+            color="primaryText"
+            style={{ fontWeight: '600' }}
+            numberOfLines={1}
+            testID="product-price-on-request"
+          >
+            Цена по запросу
+          </Text>
+        ) : (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              columnGap: spacing.xs,
+            }}
+          >
+            <PriceDisplay
+              value={priceKopecks ?? 0}
+              oldPrice={oldPriceKopecks}
+              size="sm"
+            />
+            {unit ? (
+              <Text variant="caption" color="textMuted" numberOfLines={1}>
+                {`за ${unit}`}
+              </Text>
+            ) : null}
+          </View>
+        )}
       </View>
     </View>
   );

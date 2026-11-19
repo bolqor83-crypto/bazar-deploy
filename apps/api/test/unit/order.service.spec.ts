@@ -199,4 +199,129 @@ describe('OrderService (unit)', () => {
     expect(detail.items[0].price).toBe(18900);
     expect(detail.items[0].title).toBe('Помидоры');
   });
+
+  describe('Заказ по персональной цене (Промт 16, C)', () => {
+    /** POR-оффер org-a + ANSWERED-запрос покупателя в корзине. */
+    const seedQuote = (options?: {
+      status?: 'PENDING' | 'ANSWERED' | 'DECLINED';
+      validUntil?: Date;
+    }) => {
+      prisma.offers.set('offer-por', {
+        id: 'offer-por',
+        productId: 'product-3',
+        organizationId: 'org-a',
+        priceKopecks: 25000,
+        priceOnRequest: true,
+        minQuantity: 10,
+        badge: null,
+        isPerishable: false,
+        product: { id: 'product-3', name: 'Картофель', unit: '1 кг' },
+        organization: { id: 'org-a', name: 'Опт-Юг' },
+      });
+      prisma.seedStock('offer-por', 'org-a', 100);
+      prisma.priceRequests.set('quote-1', {
+        id: 'quote-1',
+        buyerId: BUYER,
+        offerId: 'offer-por',
+        quantity: 20,
+        message: null,
+        status: options?.status ?? 'ANSWERED',
+        quotedPriceKopecks: 22000,
+        validUntil:
+          options?.validUntil ?? new Date(Date.now() + 48 * 3_600_000),
+        respondedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      // Строка корзины покупателя по quote (как делает CartService).
+      prisma.cartItems.set('cart-item-quote', {
+        id: 'cart-item-quote',
+        cartId: 'cart-quote',
+        offerId: 'offer-por',
+        quantity: 20,
+        priceRequestId: 'quote-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        offer: prisma.offers.get('offer-por') as never,
+      });
+      prisma.carts.set('cart-quote', {
+        id: 'cart-quote',
+        userId: BUYER,
+        organizationId: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      return 'quote-1';
+    };
+
+    it('цена позиции = quotedPriceKopecks, трассировка priceRequestId', async () => {
+      seedQuote();
+      const orders = await service.create({
+        buyerId: BUYER,
+        organizationId: null,
+        items: [{ offerId: 'offer-por', quantity: 20 }],
+        deliveryMethod: 'pickup',
+      });
+      expect(orders).toHaveLength(1);
+      const item = orders[0].items[0];
+      expect(item.price).toBe(22000);
+      expect(item.total).toBe(22000 * 20);
+      expect(item.priceRequestId).toBe('quote-1');
+      expect(orders[0].subtotal).toBe(22000 * 20);
+    });
+
+    it('POR-оффер без quote — PRICE_REQUIRED (цена не покидает сервер)', async () => {
+      seedQuote();
+      // Убираем строку корзины с quote: прямой заказ без предложения.
+      prisma.cartItems.delete('cart-item-quote');
+      await expect(
+        service.create({
+          buyerId: BUYER,
+          organizationId: null,
+          items: [{ offerId: 'offer-por', quantity: 20 }],
+          deliveryMethod: 'pickup',
+        }),
+      ).rejects.toMatchObject({ response: { code: 'PRICE_REQUIRED' } });
+    });
+
+    it('истёкший quote — QUOTE_EXPIRED', async () => {
+      seedQuote({ validUntil: new Date(Date.now() - 1_000) });
+      await expect(
+        service.create({
+          buyerId: BUYER,
+          organizationId: null,
+          items: [{ offerId: 'offer-por', quantity: 20 }],
+          deliveryMethod: 'pickup',
+        }),
+      ).rejects.toMatchObject({ response: { code: 'QUOTE_EXPIRED' } });
+    });
+
+    it('PENDING-запрос в корзине — PRICE_REQUEST_NOT_ANSWERED', async () => {
+      seedQuote({ status: 'PENDING' });
+      await expect(
+        service.create({
+          buyerId: BUYER,
+          organizationId: null,
+          items: [{ offerId: 'offer-por', quantity: 20 }],
+          deliveryMethod: 'pickup',
+        }),
+      ).rejects.toMatchObject({
+        response: { code: 'PRICE_REQUEST_NOT_ANSWERED' },
+      });
+    });
+
+    it('чужой quote не считается (изоляция покупателей)', async () => {
+      seedQuote();
+      // Quote привязан к BUYER: заказ от OTHER по тому же офферу
+      // не имеет права на персональную цену.
+      await expect(
+        service.create({
+          buyerId: OTHER,
+          organizationId: null,
+          items: [{ offerId: 'offer-por', quantity: 20 }],
+          deliveryMethod: 'pickup',
+        }),
+      ).rejects.toMatchObject({ response: { code: 'PRICE_REQUIRED' } });
+    });
+  });
 });

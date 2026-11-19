@@ -28,6 +28,7 @@ function product(partial: Partial<CatalogProduct>): CatalogProduct {
     bestOffer: {
       id: 'o1',
       priceKopecks: 18_900,
+      priceOnRequest: false,
       stock: 53,
       minQuantity: 5,
       badge: 'hit',

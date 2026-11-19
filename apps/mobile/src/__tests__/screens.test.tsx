@@ -41,6 +41,26 @@ import CarrierProfileScreen from '../app/(tabs)/carrier/profile';
 
 // Профиль покупателя тянет счётчик уведомлений (Часть C) — мокаем,
 // чтобы смоук-тесты не зависели от сети.
+jest.mock('../services/api/priceRequestApi', () => ({
+  fetchMyPriceRequests: jest.fn().mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 50,
+    hasMore: false,
+  }),
+  fetchIncomingPriceRequests: jest.fn().mockResolvedValue({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 50,
+    hasMore: false,
+  }),
+  createPriceRequest: jest.fn(),
+  respondPriceRequest: jest.fn(),
+  declinePriceRequest: jest.fn(),
+}));
+
 jest.mock('../services/api/notificationApi', () => ({
   fetchNotifications: jest.fn(),
   fetchUnreadCount: jest.fn().mockResolvedValue(0),
@@ -179,8 +199,8 @@ const SCREENS: readonly Row[] = [
   [
     'wholesale/requests',
     RequestsScreen,
-    'Запросы',
-    'Заявок пока нет',
+    'Запросы цен',
+    'Запросов пока нет',
     WHOLESALE,
   ],
   [

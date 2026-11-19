@@ -19,8 +19,12 @@ export interface OfferRowProps {
   title: string;
   /** Единица измерения: «кг», «шт». */
   unit?: string;
-  /** Цена в копейках. */
+  /** Цена в копейках (базовая — продавец видит свою цену
+   *  даже в режиме «по запросу», Промт 16, C). */
   priceKopecks: number;
+  /** Режим «цена по запросу»: покупателям цена скрыта,
+   *  строке — бейдж-напоминание (Промт 16, C). */
+  priceOnRequest?: boolean;
   /** Остаток на складе. */
   stock: number;
   /** Минимальная партия. */
@@ -49,6 +53,7 @@ export function OfferRow({
   title,
   unit,
   priceKopecks,
+  priceOnRequest = false,
   stock,
   minQuantity,
   badge,
@@ -107,6 +112,11 @@ export function OfferRow({
           {badge && BADGE_LABELS[badge] ? (
             <Badge variant="warning" size="sm">
               {BADGE_LABELS[badge]}
+            </Badge>
+          ) : null}
+          {priceOnRequest ? (
+            <Badge variant="info" size="sm">
+              По запросу
             </Badge>
           ) : null}
         </View>

@@ -34,7 +34,9 @@ export function useCart() {
   });
 }
 
-/** Добавить предложение (quantity >= minQuantity). */
+/** Добавить предложение (quantity >= minQuantity).
+ * Промт 16 (C): priceRequestId — добавить по персональному
+ * предложению (цена строки = quotedPriceKopecks). */
 export function useAddToCart() {
   const client = useQueryClient();
   const organizationId = useContextStore(
@@ -44,10 +46,12 @@ export function useAddToCart() {
     mutationFn: ({
       offerId,
       quantity,
+      priceRequestId,
     }: {
       offerId: string;
       quantity: number;
-    }) => addCartItem(offerId, quantity),
+      priceRequestId?: string;
+    }) => addCartItem(offerId, quantity, priceRequestId),
     onSuccess: (cart: CartView) => {
       client.setQueryData(['cart', organizationId], cart);
     },

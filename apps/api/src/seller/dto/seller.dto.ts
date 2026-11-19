@@ -79,6 +79,12 @@ export class OfferDto {
   @Min(1)
   price!: number;
 
+  /** «Цена по запросу» (Промт 16, C): базовая цена скрыта
+   *  от покупателей — персональные предложения по запросу. */
+  @IsOptional()
+  @IsBoolean()
+  priceOnRequest?: boolean;
+
   @IsInt()
   @Min(0)
   stock!: number;
@@ -108,6 +114,11 @@ export class UpdateOfferDto {
   @IsInt()
   @Min(1)
   price?: number;
+
+  /** «Цена по запросу» (Промт 16, C): включить/выключить режим. */
+  @IsOptional()
+  @IsBoolean()
+  priceOnRequest?: boolean;
 
   @IsOptional()
   @IsInt()
