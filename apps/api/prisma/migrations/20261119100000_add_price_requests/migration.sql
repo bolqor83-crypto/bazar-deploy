@@ -1,6 +1,14 @@
 -- Цена по запросу (Промт 16, Часть C — ADR 0016).
 --
--- Три изменения:
+-- Реконсиляция: в прод-БД была применена миграция прошлой сессии
+-- (20261118220140_add_price_requests) с прототипной схемой
+-- (sellerId, quotedPrice, answeredAt, declineReason, CANCELLED) —
+-- файл миграции не попал в репозиторий, данные не создавались
+-- (все таблицы пусты). Эта миграция приводит схему к финальному
+-- дизайну: сначала снимает прототип (IF EXISTS — идемпотентно),
+-- затем создаёт финальные структуры.
+--
+-- Финальный дизайн:
 --   1. ProductOffer.priceOnRequest — флаг скрытия базовой цены
 --      (цена остаётся обязательной >0, но не покидает сервер
 --      в публичных ответах каталога);
@@ -11,8 +19,17 @@
 --      цене; OrderItem.priceRequestId — трассировка в заказе
 --      (без FK: заказ живёт дольше запроса, колонка — снимок).
 
+-- ── Часть 1: снять прототип прошлой сессии (no-op на чистой БД) ──
+
+ALTER TABLE "CartItem" DROP COLUMN IF EXISTS "priceRequestId";
+ALTER TABLE "OrderItem" DROP COLUMN IF EXISTS "priceRequestId";
+DROP TABLE IF EXISTS "PriceRequest";
+DROP TYPE IF EXISTS "PriceRequestStatus";
+
+-- ── Часть 2: финальная схема ──
+
 -- AlterTable
-ALTER TABLE "ProductOffer" ADD COLUMN "priceOnRequest" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProductOffer" ADD COLUMN IF NOT EXISTS "priceOnRequest" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateEnum
 CREATE TYPE "PriceRequestStatus" AS ENUM ('PENDING', 'ANSWERED', 'DECLINED');
@@ -43,12 +60,6 @@ CREATE INDEX "PriceRequest_offerId_idx" ON "PriceRequest"("offerId");
 -- CreateIndex
 CREATE INDEX "PriceRequest_status_idx" ON "PriceRequest"("status");
 
--- CreateIndex
-CREATE INDEX "CartItem_priceRequestId_idx" ON "CartItem"("priceRequestId");
-
--- CreateIndex
-CREATE INDEX "OrderItem_priceRequestId_idx" ON "OrderItem"("priceRequestId");
-
 -- AddForeignKey
 ALTER TABLE "PriceRequest" ADD CONSTRAINT "PriceRequest_buyerId_fkey" FOREIGN KEY ("buyerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -58,8 +69,14 @@ ALTER TABLE "PriceRequest" ADD CONSTRAINT "PriceRequest_offerId_fkey" FOREIGN KE
 -- AlterTable
 ALTER TABLE "CartItem" ADD COLUMN "priceRequestId" TEXT;
 
+-- CreateIndex
+CREATE INDEX "CartItem_priceRequestId_idx" ON "CartItem"("priceRequestId");
+
 -- AddForeignKey
 ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_priceRequestId_fkey" FOREIGN KEY ("priceRequestId") REFERENCES "PriceRequest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AlterTable
 ALTER TABLE "OrderItem" ADD COLUMN "priceRequestId" TEXT;
+
+-- CreateIndex
+CREATE INDEX "OrderItem_priceRequestId_idx" ON "OrderItem"("priceRequestId");
