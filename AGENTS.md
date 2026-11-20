@@ -459,6 +459,27 @@ caption 14/20/400, micro 12/16/400.
   в RoleGuard (`(tabs)/<role>/_layout.tsx`).
 - `/dev/design` доступен только в `__DEV__`-сборках.
 
+## Маршрут по рынку (Промт 17, ADR 0017)
+
+- Рынок — демо-сетка: 4 ряда × 40 мест, шаг места 3 м, ряда 8 м,
+  вход (0,0), скорость 1,2 м/с. Расстояния — Manhattan.
+  Константы — `MARKET` (packages/types + зеркало в api).
+- Позиция продавца: `BusinessLocation.marketRow/marketSpot`
+  (nullable). Seed: Опт-Юг (3,12), Сеть «У дома» (1,8),
+  Ромашка (2,27) — менять без пересъёмки golden нельзя.
+- `GET /api/market/route` (JWT): свои заказы CONFIRMED/PREPARING/
+  READY, PENDING исключён; orderIds — свои, чужие молча
+  игнорируются; >20 — усечение + truncated.
+- Оптимизатор: Held-Karp ≤ 12 (cross-check с перебором в тестах),
+  дальше NN + 2-opt. Детерминизм: (row, spot, id).
+- Экраны: `/customer/market-route`, `/store/market-route` — схема
+  <MarketMap> (SVG, «схема, а не карта» — без geo-провайдеров),
+  сводка, toggle «Вернуться к выходу», список <RouteStopRow>,
+  visited-отметки в AsyncStorage по дню (смена даты — сброс).
+- Входы: IconButton Route в шапке «Заказы» (при ≥1 активном) +
+  «Все инструменты» (Торговля). Позиция продавца:
+  `/wholesale/market-position`, `/store/market-position`.
+
 ## Definition of Done (для каждого промта)
 
 - [ ] `pnpm install` проходит без ошибок и предупреждений.

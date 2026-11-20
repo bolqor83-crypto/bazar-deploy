@@ -5,6 +5,7 @@
  * Справа: переключатель темы и профиль. Высота 56 + safe area сверху.
  * Все зоны нажатия ≥ 48×48.
  */
+import { type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, useTheme } from '@bazar/ui';
@@ -18,9 +19,11 @@ const HEADER_HEIGHT = 56;
 
 export interface AppHeaderProps {
   title: string;
+  /** Действие справа перед темой (Промт 17, B: «Маршрут по рынку»). */
+  headerRight?: ReactNode;
 }
 
-export function AppHeader({ title }: AppHeaderProps) {
+export function AppHeader({ title, headerRight }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const sheetVisible = useContextSheetStore((s) => s.visible);
@@ -50,6 +53,7 @@ export function AppHeader({ title }: AppHeaderProps) {
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {headerRight}
         <ThemeToggle />
         <ProfileButton />
       </View>

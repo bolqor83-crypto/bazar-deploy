@@ -447,6 +447,62 @@
     "ordersCollapse": true
   },
   {
+    "name": "market-route-light-390",
+    "file": "market-route-light-390.png",
+    "url": "/customer/market-route",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Маршрут по рынку",
+    "marketRoute": true
+  },
+  {
+    "name": "market-route-dark-390",
+    "file": "market-route-dark-390.png",
+    "url": "/customer/market-route",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Маршрут по рынку",
+    "marketRoute": true
+  },
+  {
+    "name": "market-route-light-360",
+    "file": "market-route-light-360.png",
+    "url": "/customer/market-route",
+    "viewport": 360,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Маршрут по рынку",
+    "marketRoute": true
+  },
+  {
+    "name": "market-route-light-430",
+    "file": "market-route-light-430.png",
+    "url": "/customer/market-route",
+    "viewport": 430,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Маршрут по рынку",
+    "marketRoute": true
+  },
+  {
+    "name": "market-route-visited-light-390",
+    "file": "market-route-visited-light-390.png",
+    "url": "/customer/market-route",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "customer",
+    "waitForText": "Маршрут по рынку",
+    "marketRoute": true,
+    "marketVisited": 2
+  },
+  {
     "name": "seller-orders-grouped-light-390",
     "file": "seller-orders-grouped-light-390.png",
     "url": "/wholesale/orders",

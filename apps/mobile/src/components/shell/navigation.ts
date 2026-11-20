@@ -137,6 +137,26 @@ const storeNav: RoleNavConfig = {
   ],
   more: [
     {
+      title: 'Торговля',
+      items: [
+        // Промт 17, B: маршрут по активным заказам на схеме рынка.
+        {
+          key: 'market-route',
+          label: 'Маршрут по рынку',
+          icon: IconDelivery,
+          route: '/store/market-route',
+          subtitle: 'Оптимальный обход продавцов',
+        },
+        {
+          key: 'market-position',
+          label: 'Точка на рынке',
+          icon: MapPin,
+          route: '/store/market-position',
+          subtitle: 'Ряд и место на схеме',
+        },
+      ],
+    },
+    {
       title: 'Финансы',
       items: [
         // Заглушки — функциональность Промта 13+.
@@ -213,6 +233,14 @@ const wholesaleNav: RoleNavConfig = {
           icon: IconOrders,
           route: '/wholesale/requests',
           subtitle: 'Персональные цены покупателям',
+        },
+        // Промт 17, B: маршрут покупателя и позиция на рынке.
+        {
+          key: 'market-position',
+          label: 'Точка на рынке',
+          icon: MapPin,
+          route: '/wholesale/market-position',
+          subtitle: 'Ряд и место на схеме',
         },
       ],
     },

@@ -498,6 +498,10 @@ model BusinessLocation {
   name           String
   address        String
   city           String
+  /// Позиция на рынке: ряд 1..4 (Промт 17, B; null — точки на рынке нет).
+  marketRow      Int?
+  /// Позиция на рынке: место 1..40 (Промт 17, B; null — точки на рынке нет).
+  marketSpot     Int?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 

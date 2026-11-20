@@ -19,6 +19,8 @@
  * см. ADR 0012 (Промт 11).
  * Запросы цены (PriceRequest) — в price-request.ts, см. ADR 0016
  * (Промт 16, Часть C).
+ * Рынок и маршрут (MARKET, MarketRouteResponse) — в market.ts,
+ * см. ADR 0017 (Промт 17, Часть B).
  */
 export * from './context';
 export * from './auth';
@@ -31,3 +33,4 @@ export * from './delivery';
 export * from './notification';
 export * from './stock';
 export * from './price-request';
+export * from './market';

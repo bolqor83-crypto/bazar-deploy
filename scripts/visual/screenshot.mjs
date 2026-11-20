@@ -923,6 +923,181 @@ async function prepareStockGolden(token, sellerOrgId) {
  *   (Промт 14b, закрытие долга о транзиентных 500).
  * Группировка: guest-контекст и user-контекст (один логин на всех).
  */
+
+/**
+ * Детерминированный сценарий «Маршрут по рынку» (Промт 17, B).
+ *
+ * После prepareDemoDeliveries у Ивана 4 активных заказа (все
+ * Опт-Юг). Для golden нужно ровно 3 остановки у позиционированных
+ * продавцов в разных рядах:
+ *   1. Позиции: Опт-Юг (3,12) «Точка на рынке», Сеть «У дома»
+ *      (1,8) — первая точка, Ромашка (2,27) — первый зал.
+ *   2. Лишние активные заказы Опт-Юга завершаются (preparing →
+ *      ready → complete), КРОМЕ заказа с IN_TRANSIT-доставкой —
+ *      он остаётся CONFIRMED для кадров order-with-delivery.
+ *   3. Два новых заказа — «У дома» (Огурцы гладкие) и Ромашке
+ *      (Лук репчатый золотистый), pickup. Статус CONFIRMED
+ *      ставится напрямую prisma: у ритейл-организаций нет
+ *      WHOLESALE_SELLER-члена, confirm-эндпоинт им недоступен
+ *      (guard роли). Даты 13.11 — внизу списка заказов.
+ *   4. Уведомления сценария прочитаны (badge профиля = 0).
+ *
+ * Итог маршрута: 3 остановки (1,8) → (3,12) → (2,27), вход (0,0).
+ */
+async function prepareMarketRouteGolden() {
+  let token;
+  try {
+    token = await apiLogin();
+  } catch (e) {
+    await new Promise((r) => setTimeout(r, 15_000));
+    token = await apiLogin();
+    void e;
+  }
+  const prisma = await openPrisma();
+  try {
+    const orgByName = async (name) => {
+      const org = await prisma.organization.findFirst({ where: { name } });
+      if (!org) throw new Error(`организация «${name}» не найдена`);
+      return org;
+    };
+    const wholesale = await orgByName('Опт-Юг');
+    const udoma = await orgByName('Сеть «У дома»');
+    const romashka = await orgByName('Магазин «Ромашка»');
+
+    // 1. Позиции на рынке (идемпотентно).
+    const ensureMarketPosition = async (org, row, spot) => {
+      const positioned = await prisma.businessLocation.findFirst({
+        where: { organizationId: org.id, marketRow: { not: null } },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (positioned) {
+        await prisma.businessLocation.update({
+          where: { id: positioned.id },
+          data: { marketRow: row, marketSpot: spot },
+        });
+        return;
+      }
+      const any = await prisma.businessLocation.findFirst({
+        where: { organizationId: org.id },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (any) {
+        await prisma.businessLocation.update({
+          where: { id: any.id },
+          data: { marketRow: row, marketSpot: spot },
+        });
+        return;
+      }
+      await prisma.businessLocation.create({
+        data: {
+          organizationId: org.id,
+          name: 'Точка на рынке',
+          address: 'Центральный рынок',
+          city: 'Ростов-на-Дону',
+          marketRow: row,
+          marketSpot: spot,
+        },
+      });
+    };
+    await ensureMarketPosition(wholesale, 3, 12);
+    await ensureMarketPosition(udoma, 1, 8);
+    await ensureMarketPosition(romashka, 2, 27);
+
+    // 2. Заказ с IN_TRANSIT-доставкой остаётся CONFIRMED.
+    const inTransit = await prisma.deliveryRequest.findFirst({
+      where: { status: 'IN_TRANSIT' },
+      select: { orderId: true },
+    });
+    const activeOrders = await prisma.order.findMany({
+      where: { status: 'CONFIRMED' },
+      orderBy: { createdAt: 'asc' },
+    });
+    for (const order of activeOrders) {
+      if (inTransit && order.id === inTransit.orderId) continue;
+      for (const action of ['preparing', 'ready', 'complete']) {
+        await apiPost(
+          token,
+          `/seller/orders/${order.id}/${action}`,
+          undefined,
+          wholesale.id,
+        );
+      }
+    }
+
+    // 3. Два заказа у ритейл-продавцов: остатки → создание →
+    //    CONFIRMED напрямую (+ событие для честного таймлайна).
+    const offerFor = async (orgName, productName) => {
+      const offer = await prisma.productOffer.findFirst({
+        where: {
+          organization: { name: orgName },
+          product: { name: productName },
+        },
+        orderBy: { priceKopecks: 'asc' },
+      });
+      if (!offer) {
+        throw new Error(`нет предложения «${productName}» у «${orgName}»`);
+      }
+      const org = await orgByName(orgName);
+      return { offer, org };
+    };
+    const udomaOffer = await offerFor('Сеть «У дома»', 'Огурцы гладкие');
+    const romashkaOffer = await offerFor(
+      'Магазин «Ромашка»',
+      'Лук репчатый золотистый',
+    );
+    const MARKET_DATES = [
+      new Date('2026-11-13T07:00:00Z'),
+      new Date('2026-11-13T07:30:00Z'),
+    ];
+    for (const [index, { offer, org }] of [
+      udomaOffer,
+      romashkaOffer,
+    ].entries()) {
+      const quantity = Math.max(5, offer.minQuantity ?? 1);
+      await ensureOfferBalance(
+        prisma,
+        {
+          id: offer.id,
+          organization: { id: org.id },
+          minQuantity: offer.minQuantity,
+        },
+        quantity + 40,
+      );
+      const created = await apiPost(token, '/orders', {
+        items: [{ offerId: offer.id, quantity }],
+        deliveryMethod: 'pickup',
+      });
+      const order = created[0];
+      const at = MARKET_DATES[index];
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'CONFIRMED', createdAt: at, updatedAt: at },
+      });
+      await prisma.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: 'CONFIRMED',
+          payload: JSON.stringify({ source: 'market-golden' }),
+          createdAt: at,
+        },
+      });
+    }
+
+    // 4. Уведомления сценария прочитаны.
+    await prisma.notification.updateMany({
+      where: { readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    console.log(
+      'подготовка: рынок — Опт-Юг (3,12), У дома (1,8), Ромашка (2,27); ' +
+        'маршрут из 3 остановок',
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 export async function captureSet(entries) {
   const shots = new Map();
   const prepFailed = new Set();
@@ -1023,6 +1198,25 @@ export async function captureSet(entries) {
         }
       }
 
+      // Детерминированный сценарий маршрута по рынку (Промт 17, B):
+      // позиции продавцов + ровно 3 активных заказа у позиций.
+      const needsMarketRoute = userEntries.some((e) => e.marketRoute);
+      if (needsMarketRoute) {
+        try {
+          await prepareMarketRouteGolden();
+        } catch (e) {
+          for (const entry of userEntries) {
+            if (entry.marketRoute) {
+              prepFailed.add(entry.name);
+            }
+          }
+          console.warn(
+            `подготовка маршрута не удалась (после ретраев): ${e.message} — ` +
+              `кадры помечены prep_failed`,
+          );
+        }
+      }
+
       const userContext = await browser.newContext({
         deviceScaleFactor: 2,
         isMobile: true,
@@ -1079,6 +1273,27 @@ export async function captureSet(entries) {
             })
             .catch(() => {});
           await page.waitForTimeout(800);
+        }
+        if (entry.marketRoute) {
+          // Контент маршрута асинхронный: ждём сводку (не скелетон).
+          await page
+            .waitForSelector('[data-testid="market-route-summary"]', {
+              timeout: 15_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(600);
+        }
+        if (entry.marketVisited) {
+          // Промт 17, B: отметить первые N остановок «Пройдено»
+          // (клики по чекбоксам — как живой пользователь).
+          for (let i = 1; i <= entry.marketVisited; i += 1) {
+            await page
+              .locator(`[data-testid="market-route-stop-${i}-visited"]`)
+              .click({ timeout: 5000 })
+              .catch(() => {});
+            await page.waitForTimeout(200);
+          }
+          await page.waitForTimeout(400);
         }
         if (entry.openFirstProduct) {
           const card = page.locator('[data-testid="catalog-product"]').first();

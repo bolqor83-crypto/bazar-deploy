@@ -16,6 +16,8 @@ export interface RoleShellProps {
   tabItems: TabItem[];
   activeTabKey: string | null;
   onTabChange: (key: string) => void;
+  /** Действие в шапке (Проброс в AppHeader, Промт 17, B). */
+  headerRight?: ReactNode;
   children?: ReactNode;
 }
 
@@ -24,11 +26,12 @@ export function RoleShell({
   tabItems,
   activeTabKey,
   onTabChange,
+  headerRight,
   children,
 }: RoleShellProps) {
   return (
     <View style={{ flex: 1 }}>
-      <AppHeader title={title} />
+      <AppHeader title={title} headerRight={headerRight} />
 
       {/* Контент от верха: центрирование коротких экранов давало
           «огромные пустоты сверху и снизу» (VLM-аудит доработки

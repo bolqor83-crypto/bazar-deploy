@@ -5,11 +5,17 @@
  * Оболочка RoleScreen: шапка + таб-бар.
  */
 import { default as OrdersScreen } from '../../../components/screens/OrdersScreen';
+import { MarketRouteButton } from '../../../components/screens/MarketRouteButton';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 
 export default function Screen() {
   return (
-    <RoleScreen role="store_owner" section="orders" title="Заказы">
+    <RoleScreen
+      role="store_owner"
+      section="orders"
+      title="Заказы"
+      headerRight={<MarketRouteButton basePath="store" />}
+    >
       <OrdersScreen basePath="store" />
     </RoleScreen>
   );

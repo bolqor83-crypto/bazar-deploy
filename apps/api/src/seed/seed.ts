@@ -48,6 +48,9 @@ const ORGANIZATIONS = [
     type: 'WHOLESALE',
     role: 'WHOLESALE_SELLER',
     locations: [] as { name: string; address: string; city: string }[],
+    // Промт 17, B: позиция на рынке (ряд 1..4, место 1..40).
+    // У Опт-Юга нет городских точек — создаём «Точку на рынке».
+    market: { row: 3, spot: 12 },
   },
   {
     name: 'Сеть «У дома»',
@@ -58,6 +61,7 @@ const ORGANIZATIONS = [
         name: 'Точка на Садовой',
         address: 'ул. Садовая, 12',
         city: 'Ростов-на-Дону',
+        market: { row: 1, spot: 8 },
       },
       {
         name: 'Точка на Доватора',
@@ -80,6 +84,7 @@ const ORGANIZATIONS = [
         name: 'Ромашка — главный зал',
         address: 'ул. Большая Садовая, 101',
         city: 'Ростов-на-Дону',
+        market: { row: 2, spot: 27 },
       },
     ],
   },
@@ -88,6 +93,7 @@ const ORGANIZATIONS = [
     type: 'LOGISTICS',
     role: 'CARRIER',
     locations: [] as { name: string; address: string; city: string }[],
+    // Логистика на рынке не торгует — позиции нет (ADR 0017).
   },
 ] as const;
 
@@ -143,6 +149,22 @@ async function seedIvan(): Promise<void> {
               name: loc.name,
               address: loc.address,
               city: loc.city,
+              marketRow: 'market' in loc ? loc.market.row : null,
+              marketSpot: 'market' in loc ? loc.market.spot : null,
+            },
+          });
+        }
+        // Промт 17, B: у Опт-Юга нет городских точек — его место
+        // на рынке получает отдельная «Точка на рынке».
+        if (org.locations.length === 0 && 'market' in org && org.market) {
+          await tx.businessLocation.create({
+            data: {
+              organizationId: organization.id,
+              name: 'Точка на рынке',
+              address: 'Центральный рынок',
+              city: 'Ростов-на-Дону',
+              marketRow: org.market.row,
+              marketSpot: org.market.spot,
             },
           });
         }

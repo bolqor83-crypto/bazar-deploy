@@ -85,7 +85,7 @@ export async function migrateRefreshTokenStorage(): Promise<void> {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Требуется Authorization (по умолчанию — да). */
   auth?: boolean;

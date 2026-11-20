@@ -101,6 +101,9 @@ export function toLocationResponse(loc: DbLocation): {
   shortName: string;
   address: string;
   city: string;
+  /** Позиция на рынке (Промт 17, B; null — точки на рынке нет). */
+  marketRow: number | null;
+  marketSpot: number | null;
   createdAt: string;
 } {
   return {
@@ -110,6 +113,8 @@ export function toLocationResponse(loc: DbLocation): {
     shortName: shortNameOf(loc.name),
     address: loc.address,
     city: loc.city,
+    marketRow: loc.marketRow ?? null,
+    marketSpot: loc.marketSpot ?? null,
     createdAt: loc.createdAt.toISOString(),
   };
 }

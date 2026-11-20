@@ -17,6 +17,8 @@ export interface RoleScreenProps {
   /** Ключ активного раздела (подсветка вкладки). */
   section: string;
   title: string;
+  /** Действие в шапке (Промт 17, B: «Маршрут по рынку»). */
+  headerRight?: ReactNode;
   children?: ReactNode;
 }
 
@@ -24,6 +26,7 @@ export function RoleScreen({
   role,
   section,
   title,
+  headerRight,
   children,
 }: RoleScreenProps) {
   const { tabItems, onTabChange } = useRoleNavigation(role);
@@ -44,6 +47,7 @@ export function RoleScreen({
       tabItems={itemsWithBadge}
       activeTabKey={section}
       onTabChange={onTabChange}
+      headerRight={headerRight}
     >
       {children}
     </RoleShell>

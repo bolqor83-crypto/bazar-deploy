@@ -312,3 +312,10 @@ export type {
   SegmentedControlProps,
   SegmentedOption,
 } from './components/SegmentedControl';
+
+// Маршрут по рынку (Промт 17, Часть B)
+export { MarketMap } from './components/MarketMap';
+export type { MarketMapProps, MarketMapStop } from './components/MarketMap';
+
+export { RouteStopRow } from './components/RouteStopRow';
+export type { RouteStopRowProps } from './components/RouteStopRow';
