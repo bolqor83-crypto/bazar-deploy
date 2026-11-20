@@ -111,13 +111,13 @@ export function RouteStopRow({
         )}
       </View>
 
-      {/* Центр: продавец, позиция+заказ одной строкой, статус */}
+      {/* Центр: продавец, позиция, статус+заказ (перенос снизу) */}
       <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <Text variant="bodyStrong" numberOfLines={1}>
           {sellerName}
         </Text>
         <Text variant="caption" color="textMuted" mono numberOfLines={1}>
-          {`Ряд ${row} · место ${spot} · ${orderNumber}`}
+          {`Ряд ${row} · место ${spot}`}
         </Text>
         <View
           style={{
@@ -129,8 +129,16 @@ export function RouteStopRow({
           }}
         >
           <OrderStatus status={ROUTE_STATUS_MAP[status]} />
-          <Text variant="caption" color="textMuted" mono>
-            {`${itemsCount} поз. · ${formatPrice(total)}`}
+          {/* Номер заказа рядом с составом: строка переносится
+              целиком, не наезжая на колонку метров (VLM, итерация 2). */}
+          <Text
+            variant="caption"
+            color="textMuted"
+            mono
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+          >
+            {`${orderNumber} · ${itemsCount} поз. · ${formatPrice(total)}`}
           </Text>
         </View>
       </View>

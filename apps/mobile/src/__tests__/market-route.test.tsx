@@ -200,7 +200,7 @@ describe('MarketRouteScreen', () => {
     expect(screen.getByTestId('market-route-stop-2')).toBeTruthy();
     expect(screen.getByTestId('market-route-stop-3')).toBeTruthy();
     expect(screen.getByText('Сеть «У дома»')).toBeTruthy();
-    expect(screen.getByText('Ряд 3 · место 12 · BZ-2026-000007')).toBeTruthy();
+    expect(screen.getByText('Ряд 3 · место 12')).toBeTruthy();
     expect(screen.getByText('+76 м')).toBeTruthy();
   });
 
