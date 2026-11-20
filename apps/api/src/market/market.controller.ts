@@ -25,23 +25,30 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../common/decorators/current-user.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import {
   CurrentSeller,
   SellerMembershipGuard,
   type SellerContext,
 } from '../seller/guards/seller-membership.guard';
 import { MarketService } from './market.service';
+import { MarketAnalyticsService } from './analytics.service';
 import {
+  AnalyticsQueryDto,
   MarketRouteQueryDto,
   PatchLocationMarketDto,
   SaveMarketPositionDto,
+  TrendsQueryDto,
 } from './dto/market.dto';
 
 @ApiTags('Рынок')
 @ApiBearerAuth()
 @Controller('market')
 export class MarketController {
-  constructor(private readonly market: MarketService) {}
+  constructor(
+    private readonly market: MarketService,
+    private readonly analytics: MarketAnalyticsService,
+  ) {}
 
   @Get('route')
   @Throttle({ default: { limit: 100, ttl: 60_000 } })
@@ -87,6 +94,43 @@ export class MarketController {
   @ApiOperation({ summary: 'Снять позицию с рынка' })
   clearPosition(@CurrentSeller() seller: SellerContext) {
     return this.market.clearPosition(seller.userId, seller.organizationId);
+  }
+
+  // ── AI Layer 0: аналитика рынка (Промт 18, Часть C; ADR 0019).
+
+  @Get('trends')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Тренды цен по категориям (агрегаты, публично)' })
+  trends(@Query() query: TrendsQueryDto) {
+    return this.analytics.getPriceTrends(
+      query.category,
+      query.period ?? 'week',
+    );
+  }
+
+  @Get('volumes')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Объёмы заказов по товарам (агрегаты, публично)' })
+  volumes(@Query() query: AnalyticsQueryDto) {
+    return this.analytics.getVolumeTrends(query.period ?? 'week');
+  }
+
+  @Get('users')
+  @UseGuards(SellerMembershipGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Активные покупатели по ролям (продавцам)' })
+  users(@Query() query: AnalyticsQueryDto) {
+    return this.analytics.getActiveUsers(query.period ?? 'week');
+  }
+
+  @Get('anomalies')
+  @UseGuards(SellerMembershipGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Аномалии цен и объёмов, Z-score > 2 (продавцам)' })
+  anomalies(@Query() query: AnalyticsQueryDto) {
+    return this.analytics.getAnomalies(query.period ?? 'week');
   }
 }
 

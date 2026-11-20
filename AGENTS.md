@@ -482,6 +482,29 @@ caption 14/20/400, micro 12/16/400.
 - Диагностика на проде: прямой URL `/dev/logs` — список буфера,
   «Очистить», «Скопировать всё».
 
+## AI Layer 0–1 (Промт 18, ADR 0019)
+
+- **Четыре слоя**: 0 — агрегация данных (SQL, кэш), 1 — дашборды,
+  2 — рекомендации, 3 — LLM-интерпретация, 4 — действия. Сейчас
+  реализованы 0+1; внешние LLM API запрещены (ключи/сеть/цена).
+- **Layer 0** — `apps/api/src/market/analytics.service.ts`:
+  `GET /api/market/trends` и `/volumes` — публичные агрегаты;
+  `/users` и `/anomalies` — только продавцам (SellerMembershipGuard).
+  Кэш in-memory TTL 5 мин (свойство `cacheTtlMs`, тесты уменьшают).
+- Честность данных: `changePercent = null`, когда истории нет —
+  изменения не выдумываем; аномалия — Z-score > 2 при ≥3 точках
+  ряда и ненулевой дисперсии.
+- Объёмы — по OrderItem (отменённые заказы исключены); тренды —
+  по активным офферам + реконструкция цены на начало окна из
+  OfferPriceHistory.
+- **Layer 1** — дашборд `(tabs)/(wholesale)/analytics`:
+  TrendCard / объёмы (простой SVG) / топ-товары / аномалии;
+  состояния skeleton / empty / error+retry; цифры крупные,
+  tabular-nums; рост — success, падение — terracotta.
+- Контракты — `packages/types/src/market.ts`, зеркало в
+  `apps/api/src/market/analytics.service.ts` (api не тянет
+  workspace-пакет).
+
 ## Маршрут по рынку (Промт 17, ADR 0017)
 
 - Рынок — демо-сетка: 4 ряда × 40 мест, шаг места 3 м, ряда 8 м,

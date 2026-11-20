@@ -91,3 +91,88 @@ export interface SaveMarketPositionInput {
   marketRow: number;
   marketSpot: number;
 }
+
+/*
+ * AI Layer 0 — аналитика рынка (Промт 18, Часть C; ADR 0019).
+ *
+ * Программная агрегация из БД: без LLM, быстро и объяснимо.
+ * Контракт зеркалируется на сервере (apps/api/src/market/dto).
+ */
+
+/** Окно агрегации. */
+export type AnalyticsPeriod = 'day' | 'week' | 'month';
+
+/** Тренд цен по категории (Layer 0). */
+export interface PriceTrendItem {
+  categoryId: string;
+  categoryName: string;
+  /** Средняя цена активных офферов, копейки. */
+  avgPriceKopecks: number;
+  /** Число активных офферов в категории. */
+  offers: number;
+  /**
+   * Изменение к предыдущему окну, % (по истории цен). null —
+   * истории нет, изменение неизвестно (не выдумываем).
+   */
+  changePercent: number | null;
+}
+
+/** Ответ GET /api/market/trends. */
+export interface PriceTrendsResponse {
+  period: AnalyticsPeriod;
+  items: PriceTrendItem[];
+}
+
+/** Объём заказов по товару (Layer 0). */
+export interface VolumeItem {
+  productId: string;
+  productName: string;
+  unit: string;
+  /** Суммарное количество за окно. */
+  quantity: number;
+  /** Заказов с этим товаром за окно. */
+  ordersCount: number;
+  /** Изменение к предыдущему окну, %; null — в прошлом окне пусто. */
+  changePercent: number | null;
+}
+
+/** Ответ GET /api/market/volumes. */
+export interface VolumesResponse {
+  period: AnalyticsPeriod;
+  items: VolumeItem[];
+}
+
+/** Активные покупатели по ролям (Layer 0, агрегировано). */
+export interface ActiveUsersItem {
+  role: string;
+  count: number;
+}
+
+/** Ответ GET /api/market/users. */
+export interface ActiveUsersResponse {
+  period: AnalyticsPeriod;
+  items: ActiveUsersItem[];
+  total: number;
+}
+
+/** Тип аномалии (Layer 0, Z-score). */
+export type AnomalyType =
+  'price_spike' | 'price_drop' | 'volume_spike' | 'volume_drop';
+
+/** Аномалия: резкое отклонение от среднего (|z| > 2). */
+export interface AnomalyItem {
+  type: AnomalyType;
+  /** Категория (цены) или товар (объёмы). */
+  entity: string;
+  /** Текущее значение: цена (копейки) или количество. */
+  value: number;
+  /** Z-score отклонения. */
+  zScore: number;
+  unit?: string;
+}
+
+/** Ответ GET /api/market/anomalies. */
+export interface AnomaliesResponse {
+  period: AnalyticsPeriod;
+  items: AnomalyItem[];
+}

@@ -6,6 +6,7 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBooleanString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -86,4 +87,22 @@ export class PatchLocationMarketDto {
   @Min(1)
   @Max(40)
   marketSpot?: number | null;
+}
+
+/**
+ * Аналитика рынка — AI Layer 0 (Промт 18, Часть C).
+ * Окно: day / week / month (по умолчанию week).
+ */
+export class AnalyticsQueryDto {
+  /** Период агреграции. */
+  @IsOptional()
+  @IsIn(['day', 'week', 'month'])
+  period?: 'day' | 'week' | 'month';
+}
+
+/** Тренды цен: фильтр по категории. */
+export class TrendsQueryDto extends AnalyticsQueryDto {
+  @IsOptional()
+  @IsString()
+  category?: string;
 }
