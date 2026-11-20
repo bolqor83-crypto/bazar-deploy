@@ -111,37 +111,37 @@ export function RouteStopRow({
         )}
       </View>
 
-      {/* Центр: продавец, позиция, заказ, состав */}
-      <View style={{ flex: 1, gap: 2 }}>
+      {/* Центр: продавец, позиция+заказ одной строкой, статус */}
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <Text variant="bodyStrong" numberOfLines={1}>
           {sellerName}
         </Text>
-        <Text variant="caption" color="textMuted" mono>
-          {`Ряд ${row} · место ${spot}`}
+        <Text variant="caption" color="textMuted" mono numberOfLines={1}>
+          {`Ряд ${row} · место ${spot} · ${orderNumber}`}
         </Text>
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            rowGap: 2,
             gap: spacing.sm,
           }}
         >
-          <Text variant="caption" color="textSecondary" mono>
-            {orderNumber}
-          </Text>
           <OrderStatus status={ROUTE_STATUS_MAP[status]} />
+          <Text variant="caption" color="textMuted" mono>
+            {`${itemsCount} поз. · ${formatPrice(total)}`}
+          </Text>
         </View>
-        <Text variant="caption" color="textMuted" mono>
-          {`${itemsCount} поз. · ${formatPrice(total)}`}
-        </Text>
       </View>
 
-      {/* Метры от предыдущей точки */}
+      {/* Метры от предыдущей точки (своя колонка — не наезжает
+          на бейдж статуса: центр переносится, а не переполняется) */}
       <Text
         variant="bodySmall"
         color="textSecondary"
         mono
-        style={{ minWidth: 56, textAlign: 'right' }}
+        style={{ minWidth: 52, textAlign: 'right' }}
       >
         {`+${legMeters} м`}
       </Text>

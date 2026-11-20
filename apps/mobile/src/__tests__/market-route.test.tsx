@@ -192,14 +192,15 @@ describe('MarketRouteScreen', () => {
       <MarketRouteScreen basePath="customer" />,
     );
     expect(await screen.findByTestId('market-route-summary')).toBeTruthy();
-    expect(screen.getByText('3 точек · 189 м · ~3 мин пешком')).toBeTruthy();
+    expect(screen.getByText('3 точек · 189 м')).toBeTruthy();
+    expect(screen.getByText('~3 мин пешком')).toBeTruthy();
     expect(screen.getByTestId('market-route-map')).toBeTruthy();
     // Порядок списка == порядок ответа.
     expect(screen.getByTestId('market-route-stop-1')).toBeTruthy();
     expect(screen.getByTestId('market-route-stop-2')).toBeTruthy();
     expect(screen.getByTestId('market-route-stop-3')).toBeTruthy();
     expect(screen.getByText('Сеть «У дома»')).toBeTruthy();
-    expect(screen.getByText('Ряд 3 · место 12')).toBeTruthy();
+    expect(screen.getByText('Ряд 3 · место 12 · BZ-2026-000007')).toBeTruthy();
     expect(screen.getByText('+76 м')).toBeTruthy();
   });
 

@@ -32,8 +32,7 @@ describe('RouteStopRow', () => {
   it('показывает продавца, позицию, заказ и метры', async () => {
     const screen = await render(<RouteStopRow {...PROPS} />);
     expect(screen.getByText('Опт-Юг')).toBeTruthy();
-    expect(screen.getByText('Ряд 3 · место 12')).toBeTruthy();
-    expect(screen.getByText('BZ-2026-000005')).toBeTruthy();
+    expect(screen.getByText('Ряд 3 · место 12 · BZ-2026-000005')).toBeTruthy();
     expect(screen.getByText('+120 м')).toBeTruthy();
     expect(screen.getByText(/3 поз\./)).toBeTruthy();
   });

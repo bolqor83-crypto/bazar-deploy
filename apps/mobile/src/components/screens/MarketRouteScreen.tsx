@@ -161,10 +161,23 @@ export default function MarketRouteScreen({
           }}
           testID="market-route-summary"
         >
-          <Text variant="body" style={{ flex: 1 }}>
-            <Text variant="bodyStrong">{stops.length} точек</Text>
-            {` · ${route?.totalMeters ?? 0} м · ~${route?.estimatedMinutes ?? 0} мин пешком`}
-          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              columnGap: 6,
+              flex: 1,
+            }}
+          >
+            <Text variant="body">
+              <Text variant="bodyStrong">{stops.length} точек</Text>
+              {` · ${route?.totalMeters ?? 0} м`}
+            </Text>
+            {/* Целая строка-единица: «~2 мин пешком» не рвётся
+                посередине на узких экранах (VLM-ревью Промта 17). */}
+            <Text variant="body">{`~${route?.estimatedMinutes ?? 0} мин пешком`}</Text>
+          </View>
           {visitedCount > 0 ? (
             <Text variant="bodySmall" color="textSecondary">
               {`Пройдено ${visitedCount} из ${stops.length}`}

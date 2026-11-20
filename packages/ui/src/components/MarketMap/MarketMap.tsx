@@ -81,14 +81,38 @@ export function MarketMap({
   const routeColor = colors.primary;
   const nextUnvisited = stops.find((s) => !s.visited);
 
-  const points = [
-    { x: 18, y: ENTRANCE_Y },
-    ...stops.map((s) => ({ x: spotX(s.spot, spots), y: rowY(s.row) })),
-  ];
+  // Координаты остановок.
+  const stopPos = stops.map((s) => ({
+    x: spotX(s.spot, spots),
+    y: rowY(s.row),
+  }));
+
+  // Ломаная «как схема метро»: ортогональные колена (сначала
+  // горизонталь, потом вертикаль). Прямые диагонали резали
+  // подписи рядов у левого края (VLM-ревью Промта 17).
+  const points: { x: number; y: number }[] = [];
+  const firstStop = stopPos[0];
+  if (firstStop) {
+    points.push({ x: 18, y: ENTRANCE_Y });
+    points.push({ x: firstStop.x, y: ENTRANCE_Y });
+    points.push(firstStop);
+    for (let i = 1; i < stopPos.length; i += 1) {
+      const cur = stopPos[i];
+      const prev = stopPos[i - 1];
+      if (!cur || !prev) break;
+      points.push({ x: cur.x, y: prev.y });
+      points.push(cur);
+    }
+  }
   const routePath = points.map((p) => `${p.x},${p.y}`).join(' ');
-  const last = points[points.length - 1];
+  const lastStop = stopPos[stopPos.length - 1];
+  // Обратная ветка: вниз до полосы входа и по ней к маркеру —
+  // не пересекает ни подписи рядов, ни надпись «Вход» (она
+  // перенесена под маркер).
   const returnPath =
-    returnToStart && last ? `${last.x},${last.y} 18,${ENTRANCE_Y}` : null;
+    returnToStart && lastStop
+      ? `${lastStop.x},${lastStop.y} ${lastStop.x},${ENTRANCE_Y} 18,${ENTRANCE_Y}`
+      : null;
 
   return (
     <View
@@ -154,27 +178,24 @@ export function MarketMap({
           />
         ) : null}
 
-        {/* Вход */}
-        <Circle
-          cx={18}
-          cy={ENTRANCE_Y}
-          r={11}
-          fill={colors.surface}
-          stroke={routeColor}
-          strokeWidth={2}
-        />
+        {/* Вход: залитый маршрутным цветом маркер (VLM: контурный
+            «В» читался слабо) + подпись ПОД маркером — полоса входа
+            свободна для линии маршрута. */}
+        <Circle cx={18} cy={ENTRANCE_Y} r={12} fill={routeColor} />
         <SvgText
           x={18}
-          y={ENTRANCE_Y + 4}
+          y={ENTRANCE_Y + 5}
           textAnchor="middle"
-          fontSize={11}
-          fill={routeColor}
+          fontSize={13}
+          fontWeight={700}
+          fill={colors.onPrimary}
         >
           В
         </SvgText>
         <SvgText
-          x={34}
-          y={ENTRANCE_Y + 4}
+          x={20}
+          y={ENTRANCE_Y + 24}
+          textAnchor="middle"
           fontSize={12}
           fill={colors.textSecondary}
         >
