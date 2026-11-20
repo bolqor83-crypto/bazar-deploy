@@ -23,6 +23,7 @@ import {
   migrateLegacyRefreshToken,
   setStoredRefreshToken,
 } from '../storage/tokenStorage';
+import { logger } from '../../utils/logger';
 
 const TIMEOUT_MS = 15_000;
 
@@ -148,6 +149,10 @@ async function fetchWithTimeout(
 /**
  * Запрос к API. 401 → одна попытка refresh → повтор. Сетевые ошибки
  * и таймауты — NETWORK_ERROR («Сервер временно недоступен»).
+ *
+ * Промт 18: все сбои уходит в logger — сетевые и 5xx как error
+ * (тост с копированием лога), 4xx как warn (ожидаемые бизнес-отказы
+ * не дёргают пользователя). requestId ответа попадает в контекст.
  */
 export async function apiRequest<T>(
   path: string,
@@ -156,7 +161,16 @@ export async function apiRequest<T>(
   let response: Response;
   try {
     response = await fetchWithTimeout(path, options);
-  } catch {
+  } catch (error) {
+    const reason =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'timeout'
+        : 'network';
+    logger.error('network.request', 'Сервер временно недоступен', {
+      path,
+      method: options.method ?? 'GET',
+      reason,
+    });
     throw new AuthError('NETWORK_ERROR', 'Сервер временно недоступен');
   }
 
@@ -184,6 +198,18 @@ export async function apiRequest<T>(
       }
     } catch {
       // Ответ без JSON — код останется AUTH_UNKNOWN.
+    }
+    const logContext = {
+      path,
+      method: options.method ?? 'GET',
+      status: response.status,
+      code,
+      requestId: response.headers?.get?.('x-request-id') ?? undefined,
+    };
+    if (response.status >= 500) {
+      logger.error('http.server_error', message, logContext);
+    } else {
+      logger.warn('http.reject', message, logContext);
     }
     // Доменные коды сервера (STOCK_*, OFFER_*…) сохраняются в
     // serverCode: код ошибки клиента остаётся auth-контрактом.

@@ -16,7 +16,11 @@ function Harness() {
     <SafeAreaProvider>
       <ToastProvider>
         <Text>Экран приложения</Text>
-        <Text onPress={() => show({ variant: 'success', message: 'Заказ отправлен' })}>
+        <Text
+          onPress={() =>
+            show({ variant: 'success', message: 'Заказ отправлен' })
+          }
+        >
           Показать тост
         </Text>
       </ToastProvider>
@@ -98,5 +102,59 @@ describe('Toast', () => {
       jest.advanceTimersByTime(2000);
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('действие: кнопка выполняется и закрепляет уведомление', async () => {
+    const run = jest.fn();
+    const screen = await renderHarness();
+    const { show } = useToastStore.getState();
+    await act(async () => {
+      show({
+        variant: 'error',
+        message: 'Ошибка',
+        action: { label: 'Скопировать лог', run },
+      });
+    });
+    // Кнопка действия доступна.
+    const action = screen.getByRole('button', { name: 'Скопировать лог' });
+    expect(action).toBeTruthy();
+
+    await fireEvent.press(action);
+    expect(run).toHaveBeenCalledTimes(1);
+
+    // Закреплено: таймер 3 с больше не скрывает карточку.
+    await act(async () => {
+      jest.advanceTimersByTime(3100);
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Ошибка')).toBeTruthy();
+
+    // Тап по карточке закрывает вручную.
+    await fireEvent.press(screen.getByRole('alert'));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('действие: повторное нажатие не запускает таймер', async () => {
+    const run = jest.fn();
+    const screen = await renderHarness();
+    const { show } = useToastStore.getState();
+    await act(async () => {
+      show({
+        variant: 'error',
+        message: 'Ошибка',
+        action: { label: 'Скопировать лог', run },
+      });
+    });
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Скопировать лог' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Скопировать лог' }),
+    );
+    expect(run).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      jest.advanceTimersByTime(10_000);
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
   });
 });

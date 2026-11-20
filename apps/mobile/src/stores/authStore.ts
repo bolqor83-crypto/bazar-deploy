@@ -32,6 +32,7 @@ import {
 } from '../services/api/authApi';
 import { onboardingMockService } from '../services/onboardingMock';
 import { useContextStore } from './contextStore';
+import { logger } from '../utils/logger';
 import { useOnboardingStore } from './onboardingStore';
 
 export interface AuthStoreState {
@@ -133,6 +134,7 @@ async function applyAuthResult(
     accessToken: string;
     world: WorldSnapshot;
   },
+  action: string,
 ): Promise<void> {
   set({
     state: 'authenticated',
@@ -140,6 +142,10 @@ async function applyAuthResult(
     token: result.accessToken,
     error: null,
   });
+  // Промт 18: userId в контекст логгера + info о ключевых действиях
+  // (info пишется только в dev-сборках).
+  logger.setContext({ userId: result.user.id });
+  logger.info(action, 'Успешно', { userId: result.user.id });
   const world = await worldWithOnboarding(result.user.id, result.world);
   useContextStore.getState().syncWithUser(result.user.id, world);
 }
@@ -169,7 +175,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
 
     try {
       const result = await authApi.getSession();
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.session_restored');
     } catch {
       // Refresh прошёл, но /me упал (сеть): остаёмся гостем —
       // следующий заход повторит попытку.
@@ -190,7 +196,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     }
     try {
       const result = await authApi.getSession();
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.session_refreshed');
     } catch {
       // Обновление не удалось — работаем с прежними данными.
     }
@@ -200,7 +206,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await authApi.register(data);
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.register');
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -212,7 +218,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await authApi.login(data);
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.login');
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -224,7 +230,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await authApi.loginWithOtp(phone, code);
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.otp_login');
       return true;
     } catch (error) {
       set({ error: messageFor(error) });
@@ -260,7 +266,7 @@ export const useAuthStore = create<AuthStoreState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await authApi.resetPassword(phone, otp, newPassword);
-      await applyAuthResult(set, result);
+      await applyAuthResult(set, result, 'auth.password_reset');
       return true;
     } catch (error) {
       set({ error: messageFor(error) });

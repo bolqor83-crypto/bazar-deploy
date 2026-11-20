@@ -31,6 +31,7 @@ import {
   unreserveForOrder,
 } from '../stock/stock.helper';
 import { isExpired } from '../price-requests/price-request.service';
+import { AppLogger } from '../common/app-logger';
 import type { DeliveryMethod } from './dto/order.dto';
 
 /** Статусы заказа (строки, значения валидируются DTO). */
@@ -163,6 +164,8 @@ async function nextOrderNumber(tx: Prisma.TransactionClient): Promise<string> {
 @Injectable()
 export class OrderService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly logger = new AppLogger('orders');
 
   /** Создать заказ(ы): группировка по продавцу + stock-резерв.
    *
@@ -370,6 +373,14 @@ export class OrderService {
       },
       { timeout: 60_000, maxWait: 10_000 },
     );
+    // Промт 18: ключевое действие — orderId, номера и сумма
+    // (без позиций и адресов — только агрегаты).
+    this.logger.event('order.created', {
+      userId: input.buyerId,
+      count: created.length,
+      numbers: created.map((o) => o.number),
+      totalKopecks: created.reduce((sum, o) => sum + o.total, 0),
+    });
     return created;
   }
 

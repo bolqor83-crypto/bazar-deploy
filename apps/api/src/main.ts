@@ -8,15 +8,20 @@
  * Безопасность: helmet, CORS, глобальный префикс /api, Swagger на
  * /api/docs, pino-логи с requestId. Тела запросов и заголовки не
  * логируются — там бывают пароли и токены.
+ *
+ * Промт 18: HTTP-лог — структурированная запись на каждый запрос:
+ * requestId, userId (из JWT, если есть), action (METHOD + путь),
+ * status и duration_ms. pinoHttp заменён явным middleware — имена
+ * полей соответствуют контракту логирования (Промт 18, ADR 0018).
  */
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
-import { pinoHttp } from 'pino-http';
 import pino from 'pino';
 import { version as pkgVersion } from '../package.json';
 import { AppModule } from './app.module';
 import { loadEnv } from './config/env';
 import { getRequestId, runWithRequestId } from './common/request-context';
+import { httpLogger, userIdFromAuthHeader } from './common/http-log';
 import { PrismaService } from './prisma/prisma.service';
 import { setupSwagger } from './swagger';
 
@@ -64,26 +69,45 @@ async function bootstrap(): Promise<void> {
     },
   );
 
-  // HTTP-логи pino: метод, URL, статус, requestId. Без тел и заголовков.
+  // HTTP-лог (Промт 18): структурированная запись на завершение
+  // запроса — requestId, userId (если есть JWT), action, status,
+  // duration_ms. Регистрируется внутри requestId-контекста, поэтому
+  // слушатель finish видит requestId через AsyncLocalStorage.
   app.use(
-    pinoHttp({
-      genReqId: () => getRequestId() ?? crypto.randomUUID(),
-      logger: pino({
-        level: env.NODE_ENV === 'test' ? 'silent' : 'info',
-        base: undefined,
-        timestamp: pino.stdTimeFunctions.isoTime,
-      }),
-      autoLogging: {
-        ignore: (req) => {
-          const url = (req as { url?: string }).url ?? '';
-          return url.startsWith('/api/docs');
-        },
+    (
+      req: { method?: string; url?: string; headers?: Record<string, unknown> },
+      res: {
+        statusCode?: number;
+        on: (event: string, listener: () => void) => void;
       },
-      serializers: {
-        req: (req) => ({ method: req.method, url: req.url }),
-        res: (res) => ({ statusCode: res.statusCode }),
-      },
-    }),
+      next: () => void,
+    ) => {
+      const method = req.method ?? 'GET';
+      const url = req.url ?? '';
+      const path = url.split('?')[0];
+      const start = process.hrtime.bigint();
+      res.on('finish', () => {
+        if (path.startsWith('/api/docs')) {
+          return;
+        }
+        const durationMs = Math.round(
+          Number(process.hrtime.bigint() - start) / 1_000_000,
+        );
+        httpLogger.info(
+          {
+            requestId: getRequestId(),
+            userId: userIdFromAuthHeader(req.headers),
+            action: `${method} ${path}`,
+            method,
+            url: path,
+            status: res.statusCode ?? 0,
+            duration_ms: durationMs,
+          },
+          'http.request',
+        );
+      });
+      next();
+    },
   );
 
   // OpenAPI: /api/docs (Swagger UI) и /api/docs-json.

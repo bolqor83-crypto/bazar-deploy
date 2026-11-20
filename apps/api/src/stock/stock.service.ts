@@ -28,6 +28,7 @@ import {
   requireOffer,
   totalsOf,
 } from './stock.helper';
+import { AppLogger } from '../common/app-logger';
 import type {
   CreateLocationDto,
   CreateMovementDto,
@@ -86,6 +87,8 @@ function toBalanceView(row: {
 @Injectable()
 export class StockService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly logger = new AppLogger('stock');
 
   // -------------------------------------------------------------------
   // Склады
@@ -418,6 +421,15 @@ export class StockService {
     // Уведомления продавцам организации (Промт 11, §6):
     // списание — всегда; обнуление доступного остатка — дополнительно.
     await this.notifyStockEvent(seller, dto.type, result, dto.reason);
+
+    // Промт 18: ключевое действие — кто, что и насколько изменил.
+    this.logger.event('stock.movement', {
+      userId: seller.userId,
+      offerId: dto.offerId,
+      type: dto.type,
+      quantity: dto.quantity,
+      reason: dto.reason ?? null,
+    });
 
     const location = await this.prisma.stockLocation.findUnique({
       where: { id: result.balance.locationId },

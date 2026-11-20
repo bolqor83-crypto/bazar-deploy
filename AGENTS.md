@@ -458,6 +458,29 @@ caption 14/20/400, micro 12/16/400.
 - Каждая группа маршрутов обёрнута в AuthGuard, каждая ролевая группа —
   в RoleGuard (`(tabs)/<role>/_layout.tsx`).
 - `/dev/design` доступен только в `__DEV__`-сборках.
+- `/dev/logs` (журнал логов) доступен во всех сборках: секретов не
+  содержит, нужен для диагностики на проде; ссылок из навигации нет.
+
+## Логирование (Промт 18, ADR 0018)
+
+- **Клиент**: `apps/mobile/src/utils/logger.ts` — ring-buffer на 100
+  записей. `error` → буфер + тост с кнопкой «Скопировать лог»
+  (копирует весь буфер, нажатие закрепляет тост); `warn` → буфер без
+  тоста; `info` → только `__DEV__`. Контекст userId/screen —
+  `logger.setContext` (вызывает authStore).
+- **Интеграция**: HTTP-клиент (`client.ts`) — сетевой сбой и 5xx →
+  `logger.error`, 4xx → `logger.warn` (бизнес-отказы не дёргают
+  пользователя); requestId ответа — из заголовка X-Request-Id.
+  ErrorBoundary в корневом layout ловит падения React.
+- **Бэкенд**: HTTP-лог — middleware на `finish`:
+  requestId, userId (sub из JWT без верификации), action
+  (`METHOD /path`), status, duration_ms (pino, JSON в stdout).
+  Ключевые действия — события сервисов: `auth.login`,
+  `order.created`, `stock.movement`.
+- **Никогда не логировать**: пароли, OTP, refresh-токены, полные
+  номера телефонов (маска `+7900***4567` — `maskPhone` в api).
+- Диагностика на проде: прямой URL `/dev/logs` — список буфера,
+  «Очистить», «Скопировать всё».
 
 ## Маршрут по рынку (Промт 17, ADR 0017)
 

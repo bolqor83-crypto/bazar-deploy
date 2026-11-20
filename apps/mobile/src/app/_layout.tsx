@@ -31,6 +31,7 @@ import { View } from 'react-native';
 import { useContextStore } from '../stores/contextStore';
 import { useAuthStore } from '../stores/authStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Не даём сплэшу скрыться до готовности шрифтов, сессии и контекста.
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -55,6 +56,7 @@ function AppStack() {
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="dev/design" />
+        <Stack.Screen name="dev/logs" />
       </Stack>
     </>
   );
@@ -134,10 +136,12 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BazarUIProvider>
-        <AppStack />
-      </BazarUIProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BazarUIProvider>
+          <AppStack />
+        </BazarUIProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -18,6 +18,7 @@ import {
   setSessionExpiredHandler,
 } from '../client';
 import { REFRESH_TOKEN_KEY } from '../../storage/tokenStorage';
+import { logger } from '../../../utils/logger';
 
 const secure = SecureStore as unknown as {
   __store: Map<string, string>;
@@ -204,5 +205,70 @@ describe('api/client', () => {
 
     fetchMock.mockRejectedValueOnce(new TypeError('down'));
     await expect(pingApi()).resolves.toBe(false);
+  });
+
+  describe('логирование сбоев (Промт 18)', () => {
+    let errorEntries: { action: string; message: string; context?: unknown }[];
+
+    beforeEach(async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      logger.clear();
+      errorEntries = [];
+      jest
+        .spyOn(logger, 'error')
+        .mockImplementation((action, message, context) => {
+          errorEntries.push({ action, message, context });
+        });
+      jest
+        .spyOn(logger, 'warn')
+        .mockImplementation((action, message, context) => {
+          errorEntries.push({ action, message, context });
+        });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('сетевой сбой → logger.error с путём и reason', async () => {
+      fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+      await expect(
+        apiRequest('/health', { auth: false }),
+      ).rejects.toBeInstanceOf(AuthError);
+      expect(errorEntries).toHaveLength(1);
+      expect(errorEntries[0]).toMatchObject({
+        action: 'network.request',
+        message: 'Сервер временно недоступен',
+      });
+      expect(errorEntries[0]?.context).toMatchObject({
+        path: '/health',
+        reason: 'network',
+      });
+    });
+
+    it('500 → logger.error c status и requestId', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(500, { statusCode: 500, message: 'Внутренняя ошибка' }),
+      );
+      await expect(apiRequest('/x', { auth: false })).rejects.toBeInstanceOf(
+        AuthError,
+      );
+      expect(errorEntries).toHaveLength(1);
+      expect(errorEntries[0]?.action).toBe('http.server_error');
+      expect(errorEntries[0]?.context).toMatchObject({ status: 500 });
+    });
+
+    it('400 → logger.warn (бизнес-отказ без тоста)', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(400, { statusCode: 400, code: 'STOCK_INVALID' }),
+      );
+      await expect(apiRequest('/y', { auth: false })).rejects.toBeInstanceOf(
+        AuthError,
+      );
+      expect(errorEntries).toHaveLength(1);
+      expect(errorEntries[0]?.action).toBe('http.reject');
+      expect(errorEntries[0]?.context).toMatchObject({ status: 400 });
+    });
   });
 });

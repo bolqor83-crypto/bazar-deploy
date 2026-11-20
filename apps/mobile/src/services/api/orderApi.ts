@@ -7,6 +7,7 @@
 import type { CreateOrderInput, Order, OrderList } from '@bazar/types';
 import { apiRequest } from './client';
 import { useContextStore } from '../../stores/contextStore';
+import { logger } from '../../utils/logger';
 
 /** Заголовок контура для запроса. */
 function scopeHeaders(): Record<string, string> {
@@ -16,12 +17,18 @@ function scopeHeaders(): Record<string, string> {
 
 /** Создать заказ(ы) из позиций. */
 export async function createOrder(input: CreateOrderInput): Promise<Order[]> {
-  return apiRequest<Order[]>('/orders', {
+  const orders = await apiRequest<Order[]>('/orders', {
     method: 'POST',
     auth: true,
     headers: scopeHeaders(),
     body: input,
   });
+  // Промт 18: ключевое действие — info в dev-сборке.
+  logger.info('order.create', 'Заказ создан', {
+    count: orders.length,
+    numbers: orders.map((o) => o.number),
+  });
+  return orders;
 }
 
 /** Список заказов покупателя (фильтры, пагинация). */

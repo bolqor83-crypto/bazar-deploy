@@ -94,6 +94,7 @@ function ToastCard({ onDismiss }: { onDismiss: () => void }) {
 
 function ToastContent({ onDismiss }: { onDismiss: () => void }) {
   const toast = useToastStore((s) => s.queue[0]);
+  const runCurrentAction = useToastStore((s) => s.runCurrentAction);
   const { colors, spacing } = useTheme();
 
   if (!toast) {
@@ -124,6 +125,27 @@ function ToastContent({ onDismiss }: { onDismiss: () => void }) {
       <Text variant="body" style={{ flex: 1 }}>
         {toast.message}
       </Text>
+      {toast.action ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={toast.action.label}
+          testID="toast-action"
+          onPress={(e) => {
+            e.stopPropagation?.();
+            runCurrentAction();
+          }}
+          hitSlop={0}
+          style={({ pressed }) => ({
+            minHeight: 48,
+            justifyContent: 'center',
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text variant="bodyStrong" style={{ color: colors.primary }}>
+            {toast.action.label}
+          </Text>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -135,12 +157,14 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
   const toast = queue[0];
 
-  // Автоскрытие по таймеру длительности.
+  // Автоскрытие по таймеру длительности. Уведомление с уже
+  // выполненным действием закреплено — таймер не запускаем.
   useEffect(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-    if (toast) {
+    if (toast && !toast.pinned) {
       if (toast.variant === 'success') hapticSuccess();
       if (toast.variant === 'error') hapticError();
       timerRef.current = setTimeout(() => {
@@ -150,6 +174,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [toast, dismissCurrent]);
