@@ -43,4 +43,6 @@ secrets/         # секреты, не коммитятся (см. secrets/.git
 
 - Обзор продукта: [docs/product/00-overview.md](docs/product/00-overview.md)
 - Архитектурные решения: [docs/adr/0001-стек-и-монорепо.md](docs/adr/0001-стек-и-монорепо.md)
+- Онбординг разработчика (30 минут): [docs/onboarding.md](docs/onboarding.md)
+- Эксплуатация: [docs/ops/runbook.md](docs/ops/runbook.md), [docs/ops/troubleshooting.md](docs/ops/troubleshooting.md)
 - Правила проекта для агентов и контрибьюторов: [AGENTS.md](AGENTS.md)
