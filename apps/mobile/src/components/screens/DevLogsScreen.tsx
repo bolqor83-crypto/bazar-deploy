@@ -11,14 +11,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { ArrowLeft, ClipboardCopy, Eraser, Wifi } from 'lucide-react-native';
-import {
-  Badge,
-  Button,
-  Text,
-  ToastProvider,
-  useTheme,
-  useToast,
-} from '@bazar/ui';
+import { Badge, Button, Text, useTheme, useToast } from '@bazar/ui';
 import { logger, type LogEntry } from '../../utils/logger';
 import { copyTextToClipboard } from '../../utils/clipboard';
 import { pingApi } from '../../services/api/client';
@@ -262,11 +255,7 @@ export function DevLogsScreen() {
   );
 }
 
-/** Обёртка роута: журнал живёт внутри своего ToastProvider. */
+/** Обёртка роута: тост рендерит корневой BazarUIProvider (одна карточка). */
 export function DevLogsRoute() {
-  return (
-    <ToastProvider>
-      <DevLogsScreen />
-    </ToastProvider>
-  );
+  return <DevLogsScreen />;
 }
