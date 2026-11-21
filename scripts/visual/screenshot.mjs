@@ -925,6 +925,187 @@ async function prepareStockGolden(token, sellerOrgId) {
  */
 
 /**
+ * Детерминированный сценарий «Аналитика» (Промт 18, D).
+ *
+ * Объёмы/топ/аномалии агрегируют ВСЕ заказы окна — для стабильного
+ * golden окно должно содержать ровно известный набор:
+ *   1. Маркерные заказы выделенного пользователя «Маркет
+ *      Аналитика» (никогда не логинится, его заказы не попадают
+ *      в списки Ивана): два товара ритейл-продавцов (не Опт-Юг —
+ *      его экран заказов не меняется), даты ОТНОСИТЕЛЬНО сейчас
+ *      (внутри недели — «вчера/позавчера/3 дня назад»; в
+ *      предыдущем окне — 9 дней назад):
+ *        Огурцы гладкие:  8, 12, 20  → объём 40, всплеск z = 5
+ *        Лук золотистый: 10, 14, 15  → объём 39, без аномалии
+ *      Прошлое окно: 25 и 20 → изменения +60% и +95%.
+ *      Итог кадра: топ-1 Огурцы 40 кг, аномалия «Объём ↑» 20 кг.
+ *   2. Все прочие заказы «новее 13.11 23:59» (кроме маркерных)
+ *      переносятся на 12.11 с сохранением взаимного порядка —
+ *      окно недели их больше не видит, дрейф со сдвигом календаря
+ *      исключён. Маркет-заказы (13.11) и события таймлайнов не
+ *      трогаются; затронутые кадры списков переснимаются тем же
+ *      прогоном.
+ *   3. Статусы и остатки не меняются: маркерные заказы создаются
+ *      напрямую (без резервов и уведомлений), сдвиг — только даты.
+ */
+async function prepareAnalyticsGolden() {
+  const prisma = await openPrisma();
+  try {
+    // 1. Маркерный пользователь (без логина: хеш невалиден).
+    let marker = await prisma.user.findUnique({
+      where: { phone: '+79005550001' },
+    });
+    if (!marker) {
+      marker = await prisma.user.create({
+        data: {
+          phone: '+79005550001',
+          name: 'Маркет Аналитика',
+          passwordHash: 'golden-marker-not-a-login',
+        },
+      });
+    }
+
+    // 2. Прошлые маркерные заказы — удалить (схема каскадит
+    //    позиции и события; резервов и доставок у них нет).
+    await prisma.order.deleteMany({ where: { buyerId: marker.id } });
+
+    // 3. Предложения ритейл-продавцов (не Опт-Юг: его экран
+    //    заказов в golden не должен менять состав покупателей).
+    const offerFor = async (orgName, productName) => {
+      const offer = await prisma.productOffer.findFirst({
+        where: {
+          organization: { name: orgName },
+          product: { name: productName },
+        },
+        orderBy: { priceKopecks: 'asc' },
+        include: { product: true, organization: true },
+      });
+      if (!offer) {
+        throw new Error(`нет предложения «${productName}» у «${orgName}»`);
+      }
+      return offer;
+    };
+    const cucumbers = await offerFor('Сеть «У дома»', 'Огурцы гладкие');
+    const onions = await offerFor(
+      'Магазин «Ромашка»',
+      'Лук репчатый золотистый',
+    );
+
+    // 4. Маркерные заказы: [дней назад, количество].
+    const PLAN = [
+      { offer: cucumbers, days: 3, qty: 8 },
+      { offer: cucumbers, days: 2, qty: 12 },
+      { offer: cucumbers, days: 1, qty: 20 },
+      { offer: cucumbers, days: 9, qty: 25 },
+      { offer: onions, days: 3, qty: 10 },
+      { offer: onions, days: 2, qty: 14 },
+      { offer: onions, days: 1, qty: 15 },
+      { offer: onions, days: 9, qty: 20 },
+    ];
+    const stamp = Date.now();
+    for (const [index, row] of PLAN.entries()) {
+      const at = new Date(Date.now() - row.days * 86_400_000);
+      const order = await prisma.order.create({
+        data: {
+          number: `GA-${stamp}-${index}`,
+          buyerId: marker.id,
+          sellerId: row.offer.organizationId,
+          status: 'CONFIRMED',
+          subtotal: row.offer.priceKopecks * row.qty,
+          deliveryCost: 0,
+          total: row.offer.priceKopecks * row.qty,
+          comment: 'analytics-golden',
+          createdAt: at,
+          updatedAt: at,
+          items: {
+            create: {
+              offerId: row.offer.id,
+              title: row.offer.product.name,
+              unit: row.offer.product.unit,
+              price: row.offer.priceKopecks,
+              quantity: row.qty,
+              total: row.offer.priceKopecks * row.qty,
+            },
+          },
+          events: {
+            create: {
+              type: 'CREATED',
+              payload: JSON.stringify({ source: 'analytics-golden' }),
+              createdAt: at,
+            },
+          },
+        },
+      });
+      void order;
+    }
+
+    // 5. Сдвиг чужих «свежих» заказов под границу окна (12.11),
+    //    взаимный порядок сохраняется (7 минут между заказами).
+    const CUTOFF = new Date('2026-11-13T23:59:59Z');
+    const fresh = await prisma.order.findMany({
+      where: { createdAt: { gt: CUTOFF }, buyerId: { not: marker.id } },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+    let shifted = 0;
+    for (const [index, order] of fresh.entries()) {
+      const at = new Date(
+        new Date('2026-11-12T06:00:00Z').getTime() + index * 7 * 60_000,
+      );
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { createdAt: at },
+      });
+      shifted += 1;
+    }
+
+    // 6. История цен для трендов: Овощи были на 10% дешевле
+    //    (→ +11,1%), Фрукты на 5% дороже (→ −4,8%). Точка на
+    //    «10 дней назад» (за пределами окна недели) — реконструкция
+    //    цены на начало окна берёт последнюю запись до границы.
+    //    Маркер actorId='analytics-golden': прошлые точки удаляются.
+    await prisma.offerPriceHistory.deleteMany({
+      where: { actorId: 'analytics-golden' },
+    });
+    const PRICE_PLAN = [
+      { category: 'Овощи', factor: 0.9 },
+      { category: 'Фрукты', factor: 1.05 },
+    ];
+    const atPast = new Date(Date.now() - 10 * 86_400_000);
+    let historyPoints = 0;
+    for (const plan of PRICE_PLAN) {
+      const offers = await prisma.productOffer.findMany({
+        where: {
+          archivedAt: null,
+          priceOnRequest: false,
+          product: { category: { name: plan.category } },
+        },
+        select: { id: true, priceKopecks: true },
+      });
+      for (const offer of offers) {
+        await prisma.offerPriceHistory.create({
+          data: {
+            offerId: offer.id,
+            priceKopecks: Math.round(offer.priceKopecks * plan.factor),
+            actorId: 'analytics-golden',
+            createdAt: atPast,
+          },
+        });
+        historyPoints += 1;
+      }
+    }
+
+    console.log(
+      `подготовка: аналитика — ${PLAN.length} маркерных заказов ` +
+        `(Огурцы 40 кг, Лук 39 кг, всплеск z=5), сдвинуто дат: ${shifted}, ` +
+        `точек истории цен: ${historyPoints}`,
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
  * Детерминированный сценарий «Маршрут по рынку» (Промт 17, B).
  *
  * После prepareDemoDeliveries у Ивана 4 активных заказа (все
@@ -1112,10 +1293,27 @@ export async function captureSet(entries) {
     for (const entry of entries) {
       if (entry.authState === 'user') continue;
       const page = await preparePage(guestContext, entry);
+      // Промт 18, D: кадр журнала — API резаться до загрузки,
+      // «Проверка связи» пишет детерминированную ошибку в буфер.
+      if (entry.devLogsProbe) {
+        await guestContext.route('**/api/**', (route) => route.abort());
+      }
       await settle(page, entry);
+      if (entry.devLogsProbe) {
+        await page
+          .locator('[data-testid="logs-probe"]')
+          .click({ timeout: 10_000 });
+        await page
+          .waitForSelector('[data-testid^="logs-entry-"]', { timeout: 10_000 })
+          .catch(() => {});
+        await page.waitForTimeout(600);
+      }
       await applyMasks(page);
       shots.set(entry.name, await page.screenshot({ fullPage: false }));
       await page.close();
+      if (entry.devLogsProbe) {
+        await guestContext.unroute('**/api/**');
+      }
     }
     await guestContext.close();
 
@@ -1217,6 +1415,27 @@ export async function captureSet(entries) {
         }
       }
 
+      // Детерминированный сценарий аналитики (Промт 18, D):
+      // маркерные заказы + сдвиг чужих свежих заказов из окна.
+      // ПОСЛЕ маркет-подготовки: сдвиг должен накрыть и её
+      // свежие заказы (создаются с датой «сейчас» через API).
+      const needsAnalytics = userEntries.some((e) => e.analyticsGolden);
+      if (needsAnalytics) {
+        try {
+          await prepareAnalyticsGolden();
+        } catch (e) {
+          for (const entry of userEntries) {
+            if (entry.analyticsGolden) {
+              prepFailed.add(entry.name);
+            }
+          }
+          console.warn(
+            `подготовка аналитики не удалась (после ретраев): ${e.message} — ` +
+              `кадры помечены prep_failed`,
+          );
+        }
+      }
+
       const userContext = await browser.newContext({
         deviceScaleFactor: 2,
         isMobile: true,
@@ -1282,6 +1501,15 @@ export async function captureSet(entries) {
             })
             .catch(() => {});
           await page.waitForTimeout(600);
+        }
+        if (entry.analyticsGolden) {
+          // Промт 18, D: ждём данные объёмов (не скелетон/empty).
+          await page
+            .waitForSelector('[data-testid="analytics-volumes"]', {
+              timeout: 15_000,
+            })
+            .catch(() => {});
+          await page.waitForTimeout(800);
         }
         if (entry.marketVisited) {
           // Промт 17, B: отметить первые N остановок «Пройдено»

@@ -319,3 +319,25 @@ export type { MarketMapProps, MarketMapStop } from './components/MarketMap';
 
 export { RouteStopRow } from './components/RouteStopRow';
 export type { RouteStopRowProps } from './components/RouteStopRow';
+
+// Аналитика рынка (Промт 18, Часть D)
+export { TrendCard } from './components/TrendCard';
+export type { TrendCardProps } from './components/TrendCard';
+
+export { VolumeChart } from './components/VolumeChart';
+export type {
+  VolumeChartItem,
+  VolumeChartProps,
+} from './components/VolumeChart';
+
+export { TopProductsList } from './components/TopProductsList';
+export type {
+  TopProductItem,
+  TopProductsListProps,
+} from './components/TopProductsList';
+
+export { AnomalyList } from './components/AnomalyList';
+export type {
+  AnomalyItemData,
+  AnomalyListProps,
+} from './components/AnomalyList';

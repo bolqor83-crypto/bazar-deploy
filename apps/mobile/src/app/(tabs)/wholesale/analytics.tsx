@@ -1,19 +1,14 @@
 /**
- * Аналитика (analytics) — экран-заглушка роли «оптовик».
- * Бизнес-логики нет: структура навигации и осмысленный EmptyState.
+ * Аналитика (analytics) — экран оптовика (Промт 18, Часть D):
+ * AI Layer 1, дашборд на данных Layer 0 (ADR 0019).
  */
-import { BarChart3 } from 'lucide-react-native';
-import { EmptyState } from '@bazar/ui';
+import { AnalyticsScreen } from '../../../components/screens/AnalyticsScreen';
 import { RoleScreen } from '../../../components/shell/RoleScreen';
 
-export default function AnalyticsScreen() {
+export default function AnalyticsRoute() {
   return (
     <RoleScreen role="wholesale_seller" section="analytics" title="Аналитика">
-      <EmptyState
-        icon={BarChart3}
-        title="Аналитика в разработке"
-        description="Динамика продаж по товарам и клиентам появится здесь."
-      />
+      <AnalyticsScreen />
     </RoleScreen>
   );
 }

@@ -218,10 +218,12 @@ const SCREENS: readonly Row[] = [
     WHOLESALE,
   ],
   [
+    // Промт 18, D: аналитика — реальный дашборд Layer 1; без API
+    // секции показывают ErrorState с retry.
     'wholesale/analytics',
     AnalyticsScreen,
     'Аналитика',
-    'Аналитика в разработке',
+    'Не удалось загрузить тренды',
     WHOLESALE,
   ],
   [

@@ -1,12 +1,16 @@
 /**
- * Экран журнала логов (Промт 18, Часть A): ring-buffer логгера
- * (последние 100 записей, новые сверху), кнопки «Очистить» и
- * «Скопировать всё».
+ * Экран журнала логов (Промт 18, Часть A + D).
+ *
+ * Показывает ring-buffer логгера (последние 100 записей, новые
+ * сверху): уровень, время, действие, сообщение, контекст. Кнопки:
+ * «Очистить», «Скопировать всё» и «Проверка связи» — пингует
+ * /api/health через клиент приложения: сбой пишется в журнал как
+ * error (тост с копированием) — им же снимается golden-кадр.
  */
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
-import { ArrowLeft, ClipboardCopy, Eraser } from 'lucide-react-native';
+import { ArrowLeft, ClipboardCopy, Eraser, Wifi } from 'lucide-react-native';
 import {
   Badge,
   Button,
@@ -17,6 +21,7 @@ import {
 } from '@bazar/ui';
 import { logger, type LogEntry } from '../../utils/logger';
 import { copyTextToClipboard } from '../../utils/clipboard';
+import { pingApi } from '../../services/api/client';
 
 /** Цвет уровня: terracotta для error (не красный), янтарь для warn. */
 function levelBadge(entry: LogEntry): {
@@ -37,6 +42,22 @@ function entryTime(iso: string): string {
   const date = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+/** Русская плюрализация: 1 ошибка / 2 ошибки / 5 ошибок. */
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) {
+    return many;
+  }
+  if (mod10 === 1) {
+    return one;
+  }
+  if (mod10 >= 2 && mod10 <= 4) {
+    return few;
+  }
+  return many;
 }
 
 export function DevLogsScreen() {
@@ -76,6 +97,18 @@ export function DevLogsScreen() {
     });
   };
 
+  const handleProbe = async () => {
+    const ok = await pingApi();
+    if (ok) {
+      logger.info('network.health', 'Связь с сервером есть');
+      toast.show({ variant: 'success', message: 'Связь есть' });
+    } else {
+      // pingApi глотает сбой (булев контракт) — фиксируем в журнале.
+      logger.error('network.health', 'Сервер не отвечает');
+    }
+    setVersion((v) => v + 1);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -111,8 +144,9 @@ export function DevLogsScreen() {
           <View style={{ flex: 1 }}>
             <Text variant="h2">Журнал</Text>
             <Text variant="caption" color="textMuted">
-              {counts.error} ошибок · {counts.warn} предупреждений ·{' '}
-              {counts.info} info
+              {`${counts.error} ${plural(counts.error, 'ошибка', 'ошибки', 'ошибок')} · ` +
+                `${counts.warn} ${plural(counts.warn, 'предупреждение', 'предупреждения', 'предупреждений')} · ` +
+                `${counts.info} info`}
             </Text>
           </View>
         </View>
@@ -120,6 +154,7 @@ export function DevLogsScreen() {
         <View
           style={{
             flexDirection: 'row',
+            flexWrap: 'wrap',
             gap: spacing.md,
             marginBottom: spacing.md,
           }}
@@ -143,6 +178,17 @@ export function DevLogsScreen() {
             testID="logs-copy"
           >
             Скопировать всё
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Wifi}
+            onPress={() => {
+              void handleProbe();
+            }}
+            testID="logs-probe"
+          >
+            Проверка связи
           </Button>
         </View>
 
@@ -178,7 +224,12 @@ export function DevLogsScreen() {
                   }}
                 >
                   <Badge variant={badge.variant}>{badge.label}</Badge>
-                  <Text variant="caption" color="textMuted" mono>
+                  <Text
+                    variant="caption"
+                    color="textMuted"
+                    mono
+                    testID="logs-time"
+                  >
                     {entryTime(entry.timestamp)}
                   </Text>
                   <Text

@@ -54,6 +54,16 @@
     "waitForText": "Сброс"
   },
   {
+    "name": "dev-logs-light-390",
+    "file": "dev-logs-light-390.png",
+    "url": "/dev/logs",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "guest",
+    "waitForText": "Журнал",
+    "devLogsProbe": true
+  },
+  {
     "name": "catalog-light-390",
     "file": "catalog-light-390.png",
     "url": "/customer/catalog",
@@ -512,5 +522,27 @@
     "role": "wholesale_seller",
     "waitForText": "Заказы",
     "sellerOrdersGrouped": true
+  },
+  {
+    "name": "seller-analytics-light-390",
+    "file": "seller-analytics-light-390.png",
+    "url": "/wholesale/analytics",
+    "viewport": 390,
+    "theme": "light",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Аналитика",
+    "analyticsGolden": true
+  },
+  {
+    "name": "seller-analytics-dark-390",
+    "file": "seller-analytics-dark-390.png",
+    "url": "/wholesale/analytics",
+    "viewport": 390,
+    "theme": "dark",
+    "authState": "user",
+    "role": "wholesale_seller",
+    "waitForText": "Аналитика",
+    "analyticsGolden": true
   }
 ]

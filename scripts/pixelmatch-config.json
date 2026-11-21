@@ -7,6 +7,7 @@
     "[data-testid='avatar-placeholder']",
     "[data-testid='clock']",
     "[data-testid='datetime']",
-    "[data-testid='stock-summary-value']"
+    "[data-testid='stock-summary-value']",
+    "[data-testid='logs-time']"
   ]
 }

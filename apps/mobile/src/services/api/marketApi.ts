@@ -5,9 +5,14 @@
  * организации на сетке рынка (X-Organization-Id).
  */
 import type {
+  ActiveUsersResponse,
+  AnalyticsPeriod,
+  AnomaliesResponse,
   MarketPosition,
   MarketRouteResponse,
+  PriceTrendsResponse,
   SaveMarketPositionInput,
+  VolumesResponse,
 } from '@bazar/types';
 import { apiRequest } from './client';
 import { useContextStore } from '../../stores/contextStore';
@@ -58,6 +63,50 @@ export async function saveMarketPosition(
 export async function clearMarketPosition(): Promise<{ cleared: boolean }> {
   return apiRequest<{ cleared: boolean }>('/market/position', {
     method: 'DELETE',
+    auth: true,
+    headers: orgHeaders(),
+  });
+}
+
+/*
+ * Аналитика рынка — Layer 0 (Промт 18, Часть C; ADR 0019).
+ * trends/volumes — публичные агрегаты; users/anomalies — контур
+ * продавца (X-Organization-Id).
+ */
+export async function fetchPriceTrends(
+  period: AnalyticsPeriod,
+  categoryId?: string,
+): Promise<PriceTrendsResponse> {
+  const query = new URLSearchParams({ period });
+  if (categoryId) {
+    query.set('category', categoryId);
+  }
+  return apiRequest<PriceTrendsResponse>(`/market/trends?${query.toString()}`, {
+    auth: false,
+  });
+}
+
+export async function fetchVolumeTrends(
+  period: AnalyticsPeriod,
+): Promise<VolumesResponse> {
+  return apiRequest<VolumesResponse>(`/market/volumes?period=${period}`, {
+    auth: false,
+  });
+}
+
+export async function fetchActiveUsers(
+  period: AnalyticsPeriod,
+): Promise<ActiveUsersResponse> {
+  return apiRequest<ActiveUsersResponse>(`/market/users?period=${period}`, {
+    auth: true,
+    headers: orgHeaders(),
+  });
+}
+
+export async function fetchAnomalies(
+  period: AnalyticsPeriod,
+): Promise<AnomaliesResponse> {
+  return apiRequest<AnomaliesResponse>(`/market/anomalies?period=${period}`, {
     auth: true,
     headers: orgHeaders(),
   });
