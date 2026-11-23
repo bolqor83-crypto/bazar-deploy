@@ -84,13 +84,19 @@ async function shot(page, name) {
   console.log(`скриншот: ${name}.png`);
 }
 
-/** Форматирование цены как в UI (копейки → рубли). */
+/** Форматирование цены как в UI (копейки → рубли).
+ *  Зеркало formatPrice из PriceDisplay: узкий неразрывный
+ *  пробел (U+202F) как разделитель групп и перед ₽ — иначе
+ *  сверка aria-label ломается на whitespace (найдено на финале). */
 function priceRub(kopecks) {
   const rub = kopecks / 100;
-  return `${rub.toLocaleString('ru-RU', {
-    minimumFractionDigits: 2,
+  const hasKopecks = Math.round(kopecks) % 100 !== 0;
+  const formatted = rub.toLocaleString('ru-RU', {
+    minimumFractionDigits: hasKopecks ? 2 : 0,
     maximumFractionDigits: 2,
-  })} ₽`;
+  });
+  const narrow = '\u202F';
+  return `${formatted.replace(/\u00A0/g, narrow)}${narrow}₽`;
 }
 
 async function main() {
@@ -177,7 +183,7 @@ async function main() {
     const label = await card.getAttribute('aria-label');
     const name = label.match(/^Тренд ([^:]+):/)?.[1];
     const apiItem = trendsApi.items.find((t) => t.categoryName === name);
-    const uiPrice = label.match(/средняя ([\d\s,]+ ₽)/)?.[1];
+    const uiPrice = label.match(/средняя (.+?), изменение/)?.[1];
     const apiPrice = apiItem ? priceRub(apiItem.avgPriceKopecks) : '—';
     const ok = uiPrice === apiPrice;
     if (!ok) mismatch += 1;
